@@ -1,0 +1,45 @@
+test_actual_bingx_book_schema (test_core.DataStrategyTests.test_actual_bingx_book_schema) ... ok
+test_backtest_next_open_and_no_future_signal (test_core.DataStrategyTests.test_backtest_next_open_and_no_future_signal) ... ok
+test_checksum_and_roundtrip (test_core.DataStrategyTests.test_checksum_and_roundtrip) ... ok
+test_flat_rsi (test_core.DataStrategyTests.test_flat_rsi) ... ok
+test_funding_missing_fails (test_core.DataStrategyTests.test_funding_missing_fails) ... ok
+test_future_candles_do_not_leak_through_test_end (test_core.DataStrategyTests.test_future_candles_do_not_leak_through_test_end) ... ok
+test_history_empty_fails (test_core.DataStrategyTests.test_history_empty_fails) ... ok
+test_hour_only_after_four_closed_candles (test_core.DataStrategyTests.test_hour_only_after_four_closed_candles) ... ok
+test_inactive_contract_fails (test_core.DataStrategyTests.test_inactive_contract_fails) ... ok
+test_nonfinite_funding_mark_fails (test_core.DataStrategyTests.test_nonfinite_funding_mark_fails) ... ok
+test_partial_start_hour_discarded (test_core.DataStrategyTests.test_partial_start_hour_discarded) ... ok
+test_private_endpoint_rejected_before_network (test_core.DataStrategyTests.test_private_endpoint_rejected_before_network) ... ok
+test_rising_falling_rsi (test_core.DataStrategyTests.test_rising_falling_rsi) ... ok
+test_signal_prefix_invariance (test_core.DataStrategyTests.test_signal_prefix_invariance) ... ok
+test_validation_gaps_nan_bad_ohlc (test_core.DataStrategyTests.test_validation_gaps_nan_bad_ohlc) ... ok
+test_accounting_reconciles (test_core.RiskTests.test_accounting_reconciles) ... ok
+test_both_hit_stop_first_long (test_core.RiskTests.test_both_hit_stop_first_long) ... ok
+test_both_hit_stop_first_short (test_core.RiskTests.test_both_hit_stop_first_short) ... ok
+test_budget_includes_fees_slip_funding (test_core.RiskTests.test_budget_includes_fees_slip_funding) ... ok
+test_daily_halt_latched_until_next_utc_day (test_core.RiskTests.test_daily_halt_latched_until_next_utc_day) ... ok
+test_drawdown_halt_survives_day_and_restore (test_core.RiskTests.test_drawdown_halt_survives_day_and_restore) ... ok
+test_funding_long_and_short_sign (test_core.RiskTests.test_funding_long_and_short_sign) ... ok
+test_gap_fills_at_worse_open (test_core.RiskTests.test_gap_fills_at_worse_open) ... ok
+test_invalid_config_rejected (test_core.RiskTests.test_invalid_config_rejected) ... ok
+test_isolated_gap_loss_cap (test_core.RiskTests.test_isolated_gap_loss_cap) ... ok
+test_margin_and_notional_cap (test_core.RiskTests.test_margin_and_notional_cap) ... ok
+test_minimum_no_forced_oversize (test_core.RiskTests.test_minimum_no_forced_oversize) ... ok
+test_new_entry_at_settlement_not_charged (test_core.RiskTests.test_new_entry_at_settlement_not_charged) ... ok
+test_no_intrabar_cash_available_at_open (test_core.RiskTests.test_no_intrabar_cash_available_at_open) ... ok
+test_portfolio_risk_cap (test_core.RiskTests.test_portfolio_risk_cap) ... ok
+test_quantity_rounds_down (test_core.RiskTests.test_quantity_rounds_down) ... ok
+test_short_stop_budget (test_core.RiskTests.test_short_stop_budget) ... ok
+test_atomic_restart_and_no_duplicate_journal (test_core.StorePaperTests.test_atomic_restart_and_no_duplicate_journal) ... ok
+test_config_change_blocked (test_core.StorePaperTests.test_config_change_blocked) ... ok
+test_missed_signal_not_replayed (test_core.StorePaperTests.test_missed_signal_not_replayed) ... ok
+test_same_signal_not_duplicated_after_restart (test_core.StorePaperTests.test_same_signal_not_duplicated_after_restart) ... ok
+test_single_writer (test_core.StorePaperTests.test_single_writer) ... ok
+test_stale_quote_no_execution (test_core.StorePaperTests.test_stale_quote_no_execution) ... ok
+test_stop_file_flattens_and_blocks_entry (test_core.StorePaperTests.test_stop_file_flattens_and_blocks_entry) ... ok
+test_uncommitted_cash_not_recovered (test_core.StorePaperTests.test_uncommitted_cash_not_recovered) ... ok
+
+----------------------------------------------------------------------
+Ran 40 tests in 0.080s
+
+OK

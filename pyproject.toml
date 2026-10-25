@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=75,<82"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bingx-paper-bot"
+version = "0.1.0"
+description = "Read-only BingX BTC/ETH perpetual research and autonomous paper trader"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+bingx-bot = "bingx_bot.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["bingx_bot*"]
