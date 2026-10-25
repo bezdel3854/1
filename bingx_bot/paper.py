@@ -9,10 +9,20 @@ from .config import BAR, SYMBOLS, Config
 from .data import PublicClient
 from .strategy import Strategy
 from .store import Store
+from .engine import apply_trail
+from .approaches import factory, runtime_config
 
 class PaperWorker:
-    def __init__(self, store, client):
+    def __init__(self, store, client, strategy_name='baseline', observe_only=None):
         self.store, self.client = store, client
+        self.strategy_name = strategy_name
+        factory(strategy_name)  # validate even before first network request
+        saved = store.meta.get('strategy_name','baseline' if store.meta else None)
+        if saved is not None and saved != strategy_name:
+            raise ValueError('Strategy changed: use a separate paper database')
+        self.observe_only = strategy_name != 'baseline' if observe_only is None else observe_only
+        store.meta['strategy_name'] = strategy_name
+        store.meta['observe_only'] = self.observe_only
         self.rules = None
         self.last_rules = 0
         self.strategies = {}
@@ -31,7 +41,10 @@ class PaperWorker:
                 # On restart replay enough fixed warmup, then incrementally update.
                 start = close-1000*BAR if self.strategy_ts is None else self.strategy_ts
                 rows = self.client.candles(s,start,close)
-                strategy = self.strategies.setdefault(s,Strategy(self.store.config))
+                strategy = self.strategies.get(s)
+                if strategy is None:
+                    strategy = Strategy(self.store.config) if self.strategy_name == 'baseline' else factory(self.strategy_name)(self.store.config)
+                    self.strategies[s] = strategy
                 for c in rows:
                     self.signals[s] = strategy.update(c)
             self.strategy_ts = close
@@ -60,7 +73,11 @@ class PaperWorker:
             for f in funding[s]:
                 broker.fund(s,f.ts,f.rate,f.mark)
         self.store.meta['funding_cursor'] = min(now, max(cursor, funding_end))
+        last_signal = int(self.store.meta.get('last_signal',0))
+        fresh_signal = close > last_signal and 0 <= now-close <= 60_000
         for s,p in list(broker.positions.items()):
+            if fresh_signal:
+                apply_trail(broker,s,self.signals[s])
             price = marks[s]
             reason = None
             if p.side*(price-p.stop) <= 0:
@@ -69,6 +86,9 @@ class PaperWorker:
                 reason = 'paper_target_sampled'
             elif now-p.opened >= broker.config.max_bars*BAR:
                 reason = 'paper_time_exit'
+            sig = self.signals[s]
+            if reason is None and fresh_signal and ((p.side == 1 and sig.close_long) or (p.side == -1 and sig.close_short)):
+                reason = 'paper_strategy_exit'
             if reason:
                 broker.exit(s,price,now,reason)
         stopped = broker.risk_check(now,marks)
@@ -76,9 +96,10 @@ class PaperWorker:
         if stopped or kill:
             broker.flatten(marks,now,'manual_stop' if kill else 'risk_halt')
         # Never replay historical entries after restart/outage; only a fresh close (<60 sec).
-        last_signal = int(self.store.meta.get('last_signal',0))
         if close > last_signal:
-            if 0 <= now-close <= 60_000 and not stopped and not kill:
+            for s in SYMBOLS:
+                broker.event(now,'decision',symbol=s,strategy=self.strategy_name,side=self.signals[s].side,observe_only=self.observe_only,close=close)
+            if fresh_signal and not stopped and not kill and not self.observe_only:
                 for s in SYMBOLS:
                     bid,ask,_ = quotes[s]
                     sig = self.signals[s]
@@ -94,15 +115,17 @@ class PaperWorker:
                      halted=broker.halted,daily_halted=broker.day_halted,manual_stop=kill)
         self.store.meta['heartbeat'] = now
         self.store.commit()
-        return {'mode':'paper','ts':now,'equity':broker.last_equity,
+        return {'mode':'paper','strategy':self.strategy_name,'observe_only':self.observe_only,'ts':now,'equity':broker.last_equity,
                 'positions':len(broker.positions),'halted':broker.halted,'manual_stop':kill}
 
 
-def run(path, port=None, once=False):
+def run(path, port=None, once=False, strategy_name="baseline", enable_experimental_entries=False):
     if os.environ.get('MODE','paper') != 'paper':
         raise ValueError('Only MODE=paper is supported')
-    store = Store(path,Config())
-    worker = PaperWorker(store,PublicClient())
+    config = runtime_config(strategy_name)
+    store = Store(path,config)
+    observe = strategy_name != "baseline" and not enable_experimental_entries
+    worker = PaperWorker(store,PublicClient(),strategy_name,observe)
     status = {'ok':False,'mode':'paper','last_success':0,'error':None}
     stop = threading.Event()
     signal.signal(signal.SIGTERM,lambda *_:stop.set())
@@ -138,8 +161,8 @@ def run(path, port=None, once=False):
                 if once or failures >= 5:
                     raise
                 store.close()
-                store = Store(path,Config())
-                worker = PaperWorker(store,PublicClient())
+                store = Store(path,config)
+                worker = PaperWorker(store,PublicClient(),strategy_name,observe)
             if once:
                 break
             stop.wait(5 if failures == 0 else min(30,2**failures))

@@ -60,3 +60,12 @@ class Store:
         if not self.lock.closed:
             fcntl.flock(self.lock,fcntl.LOCK_UN)
             self.lock.close()
+
+
+def existing_config(path):
+    from .config import Config
+    uri=Path(path).resolve().as_uri()+'?mode=ro'
+    with sqlite3.connect(uri,uri=True) as db:
+        row=db.execute('SELECT payload FROM state WHERE id=1').fetchone()
+    if row is None:raise ValueError('No committed account')
+    return Config(**json.loads(row[0])['config'])

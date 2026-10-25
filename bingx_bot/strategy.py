@@ -7,6 +7,10 @@ from .config import HOUR
 class Signal:
     side: int = 0
     distance: float = 0
+    close_long: bool = False
+    close_short: bool = False
+    trail_long: float | None = None
+    trail_short: float | None = None
 
 class Indicators:
     def __init__(self):

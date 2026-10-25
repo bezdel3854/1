@@ -35,3 +35,8 @@ Docker daemon в среде разработки отсутствовал. Docke
 IaC-шаблон описывает worker, Volume 1 ГБ, переменные и healthcheck. Его применение не выполнялось: SDK/CLI Railway не установлен и аккаунт не подключён. Для ручного развёртывания выполнить шаги выше; Start Command `python -m bingx_bot.cli paper`, Healthcheck Path `/health`, timeout 180 секунд, Restart Policy On Failure с 5 попытками задать в интерфейсе. При использовании IaC проверить регион Volume, связать сервис с GitHub, установить SDK `railway`, выполнить `railway login`, `railway link`, `railway config plan`, затем применить просмотренный план. Не применять шаблон к проекту с посторонними сервисами.
 
 Документация: https://docs.railway.com/builds/dockerfiles ; https://docs.railway.com/infrastructure-as-code ; https://docs.railway.com/infrastructure-as-code/reference ; https://docs.railway.com/volumes
+
+
+## Новые исследовательские модели
+
+`STRATEGY=regime_composite` либо `STRATEGY=consensus` выбирает общую экспериментальную систему. По умолчанию она только журналирует сигналы, без виртуальных входов. Весь список имён выводится `python -m bingx_bot.cli paper --help`. Для новой стратегии нужен новый `DB_PATH`, чтобы не смешивать историю и конфиги. Ни одна модель не прошла исследовательский фильтр; не менять параметры для обхода gate после просмотра результата.

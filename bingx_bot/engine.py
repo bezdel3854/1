@@ -140,6 +140,17 @@ class Broker:
         return b
 
 
+def apply_trail(broker, symbol, decision):
+    p = broker.positions.get(symbol)
+    if not p or decision is None:
+        return
+    level = decision.trail_long if p.side == 1 else decision.trail_short
+    if level is not None:
+        if not math.isfinite(level) or level <= 0:
+            raise ValueError('Invalid trailing instruction')
+        p.stop = max(p.stop, level) if p.side == 1 else min(p.stop, level)
+
+
 def bar_exit(broker, symbol, bar, phase="all"):
     p = broker.positions.get(symbol)
     if not p:
@@ -169,12 +180,15 @@ def bar_exit(broker, symbol, bar, phase="all"):
             broker.exit(symbol,p.target,bar.ts+BAR-1,'take_profit')
 
 
-def backtest(candles, funding, rules, config=Config(), start=None, end=None):
+def backtest(candles, funding, rules, config=Config(), start=None, end=None, strategy_factory=None, entry_delay=0):
     times = [c.ts for c in candles[SYMBOLS[0]]]
     if any([c.ts for c in candles[s]] != times for s in SYMBOLS):
         raise ValueError('Unaligned portfolio')
-    strategies = {s:Strategy(config) for s in SYMBOLS}
+    if entry_delay not in (0,1):
+        raise ValueError("Only zero or one-bar extra entry latency is supported")
+    strategies = {s:(strategy_factory or Strategy)(config) for s in SYMBOLS}
     signals = {s:None for s in SYMBOLS}
+    delayed = {s:None for s in SYMBOLS}
     broker = Broker(config)
     funds = {s:{f.ts:f for f in funding[s]} for s in SYMBOLS}
     equity = []
@@ -191,13 +205,18 @@ def backtest(candles, funding, rules, config=Config(), start=None, end=None):
             for s in SYMBOLS:
                 if ts in funds[s]:
                     broker.fund(s,ts,funds[s][ts].rate,funds[s][ts].mark or bars[s].open)
-            # Exits before fresh allocations; deterministic BTC then ETH tie priority.
+            # Prior-close trailing instructions become active at the next open.
             for s in SYMBOLS:
+                apply_trail(broker,s,signals[s])
                 bar_exit(broker,s,bars[s],"open")
+                p = broker.positions.get(s)
+                sig = signals[s]
+                if p and sig and ((p.side == 1 and sig.close_long) or (p.side == -1 and sig.close_short)):
+                    broker.exit(s,bars[s].open,ts,'strategy_exit')
             if broker.risk_check(ts,marks):
                 broker.flatten(marks,ts,'risk_halt')
             for s in SYMBOLS:
-                signal = signals[s]
+                signal = delayed[s] if entry_delay else signals[s]
                 if signal and signal.side:
                     broker.enter(s,signal.side,bars[s].open,signal.distance,ts,rules[s],marks)
             for s in SYMBOLS:
@@ -207,6 +226,7 @@ def backtest(candles, funding, rules, config=Config(), start=None, end=None):
                 broker.flatten(closes,ts+BAR-1,'risk_halt')
             equity.append({'ts':ts+BAR,'equity':broker.equity(closes)})
         for s in SYMBOLS:
+            delayed[s] = signals[s]
             signals[s] = strategies[s].update(bars[s])
     if equity:
         last_ts = equity[-1]['ts']

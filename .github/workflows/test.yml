@@ -13,6 +13,7 @@ jobs:
       - run: python -m unittest discover -s tests -v
       - run: python -m compileall -q bingx_bot
       - run: python -m bingx_bot.cli backtest --data data/history --out /tmp/research
+      - run: python -m bingx_bot.cli research --data data/history --out /tmp/approaches
   container:
     runs-on: ubuntu-latest
     steps:
