@@ -14,7 +14,7 @@
 ## Не выполнено / не доказано
 
 - Нет реальных заявок, реальных денег и exchange testnet orders. Paper fills существуют только в SQLite.
-- Нет успешного Docker build: Docker daemon не установлен в среде. Workflow добавлен, запуск в GitHub проверяется отдельно.
+- GitHub Actions успешно выполнил 40 тестов, бэктест, Docker build и минимальный запуск образа: https://github.com/bezdel3854/1/actions/runs/40180071957 . Локального Docker daemon нет; сетевой paper-worker внутри облачного контейнера ещё не проверен.
 - Нет активного сервиса Railway, проверки Volume permissions и перезапуска в облаке; подготовлены файлы/инструкция.
 - Нет многомесячного forward paper-trading. Короткий smoke не заменяет его.
 - Нет годовой истории, точного order-book backtest, исторических tier/rule snapshots и реальной модели ликвидации BingX.

@@ -60,6 +60,6 @@ Paper использует живые котировки, но не провер
 
 ## Развёртывание
 
-[Railway: инструкция и ограничения](docs/RAILWAY.md). Нужен Volume `/data`, один worker, без sleeping. Docker-сборка и облачный деплой ещё не подтверждены. Новым сервисам Railway нужен IaC либо настройки через интерфейс; устаревший `railway.json` не лежит в корне проекта.
+[Railway: инструкция и ограничения](docs/RAILWAY.md). Нужен Volume `/data`, один worker, без sleeping. Docker-сборка и минимальный запуск образа прошли в GitHub Actions; облачный деплой не выполнен. Новым сервисам Railway нужен IaC либо настройки через интерфейс; устаревший `railway.json` не лежит в корне проекта.
 
 Источники: [BingX API](https://bingx-api.github.io/docs/), [официальные примеры публичных рынков](https://github.com/BingX-API/api-ai-skills/tree/main/skills/swap-market), [Railway Docker](https://docs.railway.com/builds/dockerfiles), [Railway IaC](https://docs.railway.com/infrastructure-as-code).
