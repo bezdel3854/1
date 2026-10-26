@@ -1,0 +1,4 @@
+{"mode": "paper", "strategy": "candidate_120h", "observe_only": true, "ts": 1783699210000, "equity": 1000.0, "positions": 0, "halted": false, "manual_stop": false}
+{"mode": "paper", "strategy": "candidate_120h", "observe_only": true, "ts": 1783699215000, "equity": 1000.0, "positions": 0, "halted": false, "manual_stop": false}
+{"mode": "paper", "strategy": "candidate_120h", "observe_only": true, "ts": 1783699210000, "equity": 1000.0, "positions": 0, "halted": false, "manual_stop": false}
+{"container_lifecycle": "PASS", "startup_health": 503, "ready_health": 200, "sigterm": "graceful", "restart": "same port and durable account", "mode": "observation only", "external_requests": 0}

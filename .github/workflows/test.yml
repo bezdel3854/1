@@ -21,3 +21,5 @@ jobs:
       - uses: actions/checkout@v4
       - run: docker build -t bingx-paper:test .
       - run: docker run --rm --entrypoint python bingx-paper:test -c 'from bingx_bot.config import Config; assert Config().risk == 0.005'
+
+      - run: docker run --rm -e PYTHONPATH=/app -v "$PWD/tests/container_smoke.py:/tmp/container_smoke.py:ro" --entrypoint python bingx-paper:test /tmp/container_smoke.py

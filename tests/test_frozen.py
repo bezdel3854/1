@@ -33,4 +33,12 @@ class FrozenTests(unittest.TestCase):
         self.assertAlmostEqual(b.cash,ref['final_usdt'],places=7)
         self.assertEqual(len(b.trades),ref['completed_trades'])
 
+    def test_new_capture_reconstructs_offline_with_exact_source_hashes(self):
+        import tempfile
+        from research.extended.forward_snapshot import reconstruct
+        with tempfile.TemporaryDirectory() as out:
+            hashes=reconstruct(out=out)
+            manifest=json.loads(Path('data/post-freeze/manifest.json').read_text())
+            self.assertEqual(hashes,manifest['sha256'])
+
 if __name__=='__main__':unittest.main()

@@ -13,3 +13,12 @@ Results with costs/funding: 2023 train +10.3468%; 2024 validation +17.0165%; 202
 Big proxy files excluded from Git; fetch command and SHA256 manifest retained. PYTHONPATH=. python research/extended/fetch_proxy.py; pip install '.[research]' for numpy/pandas. Full replay: research/extended/sweep.py, audit_finalist.py, report.py. Reproduction is NOT a new holdout. Daily curves/trades/results retained in Git.
 
 Next: finish/check current CI, verify health/startup and persistence, inspect failed cost robustness without cherry-picking, then obtain genuinely new data for any changed model. Keep real trading disabled. Do not promise guaranteed profit or imply an autonomous cloud service is running.
+
+
+## Resumed 2026-10-26
+
+The complete source/metrics checkpoint was published as e66b939a3925f51abac29a566d5f9e596af94c09. GitHub Actions 40262523790 passed 65 tests, replay and container build on that revision.
+
+Additional work: exact post-freeze BingX replay 2026-10-25 10:15 UTC to 2026-10-26 03:00 UTC, 16.75h, zero entries, 1000 USDT. NOT actual live/paper fills. New snapshot reconstructed losslessly from versioned data/history plus data/post-freeze/delta.json; source SHA256 verified. New scripts forward_check.py / forward_snapshot.py, report reports/post-freeze/REPORT.md.
+
+66 tests pass locally. Actual worker lifecycle test with fake public API checks initial health503, ready200, SIGTERM, socket closure, persistent account restart; added to Docker CI. A missing explicit server_close() was fixed. Current CI after this continuation must be checked. Railway still not deployed, no real orders. Candidate parameters unchanged, experimental paper entries remain disabled by default.

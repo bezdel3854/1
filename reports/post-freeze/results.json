@@ -1,0 +1,55 @@
+{
+  "mode": "historical replay after freeze, NOT live fills",
+  "strategy": "candidate_120h",
+  "parameter_changes": false,
+  "source": "BingX public USDT perpetual data",
+  "frozen_at_ms": 1792922988799,
+  "start": 1792923300000,
+  "end": 1792983600000,
+  "captured_at_ms": 1792984223050,
+  "hours": 16.75,
+  "config": {
+    "deposit": 1000.0,
+    "risk": 0.005,
+    "portfolio_risk": 0.01,
+    "leverage": 2.0,
+    "notional_cap": 1.0,
+    "fee": 0.0005,
+    "slip": 0.0002,
+    "funding_reserve": 0.001,
+    "daily_loss": 0.02,
+    "max_drawdown": 0.1,
+    "atr_multiple": 2.0,
+    "reward_risk": 4,
+    "max_bars": 672,
+    "maintenance": 0.01,
+    "max_spread": 0.001
+  },
+  "metrics": {
+    "initial_usdt": 1000.0,
+    "final_usdt": 1000.0,
+    "net_usdt": 0.0,
+    "return_pct": 0.0,
+    "completed_trades": 0,
+    "winrate_pct": null,
+    "profit_factor": null,
+    "max_open_close_drawdown_pct": 0.0,
+    "fees_usdt": 0,
+    "funding_paid_net_usdt": 0,
+    "per_symbol": {
+      "BTC-USDT": {
+        "trades": 0,
+        "net_usdt": 0
+      },
+      "ETH-USDT": {
+        "trades": 0,
+        "net_usdt": 0
+      }
+    },
+    "risk_halted": false,
+    "equity_samples": 67
+  },
+  "profitability_proven": false,
+  "paper_entries_promoted": false,
+  "limitation": "Short new-data diagnostic; replay assumes next-open fills and forces any remaining position closed at the end. No live exchange or paper fills occurred."
+}

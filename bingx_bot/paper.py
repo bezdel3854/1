@@ -171,3 +171,4 @@ def run(path, port=None, once=False, strategy_name="baseline", enable_experiment
         store.close()
         if server:
             server.shutdown()
+            server.server_close()

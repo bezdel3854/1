@@ -14,3 +14,5 @@ data/proxy-archive/
 
 data/proxy/*-USDT.json.gz
 reports/extended/**/equity.csv.gz
+
+data/post-freeze/*-USDT.json.gz
