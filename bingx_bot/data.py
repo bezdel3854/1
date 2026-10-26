@@ -108,19 +108,30 @@ class PublicClient:
         cursor = start
         while cursor < end:
             edge = min(end, cursor + 20 * 24 * 3600_000)
-            page = self.get('funding', symbol=symbol, startTime=cursor, endTime=edge-1, limit=1000)
+            # BingX returns data:null when a narrow window has no settlement.
+            # Fetch a full day of verifiable history rather than assuming null
+            # means zero funding; emit only events in the requested interval.
+            query_start = min(cursor, edge - 24 * 3600_000)
+            page = self.get('funding', symbol=symbol, startTime=query_start, endTime=edge-1, limit=1000)
             if not isinstance(page, list):
                 raise ValueError('Funding history is not a list')
             if len(page) >= 1000:
                 raise ValueError('Potential funding truncation')
+            coverage = []
             for x in page:
                 f = Funding(int(x['fundingTime']), float(x['fundingRate']), float(x['markPrice']) if x.get('markPrice') else None)
                 if not math.isfinite(f.rate) or abs(f.rate) > .1 or f.ts % BAR or (f.mark is not None and (not math.isfinite(f.mark) or f.mark <= 0)):
                     raise ValueError('Invalid/unaligned funding')
+                if query_start <= f.ts < edge:
+                    coverage.append(f.ts)
                 if start <= f.ts < end:
                     if f.ts in rows and rows[f.ts] != f:
                         raise ValueError('Conflicting funding')
                     rows[f.ts] = f
+            if query_start < cursor:
+                points = [query_start] + sorted(set(coverage)) + [edge]
+                if not coverage or max(b-a for a,b in zip(points,points[1:])) > 12*3600_000:
+                    raise ValueError('Funding coverage gap >12h')
             cursor = edge
         out = sorted(rows.values(), key=lambda f: f.ts)
         # Coverage heuristic only: BingX can change settlement intervals.

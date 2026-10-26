@@ -179,6 +179,22 @@ class DataStrategyTests(unittest.TestCase):
         with patch.object(c,'get',return_value=[]):
             with self.assertRaises(ValueError):c.funding('BTC-USDT',START,START+86400000)
 
+    def test_narrow_funding_window_fetches_verified_day_without_replaying_events(self):
+        c=PublicClient();end=START+10000
+        page=[{'fundingTime':START-i*8*3600000,'fundingRate':'.0001','markPrice':'100'} for i in range(3)]
+        with patch.object(c,'get',return_value=page) as get:
+            self.assertEqual(c.funding('BTC-USDT',START+1,end),[])
+            self.assertEqual(get.call_args.kwargs['startTime'],end-86400000)
+            self.assertEqual(get.call_args.kwargs['endTime'],end-1)
+        with patch.object(c,'get',return_value=page):
+            self.assertEqual(c.funding('BTC-USDT',START-1,end),[Funding(START,.0001,100)])
+
+    def test_narrow_funding_window_rejects_unknown_or_sparse_history(self):
+        c=PublicClient()
+        for page in (None,[],[{'fundingTime':START,'fundingRate':'.0001','markPrice':'100'}]):
+            with self.subTest(page=page),patch.object(c,'get',return_value=page):
+                with self.assertRaises(ValueError):c.funding('BTC-USDT',START+1,START+10000)
+
     def test_backtest_next_open_and_no_future_signal(self):
         rows=[bar(i,100+i) for i in range(10)]
         class Fixed:
