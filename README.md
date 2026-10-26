@@ -2,9 +2,11 @@
 
 **Research + local paper trading only. No real order code, exchange credentials, or live mode.**
 
-Первый честный результат: фиксированная EMA/RSI-стратегия **убыточна**. На данных BingX 28.07–25.10.2026 виртуальные 1000 USDT стали **899.94 USDT** (56 сделок), затем бот остановился по лимиту просадки. Отложенная проверка последних 30 дней с отдельным стартом 1000 USDT: **902.27 USDT**, 45 сделок. Прибыльность не доказана. Подбор параметров после результата не проводился. Полный отчёт: [reports/validation/REPORT.md](reports/validation/REPORT.md).
+**Текущий результат:** после конечного перебора 256 вариантов найден зафиксированный исследовательский кандидат `candidate_120h`. На финальном 2025 году (Binance research proxy) он дал +9,67%, на известной BingX-выборке за 75 торговых дней +2,79%. **Проверку устойчивости он полностью не прошёл:** при повышенных издержках на непрерывном трёхлетнем счёте срабатывает остановка по просадке; статистического подтверждения после 264 попыток нет. Это не доказанная прибыльная система. [Итоговый отчёт](reports/extended/REPORT.md).
 
-## Исследование других подходов
+Рабочая реализация кандидата, результаты, все попытки и контрольные суммы источников сохранены. Большие proxy-данные скачиваются отдельной командой. По умолчанию `paper` использует **наблюдение без виртуальных входов**; реальные ордера не реализованы. 65 тестов проходят, сигналы рабочего модуля сверены с исследовательским кодом.
+
+## Предыдущий этап: восемь подходов
 
 После интернет-поиска изучены проверяемые конкурсные результаты и публичные подходы Williams, Unger, Carlile, Scherman, Dennis/Eckhardt, Carver и Raschke. Это не рейтинг всех мировых счетов. [Источники и ограничения переноса](research/TRADERS_AND_SOURCES.md).
 
@@ -39,8 +41,8 @@ Runtime зависит только от стандартной библиоте
 ```bash
 python -m unittest discover -s tests -v
 python -m bingx_bot.cli backtest --data data/history --out reports/reproduced
-python -m bingx_bot.cli paper --db runtime/paper.sqlite --once
-python -m bingx_bot.cli paper --db runtime/paper.sqlite
+python -m bingx_bot.cli paper --strategy candidate_120h --db runtime/candidate-120h.sqlite --once
+python -m bingx_bot.cli paper --strategy candidate_120h --db runtime/candidate-120h.sqlite
 ```
 
 Для непрерывной работы нужен постоянно включённый сервер. Локальная проверка из чата не означает, что бот продолжает работать после завершения сессии.
@@ -48,7 +50,7 @@ python -m bingx_bot.cli paper --db runtime/paper.sqlite
 После остановки worker:
 
 ```bash
-python -m bingx_bot.cli export --db runtime/paper.sqlite --out trades.csv
+python -m bingx_bot.cli export --db runtime/candidate-120h.sqlite --out trades.csv
 ```
 
 Режим `MODE=live` отвергается. API-клиент содержит только allowlist публичных GET-маршрутов. Ключи BingX нигде не читаются и не нужны.
@@ -78,3 +80,10 @@ Paper использует живые котировки, но не провер
 [Railway: инструкция и ограничения](docs/RAILWAY.md). Нужен Volume `/data`, один worker, без sleeping. Docker-сборка и минимальный запуск образа прошли в GitHub Actions; облачный деплой не выполнен. Новым сервисам Railway нужен IaC либо настройки через интерфейс; устаревший `railway.json` не лежит в корне проекта.
 
 Источники: [BingX API](https://bingx-api.github.io/docs/), [официальные примеры публичных рынков](https://github.com/BingX-API/api-ai-skills/tree/main/skills/swap-market), [Railway Docker](https://docs.railway.com/builds/dockerfiles), [Railway IaC](https://docs.railway.com/infrastructure-as-code).
+
+
+## Воспроизведение расширенного поиска
+
+Для отдельного исследовательского окружения: `python -m pip install '.[research]'`. Чистый paper runtime по-прежнему не имеет сторонних зависимостей. Протокол выбора 2023/2024 и отдельного финального 2025 года: `research/extended/PROTOCOL.md`. В `data/proxy/manifest.json` сохранены источник и хеши 148 архивов. Большие proxy-файлы исключены из Git: загрузить их можно командой `PYTHONPATH=. python research/extended/fetch_proxy.py`. Команды и все ограничения — в итоговом отчёте.
+
+Старые восемь моделей, их отрицательные результаты и прежний отчёт сохранены. Они не были переписаны задним числом. Дальнейшее изменение кандидата после просмотра 2025 потребует новых данных для независимой проверки.

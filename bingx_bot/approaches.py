@@ -5,8 +5,9 @@ from .config import BAR, HOUR
 from .data import Candle
 from .strategy import Strategy, Signal, Indicators
 
-NAMES = ('baseline','donchian','ewmac','pullback','range_reversion',
+EXPERIMENT_NAMES = ('baseline','donchian','ewmac','pullback','range_reversion',
          'volatility_breakout','regime_composite','consensus')
+NAMES = EXPERIMENT_NAMES + ('candidate_120h',)
 
 class Context:
     def __init__(self):
@@ -71,7 +72,7 @@ class Context:
 
 class Approach:
     def __init__(self,config,name):
-        if name not in NAMES[1:]:raise ValueError('Unknown approach')
+        if name not in EXPERIMENT_NAMES[1:]:raise ValueError('Unknown approach')
         self.config,self.name=config,name
         self.ctx=Context()
 
@@ -139,6 +140,9 @@ class Approach:
 def factory(name):
     if name not in NAMES:raise ValueError('Unknown approach')
     if name=='baseline':return Strategy
+    if name=='candidate_120h':
+        from .frozen_candidate import FrozenCandidate
+        return FrozenCandidate
     return lambda config:Approach(config,name)
 
 
@@ -146,4 +150,5 @@ def runtime_config(name):
     from dataclasses import replace
     from .config import Config
     if name not in NAMES:raise ValueError('Unknown approach')
+    if name=='candidate_120h':return replace(Config(),reward_risk=4,max_bars=672)
     return Config() if name=='baseline' else replace(Config(),reward_risk=4,max_bars=192)

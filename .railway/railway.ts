@@ -10,7 +10,7 @@ export default defineRailway(() => {
     healthcheckTimeout: 180,
     replicas: 1,
     volumeMounts: { "/data": data },
-    env: { MODE: "paper", DB_PATH: "/data/paper.sqlite", PORT: "8080", RAILWAY_RUN_UID: "0" },
+    env: { MODE: "paper", STRATEGY: "candidate_120h", DB_PATH: "/data/candidate-120h.sqlite", PORT: "8080", RAILWAY_RUN_UID: "0" },
   });
   return project("bingx-paper-bot", { resources: [worker, data] });
 });

@@ -1,0 +1,1 @@
+{"frozen_at_ms": 1792922988799, "previous_trials": 8, "protocol_sha256": "7942d106a08f7c8e45b2092fbf394224c8b8c901392faa6cc21b3db49cd96e0f", "selected": {"family": "donchian", "id": 56, "n": 120, "pair": [32, 128], "r": 4, "stop": 2, "trail": 3}, "selection_uses_final_2025": false, "training_candidates": 256}

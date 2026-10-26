@@ -8,7 +8,7 @@ import random
 import hashlib
 import math
 from .config import Config, SYMBOLS
-from .approaches import NAMES, factory
+from .approaches import EXPERIMENT_NAMES as NAMES, factory
 from .data import load_dataset
 from .engine import backtest
 from .report import metrics, write_csv, LIMITATIONS

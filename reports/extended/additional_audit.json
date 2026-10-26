@@ -1,0 +1,365 @@
+{
+  "continuous_2023_2025": {
+    "initial_usdt": 1000.0,
+    "final_usdt": 1411.2339445710468,
+    "net_usdt": 411.2339445710468,
+    "return_pct": 41.123394457104666,
+    "completed_trades": 548,
+    "winrate_pct": 35.03649635036496,
+    "profit_factor": 1.256244159064068,
+    "max_open_close_drawdown_pct": 8.81639748228521,
+    "fees_usdt": 178.8006674782396,
+    "funding_paid_net_usdt": 15.583179475189601,
+    "per_symbol": {
+      "BTC-USDT": {
+        "trades": 270,
+        "net_usdt": 172.51048591177317
+      },
+      "ETH-USDT": {
+        "trades": 278,
+        "net_usdt": 238.72345865927932
+      }
+    },
+    "risk_halted": false,
+    "equity_samples": 105216
+  },
+  "continuous_2023_2025_stress": {
+    "initial_usdt": 1000.0,
+    "final_usdt": 1038.810538271342,
+    "net_usdt": 38.81053827134201,
+    "return_pct": 3.8810538271341954,
+    "completed_trades": 400,
+    "winrate_pct": 32.75,
+    "profit_factor": 1.0367469729619745,
+    "max_open_close_drawdown_pct": 10.041134070775515,
+    "fees_usdt": 207.07172107756836,
+    "funding_paid_net_usdt": 10.9635574945866,
+    "per_symbol": {
+      "BTC-USDT": {
+        "trades": 195,
+        "net_usdt": 50.12541827555777
+      },
+      "ETH-USDT": {
+        "trades": 205,
+        "net_usdt": -11.314880004217628
+      }
+    },
+    "risk_halted": true,
+    "equity_samples": 105216
+  },
+  "quarters_reset_capital": [
+    {
+      "year": 2023,
+      "quarter": 1,
+      "initial_usdt": 1000.0,
+      "final_usdt": 1057.0677346534183,
+      "net_usdt": 57.067734653418256,
+      "return_pct": 5.70677346534183,
+      "completed_trades": 47,
+      "winrate_pct": 34.04255319148936,
+      "profit_factor": 1.465450332004575,
+      "max_open_close_drawdown_pct": 4.4892251842993165,
+      "fees_usdt": 13.034690607189013,
+      "funding_paid_net_usdt": 1.179099369798,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 24,
+          "net_usdt": 22.698914645546942
+        },
+        "ETH-USDT": {
+          "trades": 23,
+          "net_usdt": 34.368820007871875
+        }
+      },
+      "risk_halted": false,
+      "equity_samples": 8640
+    },
+    {
+      "year": 2023,
+      "quarter": 2,
+      "initial_usdt": 1000.0,
+      "final_usdt": 1030.1789894608673,
+      "net_usdt": 30.178989460867342,
+      "return_pct": 3.017898946086728,
+      "completed_trades": 34,
+      "winrate_pct": 41.17647058823529,
+      "profit_factor": 1.4455146756851782,
+      "max_open_close_drawdown_pct": 3.507708533203846,
+      "fees_usdt": 9.766036257271457,
+      "funding_paid_net_usdt": 0.44953486339340004,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 14,
+          "net_usdt": 39.27668640365803
+        },
+        "ETH-USDT": {
+          "trades": 20,
+          "net_usdt": -9.097696942790167
+        }
+      },
+      "risk_halted": false,
+      "equity_samples": 8736
+    },
+    {
+      "year": 2023,
+      "quarter": 3,
+      "initial_usdt": 1000.0,
+      "final_usdt": 995.6166810529407,
+      "net_usdt": -4.3833189470592515,
+      "return_pct": -0.4383318947059234,
+      "completed_trades": 31,
+      "winrate_pct": 25.806451612903224,
+      "profit_factor": 0.9509542282298945,
+      "max_open_close_drawdown_pct": 4.72733684645712,
+      "fees_usdt": 11.31090475439081,
+      "funding_paid_net_usdt": -0.4927811120938,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 15,
+          "net_usdt": -10.08282461437601
+        },
+        "ETH-USDT": {
+          "trades": 16,
+          "net_usdt": 5.699505667317654
+        }
+      },
+      "risk_halted": false,
+      "equity_samples": 8832
+    },
+    {
+      "year": 2023,
+      "quarter": 4,
+      "initial_usdt": 1000.0,
+      "final_usdt": 1022.3883736361148,
+      "net_usdt": 22.388373636114807,
+      "return_pct": 2.238837363611479,
+      "completed_trades": 41,
+      "winrate_pct": 31.70731707317073,
+      "profit_factor": 1.1976393388996098,
+      "max_open_close_drawdown_pct": 5.285887134246314,
+      "fees_usdt": 11.833871267423444,
+      "funding_paid_net_usdt": 1.3527835894324,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 18,
+          "net_usdt": 31.113915530275513
+        },
+        "ETH-USDT": {
+          "trades": 23,
+          "net_usdt": -8.725541894161395
+        }
+      },
+      "risk_halted": false,
+      "equity_samples": 8832
+    },
+    {
+      "year": 2024,
+      "quarter": 1,
+      "initial_usdt": 1000.0,
+      "final_usdt": 1077.0094039060593,
+      "net_usdt": 77.00940390605933,
+      "return_pct": 7.700940390605937,
+      "completed_trades": 51,
+      "winrate_pct": 43.13725490196079,
+      "profit_factor": 1.7249752233021853,
+      "max_open_close_drawdown_pct": 3.288103824160671,
+      "fees_usdt": 12.625683648110273,
+      "funding_paid_net_usdt": 5.2361181971213,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 24,
+          "net_usdt": 51.083858969907084
+        },
+        "ETH-USDT": {
+          "trades": 27,
+          "net_usdt": 25.92554493615262
+        }
+      },
+      "risk_halted": false,
+      "equity_samples": 8736
+    },
+    {
+      "year": 2024,
+      "quarter": 2,
+      "initial_usdt": 1000.0,
+      "final_usdt": 989.0867845269937,
+      "net_usdt": -10.91321547300629,
+      "return_pct": -1.0913215473006277,
+      "completed_trades": 47,
+      "winrate_pct": 31.914893617021278,
+      "profit_factor": 0.912572105581527,
+      "max_open_close_drawdown_pct": 5.606748104973525,
+      "fees_usdt": 12.071097746043302,
+      "funding_paid_net_usdt": 0.048083450471299964,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 21,
+          "net_usdt": 12.994518748945502
+        },
+        "ETH-USDT": {
+          "trades": 26,
+          "net_usdt": -23.907734221951934
+        }
+      },
+      "risk_halted": false,
+      "equity_samples": 8736
+    },
+    {
+      "year": 2024,
+      "quarter": 3,
+      "initial_usdt": 1000.0,
+      "final_usdt": 1070.9005315891704,
+      "net_usdt": 70.90053158917044,
+      "return_pct": 7.090053158917042,
+      "completed_trades": 48,
+      "winrate_pct": 37.5,
+      "profit_factor": 1.647094775879771,
+      "max_open_close_drawdown_pct": 3.456240432996549,
+      "fees_usdt": 11.734992162907947,
+      "funding_paid_net_usdt": 0.28533566453490006,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 28,
+          "net_usdt": -18.176824657063396
+        },
+        "ETH-USDT": {
+          "trades": 20,
+          "net_usdt": 89.07735624623385
+        }
+      },
+      "risk_halted": false,
+      "equity_samples": 8832
+    },
+    {
+      "year": 2024,
+      "quarter": 4,
+      "initial_usdt": 1000.0,
+      "final_usdt": 1023.6062319242952,
+      "net_usdt": 23.60623192429523,
+      "return_pct": 2.360623192429534,
+      "completed_trades": 54,
+      "winrate_pct": 31.48148148148148,
+      "profit_factor": 1.1776403573535361,
+      "max_open_close_drawdown_pct": 5.162298787710751,
+      "fees_usdt": 13.726565293947491,
+      "funding_paid_net_usdt": 2.7933663414474,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 26,
+          "net_usdt": 24.22408614331272
+        },
+        "ETH-USDT": {
+          "trades": 28,
+          "net_usdt": -0.6178542190169595
+        }
+      },
+      "risk_halted": false,
+      "equity_samples": 8832
+    },
+    {
+      "year": 2025,
+      "quarter": 1,
+      "initial_usdt": 1000.0,
+      "final_usdt": 974.3749121490283,
+      "net_usdt": -25.62508785097168,
+      "return_pct": -2.562508785097173,
+      "completed_trades": 48,
+      "winrate_pct": 35.41666666666667,
+      "profit_factor": 0.7750358467088986,
+      "max_open_close_drawdown_pct": 5.132927980715419,
+      "fees_usdt": 11.482223226662102,
+      "funding_paid_net_usdt": 0.46586528619420003,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 26,
+          "net_usdt": -11.781980187092358
+        },
+        "ETH-USDT": {
+          "trades": 22,
+          "net_usdt": -13.843107663879213
+        }
+      },
+      "risk_halted": false,
+      "equity_samples": 8640
+    },
+    {
+      "year": 2025,
+      "quarter": 2,
+      "initial_usdt": 1000.0,
+      "final_usdt": 1043.108800718709,
+      "net_usdt": 43.10880071870906,
+      "return_pct": 4.310880071870904,
+      "completed_trades": 49,
+      "winrate_pct": 34.69387755102041,
+      "profit_factor": 1.336126058561655,
+      "max_open_close_drawdown_pct": 5.144529522637908,
+      "fees_usdt": 13.886425667540472,
+      "funding_paid_net_usdt": 0.4052455238488001,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 26,
+          "net_usdt": 10.97298927050539
+        },
+        "ETH-USDT": {
+          "trades": 23,
+          "net_usdt": 32.13581144820467
+        }
+      },
+      "risk_halted": false,
+      "equity_samples": 8736
+    },
+    {
+      "year": 2025,
+      "quarter": 3,
+      "initial_usdt": 1000.0,
+      "final_usdt": 1082.1522494021285,
+      "net_usdt": 82.15224940212852,
+      "return_pct": 8.21522494021285,
+      "completed_trades": 48,
+      "winrate_pct": 37.5,
+      "profit_factor": 1.7918250650950933,
+      "max_open_close_drawdown_pct": 4.847816975888275,
+      "fees_usdt": 15.820697870711017,
+      "funding_paid_net_usdt": 1.1778222577185002,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 24,
+          "net_usdt": -0.7227744766038209
+        },
+        "ETH-USDT": {
+          "trades": 24,
+          "net_usdt": 82.87502387873137
+        }
+      },
+      "risk_halted": false,
+      "equity_samples": 8832
+    },
+    {
+      "year": 2025,
+      "quarter": 4,
+      "initial_usdt": 1000.0,
+      "final_usdt": 997.8333870519155,
+      "net_usdt": -2.1666129480845484,
+      "return_pct": -0.2166612948084512,
+      "completed_trades": 50,
+      "winrate_pct": 34.0,
+      "profit_factor": 0.9820638612638465,
+      "max_open_close_drawdown_pct": 4.846974023519102,
+      "fees_usdt": 12.143683365275669,
+      "funding_paid_net_usdt": 0.3656588495705,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 24,
+          "net_usdt": 4.3215516135897545
+        },
+        "ETH-USDT": {
+          "trades": 26,
+          "net_usdt": -6.488164561674075
+        }
+      },
+      "risk_halted": false,
+      "equity_samples": 8832
+    }
+  ],
+  "warning": "Post-freeze descriptive diagnostics. 2023/2024 used for selection; continuous period includes development. No reselection."
+}

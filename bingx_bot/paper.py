@@ -39,7 +39,8 @@ class PaperWorker:
         if self.strategy_ts != close:
             for s in SYMBOLS:
                 # On restart replay enough fixed warmup, then incrementally update.
-                start = close-1000*BAR if self.strategy_ts is None else self.strategy_ts
+                warmup = 4096 if self.strategy_name == 'candidate_120h' else 1000
+                start = close-warmup*BAR if self.strategy_ts is None else self.strategy_ts
                 rows = self.client.candles(s,start,close)
                 strategy = self.strategies.get(s)
                 if strategy is None:

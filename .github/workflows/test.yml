@@ -10,6 +10,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - run: python -m pip install "numpy==2.3.5" "pandas==2.2.3"
       - run: python -m unittest discover -s tests -v
       - run: python -m compileall -q bingx_bot
       - run: python -m bingx_bot.cli backtest --data data/history --out /tmp/research

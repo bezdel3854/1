@@ -1,5 +1,5 @@
 FROM python:3.12-slim
-ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 MODE=paper DB_PATH=/data/paper.sqlite PORT=8080
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 MODE=paper STRATEGY=candidate_120h DB_PATH=/data/candidate-120h.sqlite PORT=8080
 WORKDIR /app
 RUN groupadd --gid 10001 bot && useradd --uid 10001 --gid bot --create-home bot && mkdir /data && chown bot:bot /data
 COPY --chown=bot:bot bingx_bot /app/bingx_bot

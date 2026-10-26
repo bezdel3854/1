@@ -10,3 +10,7 @@ runtime/
 *.egg-info/
 build/
 dist/
+data/proxy-archive/
+
+data/proxy/*-USDT.json.gz
+reports/extended/**/equity.csv.gz
