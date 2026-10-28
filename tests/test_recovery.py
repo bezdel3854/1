@@ -16,6 +16,26 @@ from bingx_bot.strategy import Signal
 BASE=1780012800000//BAR*BAR
 
 class GatewayTests(unittest.TestCase):
+    def test_partial_warmup_survives_outage_and_shifted_close_without_refetch(self):
+        client=PublicClient();calls=[];failed=False
+        def page(endpoint,**kw):
+            nonlocal failed
+            calls.append(kw['startTime'])
+            if len(calls)==2 and not failed:
+                failed=True;raise PublicAPIUnavailable('klines','limited',60)
+            return [[t,100,100.1,99.9,100,1000] for t in range(kw['startTime'],kw['endTime']+1,BAR)]
+        with patch.object(client,'get',side_effect=page):
+            with self.assertRaises(PublicAPIUnavailable):client.candles('BTC-USDT',BASE,BASE+1001*BAR)
+            rows=client.candles('BTC-USDT',BASE+BAR,BASE+1002*BAR)
+        self.assertEqual(len(rows),1001)
+        self.assertEqual(calls,[BASE,BASE+1000*BAR,BASE+1000*BAR])
+
+    def test_invalid_candle_chunk_is_not_cached(self):
+        client=PublicClient()
+        with patch.object(client,'get',return_value=[[BASE,100,1,99,100,1]]):
+            with self.assertRaises(ValueError):client.candles('BTC-USDT',BASE,BASE+BAR)
+        self.assertFalse(client.candle_cache['BTC-USDT'])
+
     def test_business_rate_limit_sets_global_cooldown_without_immediate_retry(self):
         client=PublicClient()
         response=io.BytesIO(json.dumps({'code':100410,'data':None}).encode())

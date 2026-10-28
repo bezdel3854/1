@@ -61,6 +61,7 @@ class PublicClient:
     def __init__(self):
         self.last_request = 0.0
         self.cooldown_until = 0.0
+        self.candle_cache = {}
 
     def unavailable(self, endpoint, reason, delay):
         self.cooldown_until = max(self.cooldown_until, time.monotonic()+delay)
@@ -108,21 +109,39 @@ class PublicClient:
         rows = {}
         cursor = start
         while cursor < end:
+            cache = self.candle_cache.setdefault(symbol,{})
+            if cursor in cache:
+                rows[cursor] = cache[cursor]
+                cursor += BAR
+                continue
             # Explicit bounded chunks; fail on truncated/empty windows, never fill gaps.
             edge = min(end, cursor + 1000 * BAR)
             page = self.get('klines', symbol=symbol, interval='15m',
                             startTime=cursor, endTime=edge - 1, limit=1000)
             if not page:
                 raise ValueError(f'Empty history window {symbol} {cursor}')
+            chunk = {}
             for x in page:
                 if isinstance(x, dict):
                     c = Candle(int(x['time']), *(float(x[k]) for k in ('open','high','low','close','volume')))
                 else:
                     c = Candle(int(x[0]), *(float(v) for v in x[1:6]))
+                if cursor <= c.ts < edge:
+                    if c.ts in chunk and chunk[c.ts] != c:
+                        raise ValueError('Conflicting duplicate candle')
+                    if c.ts in cache and cache[c.ts] != c:
+                        raise ValueError('Conflicting cached candle')
+                    chunk[c.ts] = c
                 if start <= c.ts < end:
                     if c.ts in rows and rows[c.ts] != c:
                         raise ValueError('Conflicting duplicate candle')
                     rows[c.ts] = c
+            validate(sorted(chunk.values(),key=lambda c:c.ts),cursor,edge)
+            cache.update(chunk)
+            # Keep verified startup progress across API outages and rolling
+            # close times, with bounded RAM even for multiyear history fetches.
+            if len(cache)>8192:
+                for ts in sorted(cache)[:-8192]:del cache[ts]
             cursor = edge
         out = sorted(rows.values(), key=lambda c: c.ts)
         validate(out, start, end)

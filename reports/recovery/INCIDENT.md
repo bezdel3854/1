@@ -23,7 +23,9 @@ not claims about a documented exchange quota. Public requests are paced at
 least2s apart in this process. No alternate IP, account, or endpoint evasion.
 
 Known outages no longer consume a five-error fatal budget. The existing client,
-limiter, and completed features survive. BTC/ETH indicator updates are staged
+limiter, and completed features survive. Verified candle chunks are cached in
+bounded memory so initial warmup resumes after a partial-download outage, even
+when the next close shifts the requested window. Invalid chunks are not cached. BTC/ETH indicator updates are staged
 and published together, preventing double-processing BTC if ETH fails.
 
 During outage health returns503, no account execution takes place, funding
@@ -35,7 +37,7 @@ bounded fatal path. MODE remains paper; strategy parameters/risk unchanged.
 
 ## Verification
 
-74 unit tests pass locally. Added simulated business and HTTP rate limits,
+76 unit tests pass locally. Added simulated business and HTTP rate limits,
 Retry-After, cross-endpoint cooldown, exhausted transport failures, permanent
 parameter-error rejection, partial-symbol failure/retry, seven outages followed
 by recovery with one client and one warmup, and fail-fast once mode.
@@ -50,3 +52,7 @@ proof of uninterrupted future operation or profitability.
 Primary references:
 https://github.com/BingX-API/api-ai-skills/blob/main/skills/references/error-codes.md
 https://github.com/BingX-API/api-ai-skills/blob/main/skills/references/rate-limits.md
+
+Startup health grace is raised to600s in hosting settings to accommodate
+cooldown during initial warmup. Health still remains503 until fresh data and a
+committed cycle; the longer grace does not mark a disconnected bot healthy.
