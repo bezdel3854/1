@@ -1,0 +1,282 @@
+{
+  "config": {
+    "deposit": 1000.0,
+    "risk": 0.005,
+    "portfolio_risk": 0.01,
+    "leverage": 2.0,
+    "notional_cap": 1.0,
+    "fee": 0.0005,
+    "slip": 0.0002,
+    "funding_reserve": 0.001,
+    "daily_loss": 0.02,
+    "max_drawdown": 0.1,
+    "atr_multiple": 2.0,
+    "reward_risk": 2.0,
+    "max_bars": 32,
+    "maintenance": 0.01,
+    "max_spread": 0.001
+  },
+  "data_manifest": {
+    "source": "https://open-api.bingx.com",
+    "sha256": {
+      "BTC-USDT": "7e875ce0e047ae35b96060086c8f654dd95996ad1106962a68c07db5267d48d8",
+      "ETH-USDT": "94f26149ee8fd6eef3d79adb391bc0155b17a0d2b3ab4c151af3701d900e01e0"
+    },
+    "retrieved_at_ms": 1792919506289,
+    "metadata": {
+      "start": 1785196800000,
+      "end": 1792886400000,
+      "contracts_snapshot": [
+        {
+          "contractId": "100",
+          "symbol": "BTC-USDT",
+          "size": "0.0001",
+          "quantityPrecision": 4,
+          "pricePrecision": 1,
+          "feeRate": 0.0005,
+          "makerFeeRate": 0.0002,
+          "takerFeeRate": 0.0005,
+          "tradeMinLimit": 0,
+          "tradeMinQuantity": 0.0001,
+          "tradeMinUSDT": 2,
+          "currency": "USDT",
+          "asset": "BTC",
+          "status": 1,
+          "apiStateOpen": "true",
+          "apiStateClose": "true",
+          "ensureTrigger": true,
+          "triggerFeeRate": "0.00050000",
+          "brokerState": false,
+          "launchTime": 1586275200000,
+          "maintainTime": 0,
+          "offTime": 0,
+          "displayName": "BTC-USDT"
+        },
+        {
+          "contractId": "101",
+          "symbol": "ETH-USDT",
+          "size": "0.01",
+          "quantityPrecision": 2,
+          "pricePrecision": 2,
+          "feeRate": 0.0005,
+          "makerFeeRate": 0.0002,
+          "takerFeeRate": 0.0005,
+          "tradeMinLimit": 0,
+          "tradeMinQuantity": 0.01,
+          "tradeMinUSDT": 2,
+          "currency": "USDT",
+          "asset": "ETH",
+          "status": 1,
+          "apiStateOpen": "true",
+          "apiStateClose": "true",
+          "ensureTrigger": true,
+          "triggerFeeRate": "0.00050000",
+          "brokerState": false,
+          "launchTime": 1586275200000,
+          "maintainTime": 0,
+          "offTime": 0,
+          "displayName": "ETH-USDT"
+        }
+      ],
+      "requested_one_year_history_unavailable": true,
+      "history_availability_checks": {
+        "365_days_ago": "empty kline response",
+        "180_days_ago": "empty kline response",
+        "90_days_ago": "available"
+      }
+    }
+  },
+  "start_ms": 1785196800000,
+  "end_ms": 1792886400000,
+  "holdout_start_ms": 1790294400000,
+  "limitations": [
+    "Research baseline; no evidence of sustainable profitability.",
+    "OHLC simulation: cannot observe intra-candle event order; stop wins when stop and target both touch.",
+    "Stops are not guaranteed: adverse gaps/slippage/funding can exceed the 0.5% planned budget.",
+    "Liquidation uses 2x isolated-margin proxy with 1% maintenance and trade prices, not actual mark/tier/insurance rules.",
+    "Drawdown is measured on bar opens/closes, not continuous intrabar equity; may understate real drawdown.",
+    "Funding is actual settled rate and mark when provided. Funding charged before bar exits; entry at settlement excluded.",
+    "Contract minimums are current snapshots, not historical rule versions; taker fee 5bp is assumed per side.",
+    "Fixed slippage does not model historical order-book liquidity or latency. Paper is sampled quotes, not exchange execution.",
+    "Fixed strategy and chronological holdout; no optimized parameters, no live performance or multi-year validation."
+  ],
+  "profitability_proven": false,
+  "runs": {
+    "full": {
+      "initial_usdt": 1000.0,
+      "final_usdt": 899.9369619345774,
+      "net_usdt": -100.06303806542257,
+      "return_pct": -10.00630380654226,
+      "completed_trades": 56,
+      "winrate_pct": 23.214285714285715,
+      "profit_factor": 0.36778946749808444,
+      "max_open_close_drawdown_pct": 10.118772260156206,
+      "fees_usdt": 40.98478540825408,
+      "funding_paid_net_usdt": -0.12232764439999999,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 27,
+          "net_usdt": -44.30780343997898
+        },
+        "ETH-USDT": {
+          "trades": 29,
+          "net_usdt": -55.75523462544307
+        }
+      },
+      "risk_halted": true,
+      "equity_samples": 7872
+    },
+    "development": {
+      "initial_usdt": 1000.0,
+      "final_usdt": 899.9369619345774,
+      "net_usdt": -100.06303806542257,
+      "return_pct": -10.00630380654226,
+      "completed_trades": 56,
+      "winrate_pct": 23.214285714285715,
+      "profit_factor": 0.36778946749808444,
+      "max_open_close_drawdown_pct": 10.118772260156206,
+      "fees_usdt": 40.98478540825408,
+      "funding_paid_net_usdt": -0.12232764439999999,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 27,
+          "net_usdt": -44.30780343997898
+        },
+        "ETH-USDT": {
+          "trades": 29,
+          "net_usdt": -55.75523462544307
+        }
+      },
+      "risk_halted": true,
+      "equity_samples": 4992
+    },
+    "holdout": {
+      "initial_usdt": 1000.0,
+      "final_usdt": 902.271000191157,
+      "net_usdt": -97.72899980884301,
+      "return_pct": -9.772899980884297,
+      "completed_trades": 45,
+      "winrate_pct": 17.77777777777778,
+      "profit_factor": 0.22420931585093629,
+      "max_open_close_drawdown_pct": 10.026483099749239,
+      "fees_usdt": 31.71828628860134,
+      "funding_paid_net_usdt": -0.50164508686,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 21,
+          "net_usdt": -35.075451079120484
+        },
+        "ETH-USDT": {
+          "trades": 24,
+          "net_usdt": -62.65354872972235
+        }
+      },
+      "risk_halted": true,
+      "equity_samples": 2880
+    },
+    "holdout_cost_stress": {
+      "initial_usdt": 1000.0,
+      "final_usdt": 900.2741632336238,
+      "net_usdt": -99.72583676637623,
+      "return_pct": -9.972583676637626,
+      "completed_trades": 36,
+      "winrate_pct": 16.666666666666664,
+      "profit_factor": 0.11659962426633735,
+      "max_open_close_drawdown_pct": 10.05017677592399,
+      "fees_usdt": 44.335308494937514,
+      "funding_paid_net_usdt": -0.1666974323,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 18,
+          "net_usdt": -43.79187242344152
+        },
+        "ETH-USDT": {
+          "trades": 18,
+          "net_usdt": -55.93396434293459
+        }
+      },
+      "risk_halted": true,
+      "equity_samples": 2880
+    }
+  },
+  "forward_segments": [
+    {
+      "start_ms": 1785801600000,
+      "end_ms": 1788393600000,
+      "initial_usdt": 1000.0,
+      "final_usdt": 923.5892976893572,
+      "net_usdt": -76.41070231064282,
+      "return_pct": -7.641070231064284,
+      "completed_trades": 48,
+      "winrate_pct": 25.0,
+      "profit_factor": 0.42177416500222203,
+      "max_open_close_drawdown_pct": 7.756494604636199,
+      "fees_usdt": 34.90258673038753,
+      "funding_paid_net_usdt": -0.12436740439999999,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 22,
+          "net_usdt": -32.16012839393573
+        },
+        "ETH-USDT": {
+          "trades": 26,
+          "net_usdt": -44.25057391670666
+        }
+      },
+      "risk_halted": false,
+      "equity_samples": 2880
+    },
+    {
+      "start_ms": 1788393600000,
+      "end_ms": 1790985600000,
+      "initial_usdt": 1000.0,
+      "final_usdt": 945.7866516071391,
+      "net_usdt": -54.213348392860894,
+      "return_pct": -5.421334839286085,
+      "completed_trades": 41,
+      "winrate_pct": 29.268292682926827,
+      "profit_factor": 0.4791234317394029,
+      "max_open_close_drawdown_pct": 6.426067414153658,
+      "fees_usdt": 28.569767202720794,
+      "funding_paid_net_usdt": -0.40131094305000004,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 24,
+          "net_usdt": -40.17559357505389
+        },
+        "ETH-USDT": {
+          "trades": 17,
+          "net_usdt": -14.037754817807167
+        }
+      },
+      "risk_halted": false,
+      "equity_samples": 2880
+    },
+    {
+      "start_ms": 1790985600000,
+      "end_ms": 1792886400000,
+      "initial_usdt": 1000.0,
+      "final_usdt": 947.9057578467736,
+      "net_usdt": -52.094242153226446,
+      "return_pct": -5.209424215322644,
+      "completed_trades": 29,
+      "winrate_pct": 20.689655172413794,
+      "profit_factor": 0.33999664809816826,
+      "max_open_close_drawdown_pct": 6.6865899480385576,
+      "fees_usdt": 20.97564232627247,
+      "funding_paid_net_usdt": -0.39397637046,
+      "per_symbol": {
+        "BTC-USDT": {
+          "trades": 11,
+          "net_usdt": -5.7480068440096
+        },
+        "ETH-USDT": {
+          "trades": 18,
+          "net_usdt": -46.346235309217285
+        }
+      },
+      "risk_halted": false,
+      "equity_samples": 2112
+    }
+  ]
+}
