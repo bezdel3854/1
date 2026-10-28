@@ -12,6 +12,13 @@ import gzip
 from pathlib import Path
 from .config import BAR, SYMBOLS
 
+
+class PublicAPIUnavailable(RuntimeError):
+    """Retryable public-data outage; never permission to trade on stale data."""
+    def __init__(self, endpoint, reason, retry_after=30):
+        self.endpoint, self.retry_after = endpoint, retry_after
+        super().__init__(f'{endpoint}: {reason}')
+
 @dataclass(frozen=True)
 class Candle:
     ts: int
@@ -53,13 +60,22 @@ class PublicClient:
 
     def __init__(self):
         self.last_request = 0.0
+        self.cooldown_until = 0.0
+
+    def unavailable(self, endpoint, reason, delay):
+        self.cooldown_until = max(self.cooldown_until, time.monotonic()+delay)
+        return PublicAPIUnavailable(endpoint,reason,delay)
 
     def get(self, endpoint, **params):
         path = self.PATHS[endpoint]  # rejects all non-allowlisted endpoints
         if 'symbol' in params and params['symbol'] not in SYMBOLS:
             raise ValueError('Unsupported contract')
+        remaining = self.cooldown_until-time.monotonic()
+        if remaining > 0:
+            raise PublicAPIUnavailable(endpoint,'public API cooldown',remaining)
         for attempt in range(4):
-            time.sleep(max(0, 1.05 - (time.monotonic() - self.last_request)))
+            # Conservative process-wide pacing, not an assumed exchange limit.
+            time.sleep(max(0, 2.0 - (time.monotonic() - self.last_request)))
             self.last_request = time.monotonic()
             req = Request(self.BASE + path + '?' + urlencode(params),
                           headers={'User-Agent': 'bingx-paper-research/0.1'}, method='GET')
@@ -67,14 +83,24 @@ class PublicClient:
                 with urlopen(req, timeout=20) as response:
                     result = json.load(response)
                 if result.get('code') != 0:
+                    if result.get('code') in (100410,100500,100503):
+                        delay = 60 if result['code'] == 100410 else 30
+                        raise self.unavailable(endpoint,f'BingX code {result["code"]}',delay)
                     raise ValueError(f'BingX error: {result.get("code")} {result.get("msg")}')
                 return result['data']
             except HTTPError as e:
+                if e.code in (418,429):
+                    delay = 1200 if e.code == 418 else 60
+                    try:delay = max(delay,float(e.headers.get('Retry-After',0)))
+                    except (ValueError,TypeError,AttributeError):pass
+                    raise self.unavailable(endpoint,f'HTTP {e.code}',delay) from e
                 if e.code not in (429, 500, 502, 503, 504) or attempt == 3:
+                    if e.code in (500,502,503,504):
+                        raise self.unavailable(endpoint,f'HTTP {e.code}',30) from e
                     raise
-            except (URLError, TimeoutError):
+            except (URLError, TimeoutError, ConnectionError) as e:
                 if attempt == 3:
-                    raise
+                    raise self.unavailable(endpoint,type(e).__name__,30) from e
             time.sleep(2 ** attempt)
         raise RuntimeError('Unreachable')
 

@@ -4,9 +4,11 @@ import os
 import signal
 import threading
 import time
+import random
+from copy import deepcopy
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from .config import BAR, SYMBOLS, Config
-from .data import PublicClient
+from .data import PublicClient, PublicAPIUnavailable
 from .strategy import Strategy
 from .store import Store
 from .engine import apply_trail
@@ -37,17 +39,22 @@ class PaperWorker:
             self.rules,_ = self.client.rules()
             self.last_rules = now
         if self.strategy_ts != close:
+            # A failure on ETH must not leave BTC advanced and replay its bars
+            # on retry. Publish feature state only after BOTH reads succeed.
+            strategies = deepcopy(self.strategies)
+            signals = dict(self.signals)
             for s in SYMBOLS:
                 # On restart replay enough fixed warmup, then incrementally update.
                 warmup = 4096 if self.strategy_name == 'candidate_120h' else 1000
                 start = close-warmup*BAR if self.strategy_ts is None else self.strategy_ts
                 rows = self.client.candles(s,start,close)
-                strategy = self.strategies.get(s)
+                strategy = strategies.get(s)
                 if strategy is None:
                     strategy = Strategy(self.store.config) if self.strategy_name == 'baseline' else factory(self.strategy_name)(self.store.config)
-                    self.strategies[s] = strategy
+                    strategies[s] = strategy
                 for c in rows:
-                    self.signals[s] = strategy.update(c)
+                    signals[s] = strategy.update(c)
+            self.strategies, self.signals = strategies, signals
             self.strategy_ts = close
         quotes = {s:self.client.quote(s) for s in SYMBOLS}
         now = self.client.now()  # recheck after network latency
@@ -120,7 +127,7 @@ class PaperWorker:
                 'positions':len(broker.positions),'halted':broker.halted,'manual_stop':kill}
 
 
-def run(path, port=None, once=False, strategy_name="baseline", enable_experimental_entries=False):
+def run(path, port=None, once=False, strategy_name="baseline", enable_experimental_entries=False, *, stop_event=None):
     if os.environ.get('MODE','paper') != 'paper':
         raise ValueError('Only MODE=paper is supported')
     config = runtime_config(strategy_name)
@@ -128,7 +135,7 @@ def run(path, port=None, once=False, strategy_name="baseline", enable_experiment
     observe = strategy_name != "baseline" and not enable_experimental_entries
     worker = PaperWorker(store,PublicClient(),strategy_name,observe)
     status = {'ok':False,'mode':'paper','last_success':0,'error':None}
-    stop = threading.Event()
+    stop = stop_event if stop_event is not None else threading.Event()
     signal.signal(signal.SIGTERM,lambda *_:stop.set())
     signal.signal(signal.SIGINT,lambda *_:stop.set())
     server = None
@@ -146,13 +153,35 @@ def run(path, port=None, once=False, strategy_name="baseline", enable_experiment
         server = ThreadingHTTPServer(('0.0.0.0',port),Handler)
         threading.Thread(target=server.serve_forever,daemon=True).start()
     failures = 0
+    transient_failures = 0
     try:
         while not stop.is_set():
             try:
                 result = worker.cycle()
                 status.update(ok=True,last_success=time.time(),error=None)
+                if transient_failures:
+                    store.broker.event(result['ts'],'api_recovered',failures=transient_failures)
+                    store.commit()
+                    print(json.dumps({'mode':'paper','event':'api_recovered','failures':transient_failures}),flush=True)
                 print(json.dumps(result),flush=True)
                 failures = 0
+                transient_failures = 0
+            except PublicAPIUnavailable as exc:
+                # All public calls precede account mutations. Keep the client
+                # limiter and completed feature state, not a new 8192-bar warmup.
+                status.update(ok=False,error=type(exc).__name__)
+                transient_failures += 1
+                delay = max(exc.retry_after,min(300,60*2**min(transient_failures-1,3)+random.uniform(0,5)))
+                now = int(time.time()*1000)
+                store.broker.event(now,'api_unavailable',endpoint=exc.endpoint,
+                                   retry_seconds=delay,failures=transient_failures)
+                store.commit()
+                print(json.dumps({'mode':'paper','event':'api_unavailable','endpoint':exc.endpoint,
+                                  'retry_seconds':delay,'failures':transient_failures}),flush=True)
+                if once:raise
+                # Interruptible by SIGTERM; no stale-price fills during cooldown.
+                stop.wait(delay)
+                continue
             except Exception as exc:
                 # Reload only durable state; no replay of uncommitted cash/funding.
                 # Strategy may be partially updated: rebuild on retry.

@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from bingx_bot.config import BAR, SYMBOLS
-from bingx_bot.data import Candle, Rules
+from bingx_bot.data import Candle, Rules, PublicAPIUnavailable
 from bingx_bot.paper import run
 from bingx_bot.store import Store
 from bingx_bot.approaches import runtime_config
@@ -82,8 +82,43 @@ def main():
         assert store.db.execute("SELECT count(*) FROM journal WHERE kind='heartbeat'").fetchone()[0]==3
         assert store.broker.last_equity==1000
         store.close()
+        # Sustained gateway outage must stay alive, return 503, preserve feature
+        # warmup, then return 200 only after a committed fresh cycle.
+        class OutageClient(FakePublicClient):
+            def __init__(self):
+                super().__init__();self.remaining=7;self.reads=0
+            def now(self):return self.clock
+            def candles(self,*args):
+                self.reads+=1;return super().candles(*args)
+            def quote(self,s):
+                if self.remaining:
+                    self.remaining-=1
+                    raise PublicAPIUnavailable('book','simulated 100410',60)
+                return super().quote(s)
+        class RecoveryStop:
+            stopped=False
+            waits=0
+            def set(self):self.stopped=True
+            def is_set(self):return self.stopped
+            def wait(self,seconds):
+                if seconds==5:
+                    assert health()[0]==200
+                    self.set()
+                else:
+                    self.waits+=1
+                    assert seconds>=60 and health()[0]==503
+        outage=OutageClient();control=RecoveryStop()
+        with patch('bingx_bot.paper.PublicClient',return_value=outage) as constructor:
+            run(path,port=PORT,strategy_name='candidate_120h',stop_event=control)
+        assert control.waits==7 and constructor.call_count==1 and outage.reads==2
+        store=Store(path,cfg)
+        assert store.broker.last_equity==1000 and not store.broker.positions
+        assert store.db.execute("SELECT count(*) FROM journal WHERE kind='api_unavailable'").fetchone()[0]==7
+        assert store.db.execute("SELECT count(*) FROM journal WHERE kind='api_recovered'").fetchone()[0]==1
+        store.close()
         print(json.dumps({'container_lifecycle':'PASS','startup_health':503,'ready_health':200,
                           'sigterm':'graceful','restart':'same port and durable account',
+                          'seven_outages':'503 then recovery200, one client, one warmup',
                           'mode':'observation only','external_requests':0}))
 
 if __name__=='__main__':main()
