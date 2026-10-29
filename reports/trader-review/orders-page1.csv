@@ -1,0 +1,11 @@
+time_displayed,timezone,order_id_displayed,symbol,action,qty,avg_price,realized_pnl_usdt,fee_usdt,order_type,status,leverage,margin_mode,position_id
+2026-10-29 04:47:03,unconfirmed,211566...096320,BTC-USDT,close_long,0.0522,80175,17.038,-1.6740,limit,filled,20,cross,
+2026-10-29 02:00:08,unconfirmed,211562...394112,BTC-USDT,open_long,0.0522,79848.6,,-0.5835,limit,filled,20,cross,
+2026-10-26 14:19:00,unconfirmed,211472...083264,BTC-USDT,close_long,0.0500,80017.2,14.79,-1.6003,limit,filled,20,cross,
+2026-10-26 13:32:14,unconfirmed,211471...766208,BTC-USDT,open_long,0.0500,79721.4,,-0.5580,limit,filled,20,cross,
+2026-10-26 08:27:22,unconfirmed,211463...555840,BTC-USDT,close_long,0.0500,80151,18.2747,-1.6030,limit,filled,20,cross,
+2026-10-26 08:08:08,unconfirmed,211463...060864,BTC-USDT,open_long,0.0500,79785.5,,-1.5957,market,filled,20,cross,
+2026-10-26 04:35:15,unconfirmed,211457...062464,BTC-USDT,close_long,0.0500,80054.6,5.0749,-1.6010,market,filled,20,cross,
+2026-10-26 04:12:35,unconfirmed,211457...118592,ETH-USDT,close_long,1.00,2312.19,10.19,-0.9248,limit,filled,20,cross,
+2026-10-26 02:39:54,unconfirmed,211454...608832,ETH-USDT,open_long,1.00,2302,,-0.3222,limit,filled,20,cross,
+2026-10-26 01:30:10,unconfirmed,211452...052480,BTC-USDT,open_long,0.0500,79953.1,,-0.5596,limit,filled,20,cross,

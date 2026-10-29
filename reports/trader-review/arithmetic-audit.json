@@ -1,0 +1,21 @@
+{
+  "displayed_counts_win_pct": 89.01220865704772,
+  "average_loss_to_average_win": 5.084980820300974,
+  "conditional_same_period_profit_factor": 1.5931250062277742,
+  "conditional_same_period_breakeven_win_pct": 83.56609446222481,
+  "conditional_figures_are_not_validated_performance": true,
+  "declared_risk_cap": 0.03,
+  "actual_position_risk_verified": false,
+  "strategy_reproducible": false,
+  "automated_replication_ready": false,
+  "limitations": [
+    "Averages are displayed source values, not recomputed from complete fills.",
+    "Displayed 30D win rate is 100%, but 802/901 is 89.01%; scope is unresolved.",
+    "Counts and averages must share a period before conditional figures can be interpreted.",
+    "Historical equity, entry-time stops and order/position linkage are unavailable.",
+    "Current equity cannot establish the risk of an earlier position.",
+    "A closed-order row is not necessarily a complete position or strategy decision.",
+    "High recent win rate does not establish the long-term loss distribution.",
+    "Indicator names and entry/exit thresholds have not been disclosed."
+  ]
+}
