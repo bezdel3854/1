@@ -47,6 +47,15 @@ class Rules:
             raise ValueError('Invalid quantity step')
         return float((Decimal(str(qty)) / s).to_integral_value(rounding=ROUND_FLOOR) * s)
 
+def symbol_scope(symbols):
+    import re
+    values = tuple(symbols)
+    if not values or len(set(values)) != len(values) or any(
+        not isinstance(v, str) or not re.fullmatch(r'[A-Z0-9]+-USDT', v) for v in values
+    ):
+        raise ValueError('Invalid or duplicate USDT symbol scope')
+    return values
+
 class PublicClient:
     BASE = 'https://open-api.bingx.com'
     PATHS = {
@@ -58,7 +67,8 @@ class PublicClient:
         'time': '/openApi/swap/v2/server/time',
     }
 
-    def __init__(self):
+    def __init__(self, symbols=SYMBOLS):
+        self.symbols = symbol_scope(symbols)
         self.last_request = 0.0
         self.cooldown_until = 0.0
         self.candle_cache = {}
@@ -69,7 +79,7 @@ class PublicClient:
 
     def get(self, endpoint, **params):
         path = self.PATHS[endpoint]  # rejects all non-allowlisted endpoints
-        if 'symbol' in params and params['symbol'] not in SYMBOLS:
+        if 'symbol' in params and params['symbol'] not in self.symbols:
             raise ValueError('Unsupported contract')
         remaining = self.cooldown_until-time.monotonic()
         if remaining > 0:
@@ -191,7 +201,7 @@ class PublicClient:
         out = {}
         for x in raw:
             symbol = x['symbol']
-            if symbol in SYMBOLS:
+            if symbol in self.symbols:
                 if int(x['status']) != 1 or str(x['apiStateOpen']).lower() != 'true' or str(x['apiStateClose']).lower() != 'true':
                     raise ValueError('Contract API inactive')
                 precision = int(x['quantityPrecision'])
@@ -201,8 +211,8 @@ class PublicClient:
                 if not 0 <= precision <= 12 or not all(math.isfinite(v) and v > 0 for v in (minimum,notional)):
                     raise ValueError('Invalid contract minimums')
                 out[symbol] = Rules(str(Decimal(10) ** -precision), minimum, notional)
-        if set(out) != set(SYMBOLS):
-            raise ValueError('Missing BTC/ETH contract rules')
+        if set(out) != set(self.symbols):
+            raise ValueError('Missing requested contract rules')
         return out, raw
 
     def quote(self, symbol):
@@ -238,11 +248,12 @@ def validate(rows, start=None, end=None):
         raise ValueError('History end truncated')
 
 
-def save_dataset(path, candles, funding, rules, metadata=None):
+def save_dataset(path, candles, funding, rules, metadata=None, symbols=SYMBOLS):
+    symbols = symbol_scope(symbols)
     path = Path(path)
     path.mkdir(parents=True, exist_ok=True)
     hashes = {}
-    for symbol in SYMBOLS:
+    for symbol in symbols:
         data = {'candles':[asdict(x) for x in candles[symbol]],
                 'funding':[asdict(x) for x in funding[symbol]], 'rules':asdict(rules[symbol])}
         raw = json.dumps(data, sort_keys=True).encode()
@@ -252,11 +263,12 @@ def save_dataset(path, candles, funding, rules, metadata=None):
         'retrieved_at_ms':int(time.time()*1000), 'metadata':metadata or {}}, indent=2))
 
 
-def load_dataset(path):
+def load_dataset(path, symbols=SYMBOLS):
+    symbols = symbol_scope(symbols)
     path = Path(path)
     manifest = json.loads((path/'manifest.json').read_text())
     candles, funding, rules = {}, {}, {}
-    for symbol in SYMBOLS:
+    for symbol in symbols:
         file = path/f'{symbol}.json'
         raw = file.read_bytes() if file.exists() else gzip.decompress((path/f'{symbol}.json.gz').read_bytes())
         if hashlib.sha256(raw).hexdigest() != manifest['sha256'][symbol]:
@@ -274,6 +286,6 @@ def load_dataset(path):
         if points[-1]-points[0] >= 24*3600_000 and (not fs or max(b-a for a,b in zip(points,points[1:])) > 12*3600_000):
             raise ValueError('Funding coverage gap')
         rules[symbol] = Rules(**data['rules'])
-    if [c.ts for c in candles[SYMBOLS[0]]] != [c.ts for c in candles[SYMBOLS[1]]]:
+    if any([c.ts for c in candles[s]] != [c.ts for c in candles[symbols[0]]] for s in symbols):
         raise ValueError('Portfolio histories not aligned')
     return candles, funding, rules, manifest

@@ -3,5 +3,9 @@ ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 WORKDIR /app
 RUN groupadd --gid 10001 observer && useradd --uid 10001 --gid observer --create-home observer && mkdir /data && chown observer:observer /data
 COPY --chown=observer:observer research/trader_review/finmonster_feed.py /app/research/trader_review/finmonster_feed.py
+COPY --chown=observer:observer research/trader_review/finmonster_paper.py /app/research/trader_review/finmonster_paper.py
+COPY --chown=observer:observer research/trader_review/finmonster_worker.py /app/research/trader_review/finmonster_worker.py
+COPY --chown=observer:observer bingx_bot /app/bingx_bot
 USER observer
-CMD ["python", "-m", "research.trader_review.finmonster_feed", "--db", "/data/finmonster.sqlite", "--interval", "60"]
+EXPOSE 8080
+CMD ["python", "-m", "research.trader_review.finmonster_worker"]

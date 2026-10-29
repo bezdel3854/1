@@ -19,7 +19,9 @@ class Position:
     funding: float = 0.0
 
 class Broker:
-    def __init__(self, config=Config()):
+    def __init__(self, config=Config(), symbols=SYMBOLS):
+        from .data import symbol_scope
+        self.symbols = symbol_scope(symbols)
         self.config = config
         self.cash = config.deposit
         self.positions = {}
@@ -56,7 +58,7 @@ class Broker:
         self.events.append({'ts':ts,'kind':kind,**fields})
 
     def enter(self, symbol, side, reference, distance, ts, rules, marks):
-        if side not in (-1,1) or symbol not in SYMBOLS:
+        if side not in (-1,1) or symbol not in self.symbols:
             raise ValueError('Unsupported entry')
         if not all(math.isfinite(x) and x > 0 for x in (reference,distance)):
             raise ValueError('Invalid entry price/distance')
@@ -180,33 +182,39 @@ def bar_exit(broker, symbol, bar, phase="all"):
             broker.exit(symbol,p.target,bar.ts+BAR-1,'take_profit')
 
 
-def backtest(candles, funding, rules, config=Config(), start=None, end=None, strategy_factory=None, entry_delay=0):
-    times = [c.ts for c in candles[SYMBOLS[0]]]
-    if any([c.ts for c in candles[s]] != times for s in SYMBOLS):
+def backtest(candles, funding, rules, config=Config(), start=None, end=None, strategy_factory=None, entry_delay=0, symbols=SYMBOLS):
+    from .data import symbol_scope, validate
+    symbols = symbol_scope(symbols)
+    if any(set(data) != set(symbols) for data in (candles, funding, rules)):
+        raise ValueError("Portfolio data must exactly match symbol scope")
+    for rows in candles.values():
+        validate(rows)
+    times = [c.ts for c in candles[symbols[0]]]
+    if any([c.ts for c in candles[s]] != times for s in symbols):
         raise ValueError('Unaligned portfolio')
     if entry_delay not in (0,1):
         raise ValueError("Only zero or one-bar extra entry latency is supported")
-    strategies = {s:(strategy_factory or Strategy)(config) for s in SYMBOLS}
-    signals = {s:None for s in SYMBOLS}
-    delayed = {s:None for s in SYMBOLS}
-    broker = Broker(config)
-    funds = {s:{f.ts:f for f in funding[s]} for s in SYMBOLS}
+    strategies = {s:(strategy_factory or Strategy)(config) for s in symbols}
+    signals = {s:None for s in symbols}
+    delayed = {s:None for s in symbols}
+    broker = Broker(config, symbols=symbols)
+    funds = {s:{f.ts:f for f in funding[s]} for s in symbols}
     equity = []
     last_bars = None
     for i,ts in enumerate(times):
         if end is not None and ts >= end:
             break
-        bars = {s:candles[s][i] for s in SYMBOLS}
+        bars = {s:candles[s][i] for s in symbols}
         last_bars = bars
         active = start is None or ts >= start
         if active:
             marks = {s:b.open for s,b in bars.items()}
             broker.risk_check(ts,marks)
-            for s in SYMBOLS:
+            for s in symbols:
                 if ts in funds[s]:
                     broker.fund(s,ts,funds[s][ts].rate,funds[s][ts].mark or bars[s].open)
             # Prior-close trailing instructions become active at the next open.
-            for s in SYMBOLS:
+            for s in symbols:
                 apply_trail(broker,s,signals[s])
                 bar_exit(broker,s,bars[s],"open")
                 p = broker.positions.get(s)
@@ -215,22 +223,22 @@ def backtest(candles, funding, rules, config=Config(), start=None, end=None, str
                     broker.exit(s,bars[s].open,ts,'strategy_exit')
             if broker.risk_check(ts,marks):
                 broker.flatten(marks,ts,'risk_halt')
-            for s in SYMBOLS:
+            for s in symbols:
                 signal = delayed[s] if entry_delay else signals[s]
                 if signal and signal.side:
                     broker.enter(s,signal.side,bars[s].open,signal.distance,ts,rules[s],marks)
-            for s in SYMBOLS:
+            for s in symbols:
                 bar_exit(broker,s,bars[s],"intrabar")
             closes = {s:b.close for s,b in bars.items()}
             if broker.risk_check(ts+BAR-1,closes):
                 broker.flatten(closes,ts+BAR-1,'risk_halt')
             equity.append({'ts':ts+BAR,'equity':broker.equity(closes)})
-        for s in SYMBOLS:
+        for s in symbols:
             delayed[s] = signals[s]
             signals[s] = strategies[s].update(bars[s])
     if equity:
         last_ts = equity[-1]['ts']
-        broker.flatten({s:last_bars[s].close for s in SYMBOLS},last_ts,'end_of_test')
+        broker.flatten({s:last_bars[s].close for s in symbols},last_ts,'end_of_test')
         equity[-1]['equity'] = broker.cash
-        broker.risk_check(last_ts-1,{s:last_bars[s].close for s in SYMBOLS})
+        broker.risk_check(last_ts-1,{s:last_bars[s].close for s in symbols})
     return broker,equity
