@@ -1,0 +1,256 @@
+{
+  "asof_ms": 1793251199000,
+  "research_only": true,
+  "historical_selection_bias": "Current snapshot; not a historical point-in-time universe",
+  "policy": {
+    "limit": 30,
+    "minimum_quote_volume_usdt": 10000000,
+    "maximum_spread_fraction": 0.001,
+    "minimum_listing_age_days": 90
+  },
+  "selected": [
+    {
+      "symbol": "BTC-USDT",
+      "quote_volume_usdt": 852635566.6,
+      "spread_fraction": 1.2430351189220495e-06,
+      "listing_age_days": 2395.5555439814816
+    },
+    {
+      "symbol": "ETH-USDT",
+      "quote_volume_usdt": 573012933.89,
+      "spread_fraction": 4.2888543398781015e-06,
+      "listing_age_days": 2395.5555439814816
+    },
+    {
+      "symbol": "SOL-USDT",
+      "quote_volume_usdt": 313843462.72,
+      "spread_fraction": 8.938103632346343e-05,
+      "listing_age_days": 1820.5555439814814
+    },
+    {
+      "symbol": "ZEC-USDT",
+      "quote_volume_usdt": 101207130.24,
+      "spread_fraction": 7.97381399483369e-06,
+      "listing_age_days": 383.8055439814815
+    },
+    {
+      "symbol": "NEAR-USDT",
+      "quote_volume_usdt": 58248610.39,
+      "spread_fraction": 0.00022219753360745113,
+      "listing_age_days": 1819.5555439814814
+    },
+    {
+      "symbol": "1000PEPE-USDT",
+      "quote_volume_usdt": 48631837.33,
+      "spread_fraction": 1.9508959489698976e-05,
+      "listing_age_days": 1164.5555439814814
+    },
+    {
+      "symbol": "AVAX-USDT",
+      "quote_volume_usdt": 38262879.25,
+      "spread_fraction": 0.00011381095999558666,
+      "listing_age_days": 1861.5555439814814
+    },
+    {
+      "symbol": "TAO-USDT",
+      "quote_volume_usdt": 36494130.57,
+      "spread_fraction": 3.9743258549732346e-05,
+      "listing_age_days": 1002.7430439814815
+    },
+    {
+      "symbol": "HYPE-USDT",
+      "quote_volume_usdt": 35876830.46,
+      "spread_fraction": 1.258724534435273e-05,
+      "listing_age_days": 678.7430439814815
+    },
+    {
+      "symbol": "AAVE-USDT",
+      "quote_volume_usdt": 34582495.76,
+      "spread_fraction": 7.580639047864841e-05,
+      "listing_age_days": 1815.5555439814814
+    },
+    {
+      "symbol": "JTO-USDT",
+      "quote_volume_usdt": 33641331.69,
+      "spread_fraction": 0.000245188181929604,
+      "listing_age_days": 1055.8194328703703
+    },
+    {
+      "symbol": "UNI-USDT",
+      "quote_volume_usdt": 31484627.47,
+      "spread_fraction": 0.00014030164854441726,
+      "listing_age_days": 1815.5555439814814
+    },
+    {
+      "symbol": "ENA-USDT",
+      "quote_volume_usdt": 30253915.2,
+      "spread_fraction": 4.9658597144680327e-05,
+      "listing_age_days": 939.7847106481481
+    },
+    {
+      "symbol": "LTC-USDT",
+      "quote_volume_usdt": 29304964.62,
+      "spread_fraction": 0.00017189514396214888,
+      "listing_age_days": 1976.5555439814814
+    },
+    {
+      "symbol": "ETHFI-USDT",
+      "quote_volume_usdt": 28539374.31,
+      "spread_fraction": 0.0001495103535921358,
+      "listing_age_days": 954.6180439814815
+    },
+    {
+      "symbol": "ENS-USDT",
+      "quote_volume_usdt": 28066356.57,
+      "spread_fraction": 0.0001915892326850169,
+      "listing_age_days": 1709.5555439814814
+    },
+    {
+      "symbol": "STRK-USDT",
+      "quote_volume_usdt": 27989666.61,
+      "spread_fraction": 0.00021397239756063173,
+      "listing_age_days": 981.6701273148149
+    },
+    {
+      "symbol": "XRP-USDT",
+      "quote_volume_usdt": 27603842.67,
+      "spread_fraction": 7.674302597750585e-05,
+      "listing_age_days": 1976.5555439814814
+    },
+    {
+      "symbol": "INJ-USDT",
+      "quote_volume_usdt": 26620623.1,
+      "spread_fraction": 0.0001297437560817819,
+      "listing_age_days": 1493.5555439814814
+    },
+    {
+      "symbol": "LINK-USDT",
+      "quote_volume_usdt": 26537436.84,
+      "spread_fraction": 8.621804543686215e-05,
+      "listing_age_days": 2180.5555439814816
+    },
+    {
+      "symbol": "SUI-USDT",
+      "quote_volume_usdt": 23969379.8,
+      "spread_fraction": 0.00010854816824964884,
+      "listing_age_days": 1275.5555439814814
+    },
+    {
+      "symbol": "IMX-USDT",
+      "quote_volume_usdt": 22591065.52,
+      "spread_fraction": 0.0007317965605560848,
+      "listing_age_days": 1696.5555439814814
+    },
+    {
+      "symbol": "WLD-USDT",
+      "quote_volume_usdt": 22456080.87,
+      "spread_fraction": 0.0002366583836232138,
+      "listing_age_days": 1193.5555439814814
+    },
+    {
+      "symbol": "BNB-USDT",
+      "quote_volume_usdt": 22447617.59,
+      "spread_fraction": 1.3192003007764688e-05,
+      "listing_age_days": 1692.5555439814814
+    },
+    {
+      "symbol": "ARB-USDT",
+      "quote_volume_usdt": 19394348.15,
+      "spread_fraction": 5.9363034638390084e-05,
+      "listing_age_days": 1316.5555439814814
+    },
+    {
+      "symbol": "DOGE-USDT",
+      "quote_volume_usdt": 18270850.36,
+      "spread_fraction": 0.0001266865142205121,
+      "listing_age_days": 1815.5555439814814
+    },
+    {
+      "symbol": "GALA-USDT",
+      "quote_volume_usdt": 17520911.72,
+      "spread_fraction": 0.0005648121999434713,
+      "listing_age_days": 1688.5555439814814
+    },
+    {
+      "symbol": "JUP-USDT",
+      "quote_volume_usdt": 17493954.99,
+      "spread_fraction": 0.00036623329060607576,
+      "listing_age_days": 1001.4930439814815
+    },
+    {
+      "symbol": "APT-USDT",
+      "quote_volume_usdt": 17418869.43,
+      "spread_fraction": 0.000148203038162266,
+      "listing_age_days": 1471.5555439814814
+    },
+    {
+      "symbol": "CRV-USDT",
+      "quote_volume_usdt": 17038852.99,
+      "spread_fraction": 0.0003040900106432857,
+      "listing_age_days": 1717.5555439814814
+    }
+  ],
+  "eligible_count": 43,
+  "rejected": [
+    {
+      "symbol": "RUNE-USDT",
+      "reason": "insufficient 24h quote volume"
+    },
+    {
+      "symbol": "AR-USDT",
+      "reason": "insufficient 24h quote volume"
+    },
+    {
+      "symbol": "QNT-USDT",
+      "reason": "insufficient 24h quote volume"
+    },
+    {
+      "symbol": "FET-USDT",
+      "reason": "insufficient 24h quote volume"
+    },
+    {
+      "symbol": "RENDER-USDT",
+      "reason": "insufficient 24h quote volume"
+    },
+    {
+      "symbol": "ALGO-USDT",
+      "reason": "insufficient 24h quote volume"
+    },
+    {
+      "symbol": "VIRTUAL-USDT",
+      "reason": "insufficient 24h quote volume"
+    },
+    {
+      "symbol": "LDO-USDT",
+      "reason": "insufficient 24h quote volume"
+    },
+    {
+      "symbol": "OP-USDT",
+      "reason": "insufficient 24h quote volume"
+    },
+    {
+      "symbol": "ICP-USDT",
+      "reason": "insufficient 24h quote volume"
+    },
+    {
+      "symbol": "1000SHIB-USDT",
+      "reason": "insufficient 24h quote volume"
+    },
+    {
+      "symbol": "SEI-USDT",
+      "reason": "insufficient 24h quote volume"
+    },
+    {
+      "symbol": "1000BONK-USDT",
+      "reason": "insufficient 24h quote volume"
+    },
+    {
+      "symbol": "WIF-USDT",
+      "reason": "insufficient 24h quote volume"
+    },
+    {
+      "symbol": "TRX-USDT",
+      "reason": "insufficient 24h quote volume"
+    }
+  ]
+}

@@ -1,0 +1,1061 @@
+{
+  "source_urls": [
+    "https://open-api.bingx.com/openApi/swap/v2/quote/contracts",
+    "https://open-api.bingx.com/openApi/swap/v2/quote/ticker"
+  ],
+  "source_contract_count": 1308,
+  "source_ticker_count": 1070,
+  "asof_ms": 1793251199000,
+  "candidate_symbols": [
+    "1000BONK-USDT",
+    "1000PEPE-USDT",
+    "1000SHIB-USDT",
+    "AAVE-USDT",
+    "ADA-USDT",
+    "ALGO-USDT",
+    "APT-USDT",
+    "AR-USDT",
+    "ARB-USDT",
+    "ATOM-USDT",
+    "AVAX-USDT",
+    "BCH-USDT",
+    "BNB-USDT",
+    "BTC-USDT",
+    "COMP-USDT",
+    "CRV-USDT",
+    "DOGE-USDT",
+    "DOT-USDT",
+    "ENA-USDT",
+    "ENS-USDT",
+    "ETC-USDT",
+    "ETH-USDT",
+    "ETHFI-USDT",
+    "FET-USDT",
+    "FIL-USDT",
+    "GALA-USDT",
+    "HYPE-USDT",
+    "ICP-USDT",
+    "IMX-USDT",
+    "INJ-USDT",
+    "JTO-USDT",
+    "JUP-USDT",
+    "LDO-USDT",
+    "LINK-USDT",
+    "LTC-USDT",
+    "MEW-USDT",
+    "MKR-USDT",
+    "NEAR-USDT",
+    "ONDO-USDT",
+    "OP-USDT",
+    "PENDLE-USDT",
+    "PUMP-USDT",
+    "QNT-USDT",
+    "RENDER-USDT",
+    "RUNE-USDT",
+    "SEI-USDT",
+    "SOL-USDT",
+    "STRK-USDT",
+    "STX-USDT",
+    "SUI-USDT",
+    "TAO-USDT",
+    "TIA-USDT",
+    "TON-USDT",
+    "TRX-USDT",
+    "UNI-USDT",
+    "VIRTUAL-USDT",
+    "WIF-USDT",
+    "WLD-USDT",
+    "XRP-USDT",
+    "ZEC-USDT"
+  ],
+  "contracts": [
+    {
+      "symbol": "BTC-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1586275200000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "ETH-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1586275200000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "LINK-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1604851200000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "BCH-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1589299200000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "ADA-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1622476800000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "XRP-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1622476800000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "LTC-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1622476800000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "DOT-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1632326400000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "AVAX-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1632412800000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "ALGO-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1634227200000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "ICP-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1635350400000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "SOL-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1635955200000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "NEAR-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1636041600000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "ATOM-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1636041600000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "UNI-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1636387200000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "FIL-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1636387200000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "AAVE-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1636387200000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "DOGE-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1636387200000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "TRX-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1636992000000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "CRV-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1644854400000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "COMP-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1644940800000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "AR-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1733820900000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "ENS-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1645545600000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "IMX-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1646668800000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "ZEC-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1760090400000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "BNB-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1647014400000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "GALA-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1647360000000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "RUNE-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1692979200000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "ETC-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1649779200000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "OP-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1654012800000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "LDO-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1658678400000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "INJ-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1664208000000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "APT-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1666108800000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "QNT-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1667232000000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "FET-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1736928000000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "STX-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1676908800000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "ARB-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1679500800000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "SUI-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1683043200000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "WLD-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1690128000000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "PENDLE-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1690387200000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "SEI-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1692115200000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "1000PEPE-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1692633600000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "TIA-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1698771600000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "1000BONK-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1700730000000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "JTO-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1702028400000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "WIF-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1705573800000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "ONDO-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1705757400000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "TAO-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1706614200000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "JUP-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1706722200000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "STRK-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1708434900000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "ETHFI-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1710772200000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "ENA-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1712053800000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "MEW-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1713884400000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "RENDER-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1721985600000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "HYPE-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1734607800000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "VIRTUAL-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1735812900000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "PUMP-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1752128400000,
+      "maintainTime": 0,
+      "offTime": 0
+    },
+    {
+      "symbol": "1000SHIB-USDT",
+      "currency": "USDT",
+      "status": 1,
+      "apiStateOpen": "true",
+      "apiStateClose": "true",
+      "launchTime": 1782381600000,
+      "maintainTime": 0,
+      "offTime": 0
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "BTC-USDT",
+      "quoteVolume": "852635566.60",
+      "bidPrice": "80448.2",
+      "askPrice": "80448.3",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "ETH-USDT",
+      "quoteVolume": "573012933.89",
+      "bidPrice": "2331.62",
+      "askPrice": "2331.63",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "SOL-USDT",
+      "quoteVolume": "313843462.72",
+      "bidPrice": "100.688",
+      "askPrice": "100.697",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "AVAX-USDT",
+      "quoteVolume": "38262879.25",
+      "bidPrice": "8.786",
+      "askPrice": "8.787",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "XRP-USDT",
+      "quoteVolume": "27603842.67",
+      "bidPrice": "1.3030",
+      "askPrice": "1.3031",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "DOGE-USDT",
+      "quoteVolume": "18270850.36",
+      "bidPrice": "0.07893",
+      "askPrice": "0.07894",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "BNB-USDT",
+      "quoteVolume": "22447617.59",
+      "bidPrice": "758.03",
+      "askPrice": "758.04",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "ETC-USDT",
+      "quoteVolume": "10075289.33",
+      "bidPrice": "7.462",
+      "askPrice": "7.463",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "FIL-USDT",
+      "quoteVolume": "12904467.29",
+      "bidPrice": "0.8913",
+      "askPrice": "0.8914",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "INJ-USDT",
+      "quoteVolume": "26620623.10",
+      "bidPrice": "7.707",
+      "askPrice": "7.708",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "PENDLE-USDT",
+      "quoteVolume": "15670315.10",
+      "bidPrice": "1.9345",
+      "askPrice": "1.9346",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "RUNE-USDT",
+      "quoteVolume": "4440199.31",
+      "bidPrice": "0.6117",
+      "askPrice": "0.6118",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "HYPE-USDT",
+      "quoteVolume": "35876830.46",
+      "bidPrice": "79.445",
+      "askPrice": "79.446",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "ONDO-USDT",
+      "quoteVolume": "16298094.29",
+      "bidPrice": "0.4128",
+      "askPrice": "0.4129",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "AR-USDT",
+      "quoteVolume": "2414054.84",
+      "bidPrice": "3.453",
+      "askPrice": "3.454",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "QNT-USDT",
+      "quoteVolume": "7967534.05",
+      "bidPrice": "195.69",
+      "askPrice": "195.73",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "GALA-USDT",
+      "quoteVolume": "17520911.72",
+      "bidPrice": "0.001770",
+      "askPrice": "0.001771",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "COMP-USDT",
+      "quoteVolume": "16636300.59",
+      "bidPrice": "21.54",
+      "askPrice": "21.55",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "FET-USDT",
+      "quoteVolume": "3776629.19",
+      "bidPrice": "0.1810",
+      "askPrice": "0.1811",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "RENDER-USDT",
+      "quoteVolume": "9219885.52",
+      "bidPrice": "1.649",
+      "askPrice": "1.650",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "IMX-USDT",
+      "quoteVolume": "22591065.52",
+      "bidPrice": "0.1366",
+      "askPrice": "0.1367",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "MEW-USDT",
+      "quoteVolume": "16386380.58",
+      "bidPrice": "0.0004253",
+      "askPrice": "0.0004254",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "JTO-USDT",
+      "quoteVolume": "33641331.69",
+      "bidPrice": "0.4078",
+      "askPrice": "0.4079",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "ALGO-USDT",
+      "quoteVolume": "2745312.02",
+      "bidPrice": "0.10077",
+      "askPrice": "0.10081",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "VIRTUAL-USDT",
+      "quoteVolume": "6850633.87",
+      "bidPrice": "0.6132",
+      "askPrice": "0.6133",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "AAVE-USDT",
+      "quoteVolume": "34582495.76",
+      "bidPrice": "131.91",
+      "askPrice": "131.92",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "LDO-USDT",
+      "quoteVolume": "5385501.29",
+      "bidPrice": "0.3705",
+      "askPrice": "0.3706",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "WLD-USDT",
+      "quoteVolume": "22456080.87",
+      "bidPrice": "0.4225",
+      "askPrice": "0.4226",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "ADA-USDT",
+      "quoteVolume": "15961418.73",
+      "bidPrice": "0.2010",
+      "askPrice": "0.2011",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "OP-USDT",
+      "quoteVolume": "7891799.29",
+      "bidPrice": "0.11033",
+      "askPrice": "0.11034",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "JUP-USDT",
+      "quoteVolume": "17493954.99",
+      "bidPrice": "0.2730",
+      "askPrice": "0.2731",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "ICP-USDT",
+      "quoteVolume": "5150712.45",
+      "bidPrice": "2.585",
+      "askPrice": "2.586",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "STX-USDT",
+      "quoteVolume": "13033973.59",
+      "bidPrice": "0.2792",
+      "askPrice": "0.2793",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "SUI-USDT",
+      "quoteVolume": "23969379.80",
+      "bidPrice": "0.9212",
+      "askPrice": "0.9213",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "ARB-USDT",
+      "quoteVolume": "19394348.15",
+      "bidPrice": "0.16845",
+      "askPrice": "0.16846",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "APT-USDT",
+      "quoteVolume": "17418869.43",
+      "bidPrice": "0.6747",
+      "askPrice": "0.6748",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "STRK-USDT",
+      "quoteVolume": "27989666.61",
+      "bidPrice": "0.04673",
+      "askPrice": "0.04674",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "ENA-USDT",
+      "quoteVolume": "30253915.20",
+      "bidPrice": "0.20137",
+      "askPrice": "0.20138",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "1000SHIB-USDT",
+      "quoteVolume": "1729639.51",
+      "bidPrice": "0.004922",
+      "askPrice": "0.004923",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "PUMP-USDT",
+      "quoteVolume": "14049665.66",
+      "bidPrice": "0.004299",
+      "askPrice": "0.004300",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "ATOM-USDT",
+      "quoteVolume": "13644800.75",
+      "bidPrice": "1.618",
+      "askPrice": "1.619",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "LTC-USDT",
+      "quoteVolume": "29304964.62",
+      "bidPrice": "58.17",
+      "askPrice": "58.18",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "ENS-USDT",
+      "quoteVolume": "28066356.57",
+      "bidPrice": "5.219",
+      "askPrice": "5.220",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "SEI-USDT",
+      "quoteVolume": "3976452.25",
+      "bidPrice": "0.05241",
+      "askPrice": "0.05242",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "1000BONK-USDT",
+      "quoteVolume": "5060213.11",
+      "bidPrice": "0.003115",
+      "askPrice": "0.003116",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "WIF-USDT",
+      "quoteVolume": "4799036.84",
+      "bidPrice": "0.1816",
+      "askPrice": "0.1817",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "TAO-USDT",
+      "quoteVolume": "36494130.57",
+      "bidPrice": "251.61",
+      "askPrice": "251.62",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "BCH-USDT",
+      "quoteVolume": "15061888.38",
+      "bidPrice": "281.19",
+      "askPrice": "281.20",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "LINK-USDT",
+      "quoteVolume": "26537436.84",
+      "bidPrice": "11.598",
+      "askPrice": "11.599",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "NEAR-USDT",
+      "quoteVolume": "58248610.39",
+      "bidPrice": "4.500",
+      "askPrice": "4.501",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "1000PEPE-USDT",
+      "quoteVolume": "48631837.33",
+      "bidPrice": "0.0051258",
+      "askPrice": "0.0051259",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "CRV-USDT",
+      "quoteVolume": "17038852.99",
+      "bidPrice": "0.3288",
+      "askPrice": "0.3289",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "ETHFI-USDT",
+      "quoteVolume": "28539374.31",
+      "bidPrice": "0.6688",
+      "askPrice": "0.6689",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "DOT-USDT",
+      "quoteVolume": "10320949.01",
+      "bidPrice": "0.9866",
+      "askPrice": "0.9867",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "UNI-USDT",
+      "quoteVolume": "31484627.47",
+      "bidPrice": "7.127",
+      "askPrice": "7.128",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "ZEC-USDT",
+      "quoteVolume": "101207130.24",
+      "bidPrice": "1254.10",
+      "askPrice": "1254.11",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "TRX-USDT",
+      "quoteVolume": "5220577.43",
+      "bidPrice": "0.33139",
+      "askPrice": "0.33140",
+      "closeTime": 1793251199000
+    },
+    {
+      "symbol": "TIA-USDT",
+      "quoteVolume": "14190390.45",
+      "bidPrice": "0.5375",
+      "askPrice": "0.5376",
+      "closeTime": 1793251199000
+    }
+  ]
+}
