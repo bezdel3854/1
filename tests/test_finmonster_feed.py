@@ -112,3 +112,62 @@ class RateLimitTests(unittest.TestCase):
         self.assertEqual(retry_delay('Thu, 01 Jan 1970 00:20:00 GMT',1000),200)
         self.assertEqual(retry_delay('NaN',1000),300)
         self.assertEqual(retry_delay(None,1000),300)
+
+
+class QuotaEfficiencyTests(unittest.TestCase):
+    @staticmethod
+    def response(data):
+        from unittest.mock import MagicMock
+        import json
+        response=MagicMock()
+        response.__enter__.return_value.read.return_value=json.dumps({'data':data}).encode()
+        return response
+    def test_metadata_cache_survives_restart_but_order_history_never_caches(self):
+        from unittest.mock import patch
+        profile=dict(traderId=TRADER,name='FinMonster')
+        positions=dict(hidden=False,positions=[])
+        with tempfile.TemporaryDirectory() as root:
+            observer=Observer(root+'/feed.sqlite')
+            with patch('research.trader_review.finmonster_feed.time.time',return_value=1000), \
+                 patch('research.trader_review.finmonster_feed.urllib.request.urlopen',side_effect=[self.response(profile),self.response(positions),self.response({'orders':[]}),self.response({'orders':[]})]) as request:
+                feed=Feed(db=observer.db)
+                feed.get('traderProfile');feed.get('openPositions');feed.get('orderHistory',rows=50)
+                restarted=Feed(db=observer.db)
+                restarted.get('traderProfile');restarted.get('openPositions');restarted.get('orderHistory',rows=50)
+                self.assertEqual(request.call_count,4)
+                self.assertEqual(restarted.usage['requests'],4)
+                self.assertEqual(restarted.received_ms['openPositions'],1000000)
+            observer.db.close()
+    def test_expired_positions_are_refetched_and_hidden_response_is_not_cached(self):
+        from unittest.mock import patch
+        visible=dict(hidden=False,positions=[])
+        with patch('research.trader_review.finmonster_feed.time.time',return_value=1000), \
+             patch('research.trader_review.finmonster_feed.urllib.request.urlopen',return_value=self.response(visible)):
+            feed=Feed();feed.get('openPositions')
+        with patch('research.trader_review.finmonster_feed.time.time',return_value=1301), \
+             patch('research.trader_review.finmonster_feed.urllib.request.urlopen',return_value=self.response(dict(hidden=True,positions=[]))) as request:
+            self.assertTrue(feed.get('openPositions')['hidden'])
+            self.assertTrue(feed.get('openPositions')['hidden'])
+            self.assertEqual(request.call_count,2)
+    def test_budget_persists_and_does_not_reset_when_credential_changes(self):
+        from unittest.mock import patch
+        from research.trader_review.finmonster_feed import MONTHLY_REQUEST_BUDGET
+        with tempfile.TemporaryDirectory() as root:
+            observer=Observer(root+'/feed.sqlite')
+            with patch('research.trader_review.finmonster_feed.time.time',return_value=1793277735), \
+                 patch('research.trader_review.finmonster_feed.urllib.request.urlopen',return_value=self.response({})) as request:
+                feed=Feed(db=observer.db)
+                feed.usage=dict(month='2026-10',requests=MONTHLY_REQUEST_BUDGET-1)
+                feed.get('orderHistory')
+                restarted=Feed(key='another-authorized-key',db=observer.db)
+                with self.assertRaises(FeedUnavailable) as failure:restarted.get('orderHistory')
+                self.assertEqual(failure.exception.reason,'local_monthly_request_budget')
+                self.assertEqual(request.call_count,1)
+            observer.db.close()
+    def test_cached_data_cannot_mask_a_global_cooldown(self):
+        from unittest.mock import patch
+        with patch('research.trader_review.finmonster_feed.time.time',return_value=1000), \
+             patch('research.trader_review.finmonster_feed.urllib.request.urlopen',return_value=self.response(dict(traderId=TRADER,name='FinMonster'))) as request:
+            feed=Feed();feed.get('traderProfile');feed.unavailable('orderHistory',429,100,'rate_limited')
+            with self.assertRaises(FeedUnavailable):feed.get('traderProfile')
+            self.assertEqual(request.call_count,1)

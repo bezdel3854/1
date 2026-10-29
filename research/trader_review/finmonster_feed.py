@@ -12,12 +12,16 @@ import sqlite3
 import time
 import urllib.parse
 import urllib.request
+from copy import deepcopy
+from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
 from email.utils import parsedate_to_datetime
 
 TRADER = '1584417045916868615_1627463895052578906'
 BASE = 'https://api.kopyon.com/v5/bingx-copy-trading/'
 ENDPOINTS = frozenset(('traderProfile', 'openPositions', 'orderHistory'))
+CACHE_TTL_MS = {'traderProfile': 6*3600_000, 'openPositions': 5*60_000}
+MONTHLY_REQUEST_BUDGET = 9000  # conservative ceiling within the documented free 10k quota
 
 
 def canonical(value):
@@ -55,12 +59,40 @@ class Feed:
         self.credential_id = hashlib.sha256((key or 'anonymous').encode()).hexdigest()
         self.cooldown = None
         self.failures = 0
+        self.cache = {}
+        self.received_ms = {}
+        self.usage = {}
         if db is not None:
             row = db.execute("SELECT value FROM meta WHERE key='feed_cooldown'").fetchone()
             if row:
                 saved = json.loads(row[0])
                 if saved['credential_id'] == self.credential_id:
                     self.cooldown = saved
+            for endpoint in CACHE_TTL_MS:
+                row = db.execute('SELECT value FROM meta WHERE key=?', ('feed_cache_'+endpoint,)).fetchone()
+                if row:
+                    saved = json.loads(row[0])
+                    if saved['credential_id'] == self.credential_id:
+                        self.cache[endpoint] = saved
+            row = db.execute("SELECT value FROM meta WHERE key='feed_request_usage'").fetchone()
+            if row:
+                self.usage = json.loads(row[0])
+
+    def reserve_request(self, endpoint):
+        current = datetime.fromtimestamp(time.time(), timezone.utc)
+        month = current.strftime('%Y-%m')
+        if self.usage.get('month') != month:
+            self.usage = {'month': month, 'requests': 0}
+        if self.usage['requests'] >= MONTHLY_REQUEST_BUDGET:
+            year, next_month = current.year + (current.month == 12), current.month % 12 + 1
+            until = int(datetime(year, next_month, 1, tzinfo=timezone.utc).timestamp()*1000)
+            raise FeedUnavailable(endpoint, None, until, 'local_monthly_request_budget')
+        # Count attempts before sending; failures may also consume provider quota.
+        self.usage['requests'] += 1
+        if self.db is not None:
+            with self.db:
+                self.db.execute("INSERT OR REPLACE INTO meta VALUES('feed_request_usage',?)",
+                                (canonical(self.usage),))
 
     def unavailable(self, endpoint, status, seconds, reason):
         until = int(time.time()*1000 + seconds*1000)
@@ -79,12 +111,18 @@ class Feed:
             saved = self.cooldown
             raise FeedUnavailable(saved['endpoint'], saved['http_status'],
                                   saved['retry_at_ms'], saved['reason'])
+        cached = self.cache.get(endpoint)
+        if not params and cached and 0 <= time.time()*1000-cached['received_ms'] < CACHE_TTL_MS[endpoint]:
+            self.received_ms[endpoint] = cached['received_ms']
+            return deepcopy(cached['data'])
+        cacheable_request = not params and endpoint in CACHE_TTL_MS
         params['traderId'] = TRADER
         headers = {'User-Agent': 'FinMonsterResearchObserver/1.0'}
         if self.key:
             headers['X-API-KEY'] = self.key
         request = urllib.request.Request(BASE + endpoint + '?' + urllib.parse.urlencode(params),
                                          headers=headers, method='GET')
+        self.reserve_request(endpoint)
         try:
             with urllib.request.urlopen(request, timeout=25) as response:
                 payload = json.load(response)
@@ -112,6 +150,22 @@ class Feed:
         if payload.get('error') or payload.get('success') is False:
             raise ValueError('Feed reported an error')
         self.failures = 0
+        stamp = int(time.time()*1000)
+        self.received_ms[endpoint] = stamp
+        data = payload['data']
+        cache_valid = (endpoint == 'traderProfile' and data.get('traderId') == TRADER
+                       and data.get('name') == 'FinMonster') or (
+            endpoint == 'openPositions' and data.get('hidden') is False
+            and isinstance(data.get('positions'), list)
+            and all(isinstance(p, dict) and all(k in p for k in ('positionId','symbol','side','size'))
+                    for p in data['positions']))
+        if cacheable_request and cache_valid:
+            self.cache[endpoint] = {'credential_id': self.credential_id, 'received_ms': stamp,
+                                    'data': deepcopy(data)}
+            if self.db is not None:
+                with self.db:
+                    self.db.execute('INSERT OR REPLACE INTO meta VALUES(?,?)',
+                                    ('feed_cache_'+endpoint, canonical(self.cache[endpoint])))
         return payload['data']
 
 
@@ -193,6 +247,8 @@ class Observer:
         return {'observed_at_ms': now, 'new_order_versions': added,
                 'positions': len(positions['positions']), 'latest_source_ms': newest['updatedAt'],
                 'latest_event_age_ms': now - newest['updatedAt'],
+                'positions_received_at_ms': getattr(feed, 'received_ms', {}).get('openPositions', now),
+                'profile_received_at_ms': getattr(feed, 'received_ms', {}).get('traderProfile', now),
                 'mode': 'observation_only', 'paper_trading_started': False}
 
 

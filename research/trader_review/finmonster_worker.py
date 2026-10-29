@@ -59,6 +59,9 @@ def main():
         if 'source' in status:
             status['source']['latest_event_age_ms'] = int(time.time()*1000)-status['source']['latest_source_ms']
             status['source']['snapshot_age_ms'] = int(time.time()*1000)-status['source']['observed_at_ms']
+            status['source']['positions_age_ms'] = int(time.time()*1000)-status['source']['positions_received_at_ms']
+        status['source_requests_this_month'] = feed.usage.get('requests', 0)
+        status['source_monthly_request_budget'] = 9000
         print(canonical(status), flush=True)
         if args.once:
             return 0 if status['healthy'] else 1
