@@ -2,7 +2,7 @@ import copy
 import tempfile
 import unittest
 
-from research.trader_review.finmonster_feed import Feed, Observer, TRADER
+from research.trader_review.finmonster_feed import Feed, FeedUnavailable, Observer, TRADER, retry_delay
 
 
 def order(identifier='a', stamp=900):
@@ -73,3 +73,42 @@ class ObserverTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class RateLimitTests(unittest.TestCase):
+    def test_daily_retry_after_is_shared_and_persists_across_restart(self):
+        from unittest.mock import patch
+        from urllib.error import HTTPError
+        import io
+        with tempfile.TemporaryDirectory() as root:
+            observer = Observer(root+'/feed.sqlite')
+            error = HTTPError('https://example.invalid',429,'rate limit',
+                              {'Retry-After':'46672'},io.BytesIO(b'{"error":{"code":"RATE_LIMITED","message":"Daily keyless limit reached. Use an API key"}}'))
+            with patch('research.trader_review.finmonster_feed.time.time', return_value=1000), \
+                 patch('research.trader_review.finmonster_feed.urllib.request.urlopen', side_effect=error) as request:
+                feed = Feed(db=observer.db)
+                with self.assertRaises(FeedUnavailable) as failure: feed.get('traderProfile')
+                self.assertEqual(failure.exception.retry_at_ms,47672000)
+                self.assertEqual(failure.exception.http_status,429)
+                self.assertEqual(failure.exception.reason,'rate_limited')
+                with self.assertRaises(FeedUnavailable): feed.get('openPositions')
+                with self.assertRaises(FeedUnavailable): Feed(db=observer.db).get('orderHistory')
+                self.assertEqual(request.call_count,1)
+            observer.db.close()
+    def test_backoff_expires_and_new_authorized_key_has_its_own_state(self):
+        from unittest.mock import patch, MagicMock
+        with tempfile.TemporaryDirectory() as root:
+            observer = Observer(root+'/feed.sqlite')
+            with patch('research.trader_review.finmonster_feed.time.time',return_value=1000):
+                feed=Feed(db=observer.db);feed.unavailable('traderProfile',429,100,'rate_limited')
+            response=MagicMock();response.__enter__.return_value.read.return_value=b'{"data":{}}'
+            with patch('research.trader_review.finmonster_feed.time.time',return_value=1101), \
+                 patch('research.trader_review.finmonster_feed.urllib.request.urlopen',return_value=response) as request:
+                self.assertEqual(Feed(db=observer.db).get('traderProfile'),{})
+                self.assertEqual(request.call_count,1)
+            self.assertIsNone(Feed(key='new-authorized-key',db=observer.db).cooldown)
+            observer.db.close()
+    def test_retry_after_date_and_invalid_values(self):
+        self.assertEqual(retry_delay('Thu, 01 Jan 1970 00:20:00 GMT',1000),200)
+        self.assertEqual(retry_delay('NaN',1000),300)
+        self.assertEqual(retry_delay(None,1000),300)

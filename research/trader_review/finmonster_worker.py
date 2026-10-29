@@ -7,7 +7,7 @@ from pathlib import Path
 import threading
 import time
 
-from .finmonster_feed import Feed, Observer, canonical
+from .finmonster_feed import Feed, FeedUnavailable, Observer, canonical
 from .finmonster_paper import Market, Paper
 
 
@@ -20,15 +20,18 @@ def main():
     lock = open(args.db+'.lock', 'a')
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     observer = Observer(args.db)
-    paper, feed, market = Paper(observer.db), Feed(os.environ.get('KOPYON_API_KEY')), Market()
-    status = {'mode': 'paper', 'healthy': False, 'real_orders_enabled': False}
+    paper, feed, market = Paper(observer.db), Feed(os.environ.get('KOPYON_API_KEY'), observer.db), Market()
+    status = {'mode': 'paper', 'healthy': False, 'real_orders_enabled': False,
+              'source_key_configured': bool(feed.key)}
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
-            if self.path not in ('/health', '/status'):
+            if self.path not in ('/ready', '/health', '/status'):
                 self.send_error(404); return
             body = dict(status)
             body['healthy'] = bool(body.get('healthy') and time.time()-body.get('last_cycle', 0) < 180)
-            self.send_response(200 if self.path == '/status' or body['healthy'] else 503)
+            # Deployment readiness means process/database initialized. Runtime
+            # source health stays explicit and independent at /health.
+            self.send_response(200 if self.path in ('/ready', '/status') or body['healthy'] else 503)
             self.send_header('Content-Type', 'application/json'); self.end_headers()
             self.wfile.write(canonical(body).encode())
         def log_message(self, *args): pass
@@ -41,9 +44,11 @@ def main():
         try:
             observed = observer.poll(feed)
             source_ok = True
+            observed.pop('paper_trading_started', None)
             status['source'] = observed
         except Exception as exc:
-            status['source_error'] = type(exc).__name__
+            status['source_error'] = exc.diagnostic() if isinstance(exc, FeedUnavailable) else {
+                'reason': type(exc).__name__}
         try:
             result = paper.step(market, allow_entries=source_ok)
             status.update(result, healthy=source_ok, last_cycle=time.time())
@@ -51,6 +56,9 @@ def main():
             status.pop('market_error', None)
         except Exception as exc:
             status.update(healthy=False, last_cycle=time.time(), market_error=type(exc).__name__)
+        if 'source' in status:
+            status['source']['latest_event_age_ms'] = int(time.time()*1000)-status['source']['latest_source_ms']
+            status['source']['snapshot_age_ms'] = int(time.time()*1000)-status['source']['observed_at_ms']
         print(canonical(status), flush=True)
         if args.once:
             return 0 if status['healthy'] else 1
