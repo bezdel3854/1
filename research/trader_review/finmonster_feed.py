@@ -53,7 +53,8 @@ def retry_delay(value, now_seconds):
 
 
 class Feed:
-    def __init__(self, key=None, db=None):
+    def __init__(self, key=None, db=None, trader_id=TRADER, trader_name="FinMonster"):
+        self.trader_id, self.trader_name = trader_id, trader_name
         self.key = key
         self.db = db
         self.credential_id = hashlib.sha256((key or 'anonymous').encode()).hexdigest()
@@ -116,7 +117,7 @@ class Feed:
             self.received_ms[endpoint] = cached['received_ms']
             return deepcopy(cached['data'])
         cacheable_request = not params and endpoint in CACHE_TTL_MS
-        params['traderId'] = TRADER
+        params['traderId'] = self.trader_id
         headers = {'User-Agent': 'FinMonsterResearchObserver/1.0'}
         if self.key:
             headers['X-API-KEY'] = self.key
@@ -153,8 +154,8 @@ class Feed:
         stamp = int(time.time()*1000)
         self.received_ms[endpoint] = stamp
         data = payload['data']
-        cache_valid = (endpoint == 'traderProfile' and data.get('traderId') == TRADER
-                       and data.get('name') == 'FinMonster') or (
+        cache_valid = (endpoint == 'traderProfile' and data.get('traderId') == self.trader_id
+                       and data.get('name') == self.trader_name) or (
             endpoint == 'openPositions' and data.get('hidden') is False
             and isinstance(data.get('positions'), list)
             and all(isinstance(p, dict) and all(k in p for k in ('positionId','symbol','side','size'))
@@ -170,7 +171,8 @@ class Feed:
 
 
 class Observer:
-    def __init__(self, path):
+    def __init__(self, path, trader_id=TRADER, trader_name="FinMonster"):
+        self.trader_id, self.trader_name = trader_id, trader_name
         self.db = sqlite3.connect(path)
         self.db.executescript('''
         CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -181,11 +183,19 @@ class Observer:
         CREATE TABLE IF NOT EXISTS polls(
           observed_ms INTEGER PRIMARY KEY, duration_ms INTEGER NOT NULL, payload TEXT NOT NULL);
         ''')
+        identity = canonical({'trader_id': trader_id, 'trader_name': trader_name})
+        saved = self.db.execute("SELECT value FROM meta WHERE key='trader_identity'").fetchone()
+        populated = self.db.execute('SELECT count(*) FROM polls').fetchone()[0]
+        if (saved and saved[0] != identity) or (not saved and populated and trader_id != TRADER):
+            self.db.close()
+            raise ValueError('Trader changed: a separate database is required')
+        with self.db:
+            self.db.execute("INSERT OR IGNORE INTO meta VALUES('trader_identity',?)", (identity,))
 
     def poll(self, feed, now=None):
         started = time.time_ns() // 1_000_000
         profile = feed.get('traderProfile')
-        if profile.get('traderId') != TRADER or profile.get('name') != 'FinMonster':
+        if profile.get('traderId') != self.trader_id or profile.get('name') != self.trader_name:
             raise ValueError('Trader identity mismatch')
         positions = feed.get('openPositions')
         if positions.get('hidden') is not False or not isinstance(positions.get('positions'), list):

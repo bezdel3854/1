@@ -77,7 +77,7 @@ class Paper:
         row = self.db.execute("SELECT value FROM meta WHERE key='paper_state'").fetchone()
         return json.loads(row[0]) if row else None
 
-    def step(self, market, now=None, allow_entries=True):
+    def step(self, market, now=None, allow_entries=True, retire=False):
         injected_clock = now is not None
         now = time.time_ns() // 1000000 if now is None else now
         def clock():
@@ -85,6 +85,9 @@ class Paper:
         previous = self.state()
         if previous and previous['policy'] != POLICY:
             raise ValueError('Paper policy changed: a separate account is required')
+        if previous and previous.get('retired') and not retire:
+            raise ValueError('Retired paper account cannot resume')
+        allow_entries = allow_entries and not retire
         records = self.db.execute('''SELECT o.order_id,o.payload FROM observations o
           WHERE o.category='observed' AND NOT EXISTS
           (SELECT 1 FROM paper_orders p WHERE p.order_id=o.order_id)
@@ -116,15 +119,16 @@ class Paper:
             tracked[s]['funding_checked_ms'] = now+1
             bid, ask = quote(s)
             executable = bid if position.side == 1 else ask
-            if position.side*(executable-position.stop) <= 0:
-                trade = partial_exit(broker, s, 1, executable, clock(), 'observed_stop')
+            if retire or position.side*(executable-position.stop) <= 0:
+                trade = partial_exit(broker, s, 1, executable, clock(),
+                                     'trader_replaced' if retire else 'observed_stop')
                 journal.append(('trade', trade)); tracked.pop(s)
         if broker.risk_check(now, marks):
             for s, position in list(broker.positions.items()):
                 bid, ask = quotes[s]
                 trade = partial_exit(broker, s, 1, bid if position.side == 1 else ask, now, 'risk_halt')
                 journal.append(('trade', trade)); tracked.pop(s)
-        for order in orders:
+        for order in ([] if retire else orders):
             identifier = str(order['orderId'])
             if identifier in processed or order['status'] != 'Filled':
                 continue
@@ -160,7 +164,12 @@ class Paper:
                          and str(o['positionId']) == str(order['positionId']) for o in orders):
                     result['reason'] = 'position_already_reduced_before_observation'
                 else:
-                    rules = market.rules(s)
+                    try:
+                        rules = market.rules(s)
+                    except KeyError:
+                        result['reason'] = 'unsupported_contract'
+                        processed[identifier] = result
+                        continue
                     bid, ask = quote(s)
                     side = 1 if order['side'] == 'BUY' else -1
                     reference = ask if side == 1 else bid
@@ -181,7 +190,8 @@ class Paper:
                 result['reason'] = 'untracked_close_or_ambiguous_action'
             processed[identifier] = result
         current = {'policy': POLICY, 'broker': broker.snapshot(), 'tracked': tracked,
-                   'updated_at_ms': now, 'mode': 'paper', 'real_orders_enabled': False}
+                   'updated_at_ms': now, 'mode': 'paper', 'real_orders_enabled': False,
+                   'retired': retire}
         with self.db:
             for identifier, result in processed.items():
                 self.db.execute('INSERT INTO paper_orders VALUES(?,?)', (identifier, canonical(result)))

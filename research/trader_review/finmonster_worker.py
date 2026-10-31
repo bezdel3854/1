@@ -7,8 +7,36 @@ from pathlib import Path
 import threading
 import time
 
-from .finmonster_feed import Feed, FeedUnavailable, Observer, canonical
+from .finmonster_feed import Feed, FeedUnavailable, Observer, TRADER, canonical
+import json
 from .finmonster_paper import Market, Paper
+
+
+def retire_previous(path, new_db, market):
+    """Close the previous virtual account and carry over request accounting."""
+    previous_lock = open(path+'.lock', 'a')
+    fcntl.flock(previous_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    try:
+        old = Observer(path)
+        try:
+            paper = Paper(old.db)
+            if not (paper.state() or {}).get('retired'):
+                paper.step(market, allow_entries=False, retire=True)
+            month = time.strftime('%Y-%m', time.gmtime())
+            usage = []
+            for db in (old.db, new_db):
+                row = db.execute("SELECT value FROM meta WHERE key='feed_request_usage'").fetchone()
+                saved = json.loads(row[0]) if row else {}
+                if saved.get('month') == month: usage.append(saved.get('requests', 0))
+            with new_db:
+                new_db.execute("INSERT OR REPLACE INTO meta VALUES('feed_request_usage',?)",
+                               (canonical({'month': month, 'requests': max(usage, default=0)}),))
+            state = paper.state()
+            return {'retired': True, 'cash': state['broker']['cash'], 'positions': 0}
+        finally:
+            old.db.close()
+    finally:
+        previous_lock.close()
 
 
 def main():
@@ -19,10 +47,22 @@ def main():
     Path(args.db).parent.mkdir(parents=True, exist_ok=True)
     lock = open(args.db+'.lock', 'a')
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    observer = Observer(args.db)
-    paper, feed, market = Paper(observer.db), Feed(os.environ.get('KOPYON_API_KEY'), observer.db), Market()
+    trader_id = os.environ.get('TRADER_ID', TRADER)
+    trader_name = os.environ.get('TRADER_NAME', 'FinMonster')
+    observer = Observer(args.db, trader_id, trader_name)
+    market = Market()
+    previous_path = os.environ.get('PREVIOUS_DB_PATH')
+    previous_result = None
+    if previous_path:
+        if Path(previous_path).resolve() == Path(args.db).resolve() or not Path(previous_path).is_file():
+            raise ValueError('Previous account must exist and differ from the new account')
+        previous_result = retire_previous(previous_path, observer.db, market)
+    paper = Paper(observer.db)
+    feed = Feed(os.environ.get('KOPYON_API_KEY'), observer.db, trader_id, trader_name)
     status = {'mode': 'paper', 'healthy': False, 'real_orders_enabled': False,
-              'source_key_configured': bool(feed.key)}
+              'source_key_configured': bool(feed.key),
+              'trader_id': trader_id, 'trader_name': trader_name,
+              'previous_account': previous_result}
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
             if self.path not in ('/ready', '/health', '/status'):
