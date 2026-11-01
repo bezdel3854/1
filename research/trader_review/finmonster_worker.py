@@ -39,6 +39,37 @@ def retire_previous(path, new_db, market):
         previous_lock.close()
 
 
+
+def record_source_health(db, healthy, error=None, now_ms=None):
+    """Durable incident transitions, without credentials or response bodies."""
+    stamp = int(time.time()*1000) if now_ms is None else now_ms
+    row = db.execute("SELECT value FROM meta WHERE key='source_health'").fetchone()
+    previous = json.loads(row[0]) if row else {}
+    state = dict(previous)
+    state['healthy'] = healthy
+    if healthy:
+        state['last_success_ms'] = stamp
+        state['consecutive_failed_cycles'] = 0
+        state.pop('error', None)
+    else:
+        if previous.get('healthy') is not False:
+            state['outage_started_ms'] = stamp
+        state['consecutive_failed_cycles'] = previous.get('consecutive_failed_cycles', 0)+1
+        state['error'] = error or {'reason': 'unavailable'}
+    changed = previous.get('healthy') != healthy
+    with db:
+        if changed:
+            event = {'event': 'source_recovered' if healthy else 'source_unavailable',
+                     'healthy': healthy, 'observed_at_ms': stamp}
+            if healthy and previous.get('outage_started_ms') is not None:
+                event['outage_duration_ms'] = max(0, stamp-previous['outage_started_ms'])
+            if not healthy: event['error'] = state['error']
+            db.execute("INSERT INTO paper_journal(ts,kind,payload) VALUES(?,?,?)",
+                       (stamp, 'source_health', canonical(event)))
+        db.execute("INSERT OR REPLACE INTO meta VALUES('source_health',?)", (canonical(state),))
+    return state
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--db', default=os.environ.get('DB_PATH', '/data/finmonster.sqlite'))
@@ -89,6 +120,8 @@ def main():
         except Exception as exc:
             status['source_error'] = exc.diagnostic() if isinstance(exc, FeedUnavailable) else {
                 'reason': type(exc).__name__}
+        status['source_health'] = record_source_health(
+            observer.db, source_ok, status.get('source_error'))
         try:
             result = paper.step(market, allow_entries=source_ok)
             status.update(result, healthy=source_ok, last_cycle=time.time())

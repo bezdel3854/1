@@ -39,7 +39,7 @@ class FeedUnavailable(RuntimeError):
                 'retry_at_ms': self.retry_at_ms, 'reason': self.reason}
 
 
-def retry_delay(value, now_seconds):
+def retry_delay(value, now_seconds, default=300):
     try:
         seconds = float(value)
         if math.isfinite(seconds) and seconds >= 0:
@@ -49,7 +49,7 @@ def retry_delay(value, now_seconds):
     try:
         return max(1, parsedate_to_datetime(value).timestamp()-now_seconds)
     except (TypeError, ValueError, OverflowError):
-        return 300
+        return default
 
 
 class Feed:
@@ -60,6 +60,7 @@ class Feed:
         self.credential_id = hashlib.sha256((key or 'anonymous').encode()).hexdigest()
         self.cooldown = None
         self.failures = 0
+        self.endpoint_failures = {}
         self.cache = {}
         self.received_ms = {}
         self.usage = {}
@@ -69,6 +70,7 @@ class Feed:
                 saved = json.loads(row[0])
                 if saved['credential_id'] == self.credential_id:
                     self.cooldown = saved
+                    self.endpoint_failures[saved['endpoint']] = saved.get('failures', 0)
             for endpoint in CACHE_TTL_MS:
                 row = db.execute('SELECT value FROM meta WHERE key=?', ('feed_cache_'+endpoint,)).fetchone()
                 if row:
@@ -98,7 +100,8 @@ class Feed:
     def unavailable(self, endpoint, status, seconds, reason):
         until = int(time.time()*1000 + seconds*1000)
         self.cooldown = dict(credential_id=self.credential_id, endpoint=endpoint,
-                             http_status=status, retry_at_ms=until, reason=reason)
+                             http_status=status, retry_at_ms=until, reason=reason,
+                             failures=self.endpoint_failures.get(endpoint, 0))
         if self.db is not None:
             with self.db:
                 self.db.execute("INSERT OR REPLACE INTO meta VALUES('feed_cooldown',?)",
@@ -129,13 +132,18 @@ class Feed:
                 payload = json.load(response)
         except HTTPError as exc:
             self.failures += 1
-            delay = retry_delay(exc.headers.get('Retry-After'), time.time())
-            reason = 'rate_limited' if exc.code == 429 else 'http_error'
+            self.endpoint_failures[endpoint] = self.endpoint_failures.get(endpoint, 0) + 1
+            fallback = (min(300, 60 * 2**min(self.endpoint_failures[endpoint]-1, 3))
+                        if 500 <= exc.code < 600 else 300)
+            delay = retry_delay(exc.headers.get('Retry-After'), time.time(), default=fallback)
+            reason = ('rate_limited' if exc.code == 429 else
+                      'source_unavailable' if 500 <= exc.code < 600 else 'http_error')
             # Preserve only an allowlisted machine code, never arbitrary bodies or credentials.
             try:
                 body = json.loads(exc.read(4096))
                 code = body.get('error', {}).get('code')
-                if code in ('RATE_LIMITED', 'INVALID_API_KEY', 'MISSING_API_KEY', 'QUOTA_EXCEEDED'):
+                if code in ('RATE_LIMITED', 'INVALID_API_KEY', 'MISSING_API_KEY', 'QUOTA_EXCEEDED',
+                            'SOURCE_UNAVAILABLE', 'UPSTREAM_ERROR', 'EXCHANGE_UNAVAILABLE'):
                     reason = code.lower()
             except (TypeError, ValueError, AttributeError):
                 pass
@@ -144,13 +152,21 @@ class Feed:
             raise self.unavailable(endpoint, exc.code, delay, reason) from exc
         except (URLError, TimeoutError, ConnectionError) as exc:
             self.failures += 1
-            delay = min(300, 60 * 2**min(self.failures-1, 3))
+            self.endpoint_failures[endpoint] = self.endpoint_failures.get(endpoint, 0) + 1
+            delay = min(300, 60 * 2**min(self.endpoint_failures[endpoint]-1, 3))
             raise self.unavailable(endpoint, None, delay, 'network_error') from exc
         if not isinstance(payload, dict) or not isinstance(payload.get('data'), dict):
             raise ValueError('Invalid feed envelope')
         if payload.get('error') or payload.get('success') is False:
             raise ValueError('Feed reported an error')
         self.failures = 0
+        self.endpoint_failures.pop(endpoint, None)
+        # Persist recovery so a future restart cannot resurrect the old failure count.
+        if self.cooldown and self.cooldown['endpoint'] == endpoint:
+            self.cooldown = None
+            if self.db is not None:
+                with self.db:
+                    self.db.execute("DELETE FROM meta WHERE key='feed_cooldown'")
         stamp = int(time.time()*1000)
         self.received_ms[endpoint] = stamp
         data = payload['data']
