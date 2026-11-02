@@ -10,9 +10,10 @@ from bingx_bot.data import PublicClient
 from bingx_bot.engine import Broker
 from .finmonster_feed import canonical
 
-POLICY = {'version': 1, 'stop_fraction': .02, 'max_entry_age_ms': 120000,
+LEGACY_POLICY = {'version': 1, 'stop_fraction': .02, 'max_entry_age_ms': 120000,
           'max_price_drift': .01, 'profit_share_assumption': .16,
           'config': asdict(Config())}
+POLICY = {**LEGACY_POLICY, 'version': 2, 'copy_increases': 'initial_quantity_ratio'}
 
 
 def symbol_for(raw):
@@ -37,6 +38,43 @@ def partial_exit(broker, symbol, fraction, reference, now, reason):
             setattr(original, field, getattr(original, field) * (1-fraction))
         broker.positions[symbol] = original
     return trade
+
+
+def copy_increase(broker, symbol, source_qty, copy_ratio, reference, now, rules, marks):
+    """Copy the source increment at the established quantity ratio, within shared caps.
+
+    Each execution has the original 0.5% risk allowance; all open executions share
+    the existing 1% portfolio budget. Keep the common stop and include all costs.
+    """
+    p = broker.positions[symbol]
+    c = broker.config
+    if broker.risk_check(now, marks):
+        return False
+    fill = reference*(1+p.side*c.slip)
+    if p.side*(fill-p.stop) <= 0:
+        return False
+    stop_fill = p.stop*(1-p.side*c.slip)
+    per_unit = max(0.,p.side*(fill-stop_fill))+(fill+stop_fill)*c.fee+fill*c.funding_reserve
+    eq = broker.equity(marks)
+    remaining_risk = max(0.,eq*c.portfolio_risk-sum(x.budget for x in broker.positions.values()))
+    available = max(0.,broker.cash-sum(x.margin for x in broker.positions.values()))
+    qty = min(source_qty*copy_ratio, min(eq*c.risk,remaining_risk)/per_unit,
+              max(0.,eq*c.notional_cap/fill-p.qty), available/(fill/c.leverage+fill*c.fee))
+    qty = rules.floor(qty)
+    if qty <= 0 or qty < rules.min_qty or qty*fill < rules.min_notional:
+        return False
+    old_qty = p.qty
+    fee = qty*fill*c.fee
+    p.entry = (old_qty*p.entry+qty*fill)/(old_qty+qty)
+    p.qty += qty
+    p.margin += qty*fill/c.leverage
+    p.entry_fee += fee
+    p.budget += qty*per_unit
+    broker.cash -= fee
+    broker.event(now,'increase',symbol=symbol,side=p.side,qty=qty,fill=fill,
+                 entry_fee=fee,copy_ratio=copy_ratio,requested_qty=source_qty*copy_ratio,
+                 total_qty=p.qty,average_entry=p.entry,common_stop=p.stop)
+    return True
 
 
 class Market:
@@ -83,7 +121,8 @@ class Paper:
         def clock():
             return now if injected_clock else time.time_ns() // 1000000
         previous = self.state()
-        if previous and previous['policy'] != POLICY:
+        migrating = bool(previous and previous['policy'] == LEGACY_POLICY)
+        if previous and previous['policy'] not in (POLICY, LEGACY_POLICY):
             raise ValueError('Paper policy changed: a separate account is required')
         if previous and previous.get('retired') and not retire:
             raise ValueError('Retired paper account cannot resume')
@@ -100,6 +139,12 @@ class Paper:
         broker.symbols = symbols
         tracked = deepcopy(previous['tracked']) if previous else {}
         processed, journal, quotes, marks = {}, [], {}, {}
+        if migrating:
+            journal.append(('policy_migration', {'from_version': 1, 'to_version': 2,
+                'reason': 'enable_user_requested_proportional_increases',
+                'historical_fills_replayed': False, 'cash_preserved': broker.cash}))
+        for symbol, item in tracked.items():
+            item.setdefault('copy_ratio',broker.positions[symbol].qty/item['source_remaining'])
 
         def quote(s):
             bid, ask, stamp = market.quote(s)
@@ -152,15 +197,21 @@ class Paper:
                 result['result'] = 'partial_close' if fraction < 1 else 'close'
             elif action == 'OPEN':
                 age = now-order['updatedAt']
+                increasing = (s in tracked and str(order['positionId']) == tracked[s]['position_id'])
+                if increasing:
+                    expected = 'BUY' if broker.positions[s].side == 1 else 'SELL'
+                    if order['side'] != expected:
+                        raise ValueError('Increase direction contradicts tracked position')
+                    # Track every actual source increase, even when our risk/freshness
+                    # rules prevent a fill, so later reductions use the true denominator.
+                    tracked[s]['source_remaining'] += order['quantity']
                 if not allow_entries:
                     result['reason'] = 'source_unhealthy'
                 elif not 0 <= age <= POLICY['max_entry_age_ms']:
                     result['reason'] = 'stale_source_event'
-                elif s in broker.positions:
-                    result['reason'] = 'no_pyramiding'
-                    if str(order['positionId']) == tracked[s]['position_id']:
-                        tracked[s]['source_remaining'] += order['quantity']
-                elif any(o['status'] == 'Filled' and o['action'] in ('CLOSE', 'BOTH')
+                elif s in broker.positions and not increasing:
+                    result['reason'] = 'different_source_position'
+                elif not increasing and any(o['status'] == 'Filled' and o['action'] in ('CLOSE', 'BOTH')
                          and str(o['positionId']) == str(order['positionId']) for o in orders):
                     result['reason'] = 'position_already_reduced_before_observation'
                 else:
@@ -179,10 +230,22 @@ class Paper:
                         result['reason'] = 'price_drift'
                     elif clock()-order['updatedAt'] > POLICY['max_entry_age_ms']:
                         result['reason'] = 'stale_after_quote'
+                    elif increasing:
+                        before_qty = broker.positions[s].qty
+                        ratio = tracked[s]['copy_ratio']
+                        result['requested_paper_qty'] = order['quantity']*ratio
+                        if copy_increase(broker,s,order['quantity'],ratio,reference,clock(),rules,marks):
+                            result['result'] = 'increase'
+                            result['filled_paper_qty'] = broker.positions[s].qty-before_qty
+                            result['limited_by_risk_or_size'] = (result['filled_paper_qty']+1e-12
+                                                              < result['requested_paper_qty'])
+                        else:
+                            result['reason'] = 'increase_risk_or_contract_minimum'
                     elif broker.enter(s, side, reference, reference*POLICY['stop_fraction'],
                                       clock(), rules, marks):
                         tracked[s] = dict(position_id=str(order['positionId']),
-                                          source_remaining=order['quantity'], funding_checked_ms=clock())
+                                          source_remaining=order['quantity'], funding_checked_ms=clock(),
+                                          copy_ratio=broker.positions[s].qty/order['quantity'])
                         result['result'] = 'entry'
                     else:
                         result['reason'] = 'risk_or_contract_minimum'
