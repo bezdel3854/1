@@ -1,0 +1,6 @@
+FROM python:3.12-slim
+WORKDIR /app
+COPY bingx_bot ./bingx_bot
+COPY research ./research
+ENV MODE=paper PYTHONUNBUFFERED=1
+CMD ["python", "-m", "research.trader_review.hyperliquid_worker"]
