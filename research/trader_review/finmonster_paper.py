@@ -243,9 +243,11 @@ class Paper:
                             result['reason'] = 'increase_risk_or_contract_minimum'
                     elif broker.enter(s, side, reference, reference*POLICY['stop_fraction'],
                                       clock(), rules, marks):
+                        source_remaining = (order.get('sourcePositionAfter', order['quantity'])
+                            if POLICY.get('source') == 'hyperliquid-public-fills' else order['quantity'])
                         tracked[s] = dict(position_id=str(order['positionId']),
-                                          source_remaining=order['quantity'], funding_checked_ms=clock(),
-                                          copy_ratio=broker.positions[s].qty/order['quantity'])
+                                          source_remaining=source_remaining, funding_checked_ms=clock(),
+                                          copy_ratio=broker.positions[s].qty/source_remaining)
                         result['result'] = 'entry'
                     else:
                         result['reason'] = 'risk_or_contract_minimum'
