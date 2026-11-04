@@ -60,7 +60,8 @@ def normalize(fill, epochs, now):
             epochs.setdefault(coin, f'{coin}:prebaseline:{side}')
         output.append(dict(orderId=fid+':open', positionId=epochs[coin], symbol=coin+'USDT',
             side='BUY' if side == 1 else 'SELL', action='OPEN', status='Filled',
-            updatedAt=stamp, quantity=qty, price=price))
+            updatedAt=stamp, quantity=qty, price=price,
+            sourcePositionAfter=abs(start + (1 if side == 1 else -1)*finite(fill['sz'], True))))
     return output
 
 
