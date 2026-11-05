@@ -59,6 +59,53 @@ class HyperliquidTests(unittest.TestCase):
         api.rows=[fill(2500)];h.poll(now=3000)
         self.assertEqual(o.db.execute('select category from observations').fetchone()[0],'observed')
 
+    def test_real_pipeline_baseline_entry_add_partial_close_and_restart(self):
+        from research.trader_review.finmonster_paper import Paper
+        from tests.test_finmonster_paper import FakeMarket
+        o=Observer(':memory:',ADDR,'test');api=Fake([]);h=FillObserver(o.db,ADDR,api)
+        market=FakeMarket();paper=Paper(o.db);h.poll(now=1000000)
+        self.assertEqual(paper.step(market,1000000)['cash'],1000)
+        events=[fill(1000100,1,coin='AGT')];api.rows=events;h.poll(now=1000200)
+        market.stamp=1000200;paper.step(market,1000200)
+        first=paper.state()['broker']['positions']['AGT-USDT']['qty']
+        events.append(fill(1000300,2,'2','.5',coin='AGT'));h.poll(now=1000400)
+        market.stamp=1000400;paper.step(market,1000400)
+        added=paper.state()['broker']['positions']['AGT-USDT']['qty']
+        self.assertGreater(added,first)
+        events.append(fill(1000500,3,'2.5','1.25','A',coin='AGT'));h.poll(now=1000600)
+        market.stamp=1000600;Paper(o.db).step(market,1000600)
+        self.assertAlmostEqual(paper.state()['broker']['positions']['AGT-USDT']['qty'],added/2)
+        before=paper.state()['broker']['cash'];h=FillObserver(o.db,ADDR,api);h.poll(now=1000700)
+        market.stamp=1000700;Paper(o.db).step(market,1000700)
+        self.assertEqual(paper.state()['broker']['cash'],before)
+
+    def test_supervisor_does_not_share_credentials_or_database(self):
+        from unittest.mock import patch
+        from research.trader_review.paper_supervisor import child_env
+        with patch.dict('os.environ',{'KOPYON_API_KEY':'test-secret','DB_PATH':'/data/okeyyt.sqlite','PREVIOUS_DB_PATH':'old'}):
+            env=child_env(True)
+            self.assertNotIn('KOPYON_API_KEY',env);self.assertNotIn('DB_PATH',env)
+            self.assertNotIn('PREVIOUS_DB_PATH',env)
+            self.assertEqual(env['HL_DB_PATH'],'/data/hyperliquid-paper.sqlite')
+            self.assertEqual(env['MODE'],'paper');self.assertEqual(env['PORT'],'8081')
+            self.assertEqual(child_env(False)['DB_PATH'],'/data/okeyyt.sqlite')
+
+    def test_new_add_to_baseline_position_closes_proportionally(self):
+        from unittest.mock import patch
+        from research.trader_review import finmonster_paper as execution
+        from tests.test_finmonster_paper import FakeMarket
+        policy={**execution.POLICY,'source':'hyperliquid-public-fills','version':3,'profit_share_assumption':0.}
+        with patch.object(execution,'POLICY',policy):
+            o=Observer(':memory:',ADDR,'test');api=Fake([]);h=FillObserver(o.db,ADDR,api)
+            market=FakeMarket();paper=execution.Paper(o.db);h.poll(now=1000000)
+            events=[fill(1000100,1,'8','2',coin='AGT')];api.rows=events;h.poll(now=1000200)
+            market.stamp=1000200;paper.step(market,1000200)
+            first=paper.state()['broker']['positions']['AGT-USDT']['qty']
+            self.assertEqual(paper.state()['tracked']['AGT-USDT']['source_remaining'],10)
+            events.append(fill(1000300,2,'10','5','A',coin='AGT'));h.poll(now=1000400)
+            market.stamp=1000400;paper.step(market,1000400)
+            self.assertAlmostEqual(paper.state()['broker']['positions']['AGT-USDT']['qty'],first/2)
+
     def test_full_close_new_epoch(self):
         epochs={};a=normalize(fill(),epochs,2000)[0]
         normalize(fill(1100,2,'2','2','A'),epochs,2000)
