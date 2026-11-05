@@ -33,7 +33,7 @@ def metrics(broker, equity):
             'fees_usdt':sum(x['entry_fee']+x['exit_fee'] for x in t),
             'funding_paid_net_usdt':sum(x['funding'] for x in t),
             'per_symbol':{s:{'trades':sum(x['symbol']==s for x in t),
-                             'net_usdt':sum(x['net'] for x in t if x['symbol']==s)} for s in SYMBOLS},
+                             'net_usdt':sum(x['net'] for x in t if x['symbol']==s)} for s in broker.symbols},
             'risk_halted':broker.halted,'equity_samples':len(equity)}
 
 def write_csv(path, rows, fields):
