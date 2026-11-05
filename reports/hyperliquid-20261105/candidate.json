@@ -1,0 +1,27 @@
+{
+  "public_address": "0x7611e4026305e5f3afa659dae315d602bbb8387d",
+  "selection": "prospective paper experiment only",
+  "observed_ms": 1793814966538,
+  "fills_7d": 1530,
+  "coins": [
+    "HYPE",
+    "LIT",
+    "NEAR"
+  ],
+  "week_perp_pnl_change_usdc": 8504.71554,
+  "profitability_proven": false,
+  "source_leverage": 10,
+  "paper_initial_usdt": 1000,
+  "paper_risk_per_execution": 0.005,
+  "paper_aggregate_risk": 0.01,
+  "paper_max_leverage": 2,
+  "poll_seconds": 15,
+  "old_account_preserved": true,
+  "limitations": [
+    "Historical selection bias; no verified copy return.",
+    "Source withdrawals/spot holdings differ from perpetual collateral.",
+    "Only BingX-supported native crypto contracts are copied.",
+    "Cross-venue basis, liquidity, latency and sampled stops affect results.",
+    "Fills are not independent completed trades."
+  ]
+}
