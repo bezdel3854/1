@@ -65,6 +65,37 @@ def normalize(fill, epochs, now):
     return output
 
 
+def ordered_fills(fills):
+    """Trade IDs are not chronological within a millisecond; follow position changes."""
+    groups = {}
+    for fill in fills:
+        groups.setdefault((fill['time'], fill['coin']), []).append(fill)
+    result = []
+    for key in sorted(groups):
+        pending = groups[key]
+        if len(pending) == 1 or not re.fullmatch(r'[A-Z0-9]+', key[1]):
+            result.extend(pending)
+            continue
+        def before(f): return finite(f['startPosition'])
+        def after(f):
+            if f['side'] not in ('B', 'A'): raise ValueError('Unknown fill side')
+            return before(f) + (1 if f['side'] == 'B' else -1)*finite(f['sz'], True)
+        def same(a,b): return math.isclose(a,b,rel_tol=1e-8,abs_tol=1e-8)
+        starts = [f for f in pending if not any(g is not f and same(after(g),before(f)) for g in pending)]
+        if len(starts) != 1:
+            raise ValueError('Ambiguous simultaneous source fills')
+        current = starts[0]
+        pending = list(pending)
+        while pending:
+            result.append(current);pending.remove(current)
+            if pending:
+                choices = [f for f in pending if same(before(f),after(current))]
+                if len(choices) != 1:
+                    raise ValueError('Discontinuous simultaneous source fills')
+                current = choices[0]
+    return result
+
+
 class FillObserver:
     """Atomic cursor + journal. Historical snapshot never becomes an entry."""
     def __init__(self, db, address, client=None):
@@ -95,7 +126,7 @@ class FillObserver:
         baseline_ms = saved.get('baseline_ms', now) if saved else now
         expected = dict(saved.get('positions', {})) if saved else {}
         prepared = []
-        for fill in sorted(fills, key=lambda f:(f['time'], int(f['tid']), f['coin'])):
+        for fill in ordered_fills(fills):
             fid = identity(fill)
             if self.db.execute('SELECT 1 FROM hl_fills WHERE id=?',(fid,)).fetchone():
                 continue
