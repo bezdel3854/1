@@ -112,4 +112,21 @@ class HyperliquidTests(unittest.TestCase):
         b=normalize(fill(1200,3),epochs,2000)[0]
         self.assertNotEqual(a['positionId'],b['positionId'])
 
+class SimultaneousFillTests(unittest.TestCase):
+    def test_trade_ids_do_not_define_execution_order(self):
+        o=Observer(':memory:',ADDR,'test')
+        api=Fake([fill(1000,99,'0','2'),fill(1000,1,'2','1')])
+        h=FillObserver(o.db,ADDR,api);h.poll(now=2000)
+        api.rows += [fill(2500,999,'3','1'),fill(2500,2,'4','2')]
+        h.poll(now=3000)
+        self.assertEqual(o.db.execute("select count(*) from observations where category='observed'").fetchone()[0],2)
+        h.poll(now=3001)
+        self.assertEqual(o.db.execute('select count(*) from hl_fills').fetchone()[0],4)
+
+    def test_simultaneous_gap_is_rejected_atomically(self):
+        o=Observer(':memory:',ADDR,'test')
+        api=Fake([fill(1000,1,'0','2'),fill(1000,2,'5','1')])
+        with self.assertRaises(ValueError):FillObserver(o.db,ADDR,api).poll(now=2000)
+        self.assertEqual(o.db.execute('select count(*) from hl_fills').fetchone()[0],0)
+
 if __name__=='__main__':unittest.main()
