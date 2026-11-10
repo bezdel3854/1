@@ -6,7 +6,7 @@ COPY --chown=observer:observer research/trader_review/finmonster_feed.py /app/re
 COPY --chown=observer:observer research/trader_review/finmonster_paper.py /app/research/trader_review/finmonster_paper.py
 COPY --chown=observer:observer research/trader_review/finmonster_worker.py /app/research/trader_review/finmonster_worker.py
 COPY --chown=observer:observer bingx_bot /app/bingx_bot
-COPY --chown=observer:observer research/trader_review/hyperliquid_feed.py research/trader_review/hyperliquid_worker.py research/trader_review/paper_supervisor.py /app/research/trader_review/
+COPY --chown=observer:observer research/trader_review/hyperliquid_feed.py research/trader_review/hyperliquid_worker.py research/trader_review/source_copy_paper.py research/trader_review/paper_supervisor.py /app/research/trader_review/
 USER observer
 EXPOSE 8080
 CMD ["python", "-m", "research.trader_review.paper_supervisor"]

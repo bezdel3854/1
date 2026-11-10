@@ -1,5 +1,6 @@
 import json
 import unittest
+from pathlib import Path
 from unittest.mock import Mock
 
 from research.trader_review.source_copy_paper import SourceCopyPaper, PREVIOUS_POLICY
@@ -18,6 +19,10 @@ class SourceOnlyTests(unittest.TestCase):
         self.client=Mock()
         self.client.get.return_value={'marginSummary':{'accountValue':'10000'}}
         self.paper=SourceCopyPaper(self.observer.db,self.client,'0x'+'1'*40)
+
+    def test_deployment_includes_the_source_copy_module(self):
+        self.assertIn('research/trader_review/source_copy_paper.py',
+                      Path('Dockerfile.finmonster').read_text())
 
     def test_source_sizes_unclipped_even_below_minimum_or_above_old_caps(self):
         self.event('a',qty=.001);self.step()
