@@ -11,6 +11,7 @@ from .finmonster_feed import Observer, canonical
 from . import finmonster_paper as execution
 from .finmonster_worker import record_source_health
 from .hyperliquid_feed import FillObserver
+from .source_copy_paper import SourceCopyPaper
 
 
 def main():
@@ -26,10 +27,8 @@ def main():
     Path(args.db).parent.mkdir(parents=True,exist_ok=True)
     lock=open(args.db+'.lock','a');fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
     observer=Observer(args.db,args.address.lower(),'Hyperliquid '+args.address.lower())
-    # Separate experiment: no invented copy-platform profit share. Risk limits unchanged.
-    execution.POLICY={**execution.POLICY,'version':3,'profit_share_assumption':0.,
-                      'source':'hyperliquid-public-fills'}
-    paper=execution.Paper(observer.db);market=execution.Market();source=FillObserver(observer.db,args.address)
+    market=execution.Market();source=FillObserver(observer.db,args.address)
+    paper=SourceCopyPaper(observer.db,source.client,args.address)
     status={'mode':'paper','real_orders_enabled':False,'healthy':False,
             'trader_address':args.address.lower(),'source_name':'hyperliquid','execution_venue':'bingx-paper'}
     class Handler(BaseHTTPRequestHandler):
