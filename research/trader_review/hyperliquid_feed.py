@@ -8,7 +8,7 @@ import urllib.request
 from .finmonster_feed import canonical
 
 ADDRESS = re.compile(r'0x[0-9a-fA-F]{40}')
-READ_TYPES = frozenset(('userFillsByTime', 'clearinghouseState', 'portfolio', 'meta'))
+READ_TYPES = frozenset(('userFillsByTime', 'clearinghouseState', 'portfolio', 'meta', 'metaAndAssetCtxs', 'userFunding'))
 
 class PublicInfo:
     def get(self, kind, **params):
@@ -33,7 +33,7 @@ def finite(value, positive=False):
 def normalize(fill, epochs, now):
     coin = fill['coin']
     if not re.fullmatch(r'[A-Z0-9]+', coin):
-        return []  # HIP-3/spot are explicitly unsupported by the BingX paper engine.
+        return []  # HIP-3/spot are explicitly unsupported by this perpetuals-only feed.
     stamp = fill['time']
     if not isinstance(stamp, int) or isinstance(stamp, bool) or not 0 < stamp <= now+1000:
         raise ValueError('Invalid source time')

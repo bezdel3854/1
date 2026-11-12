@@ -1,14 +1,12 @@
-"""Independent 1000-USDT paper account; public source, BingX public quotes only."""
+"""Independent 1000-USDT paper account; Hyperliquid public data only."""
 import argparse
 import fcntl
-import json
 import os
 from pathlib import Path
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from .finmonster_feed import Observer, canonical
-from . import finmonster_paper as execution
 from .finmonster_worker import record_source_health
 from .hyperliquid_feed import FillObserver
 from .source_copy_paper import SourceCopyPaper
@@ -27,10 +25,10 @@ def main():
     Path(args.db).parent.mkdir(parents=True,exist_ok=True)
     lock=open(args.db+'.lock','a');fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
     observer=Observer(args.db,args.address.lower(),'Hyperliquid '+args.address.lower())
-    market=execution.Market();source=FillObserver(observer.db,args.address)
+    source=FillObserver(observer.db,args.address)
     paper=SourceCopyPaper(observer.db,source.client,args.address)
     status={'mode':'paper','real_orders_enabled':False,'healthy':False,
-            'trader_address':args.address.lower(),'source_name':'hyperliquid','execution_venue':'bingx-paper'}
+            'trader_address':args.address.lower(),'source_name':'hyperliquid','execution_venue':'hyperliquid-paper'}
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
             if self.path not in ('/health','/status','/ready'):self.send_error(404);return
@@ -50,10 +48,13 @@ def main():
             failures+=1;status['source_error']={'reason':type(exc).__name__}
         status['source_health']=record_source_health(observer.db,ok,status.get('source_error'))
         try:
-            status.update(paper.step(market,allow_entries=ok),healthy=ok,last_cycle=time.time())
-            status.pop('market_error',None)
+            status.update(paper.step(allow_entries=ok),healthy=ok,last_cycle=time.time())
+            if status['equity'] is None:
+                status.update(healthy=False,market_error='Hyperliquid marks unavailable')
+            else:
+                status.pop('market_error',None)
         except Exception as exc:
-            status.update(healthy=False,last_cycle=time.time(),market_error=type(exc).__name__)
+            status.update(healthy=False,last_cycle=time.time(),market_error=f'{type(exc).__name__}: {exc}')
         print(canonical(status),flush=True)
         if args.once:return 0 if status['healthy'] else 1
         delay=min(300,args.interval*2**min(failures,5))
