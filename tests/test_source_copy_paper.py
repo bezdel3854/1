@@ -119,13 +119,28 @@ class SourceOnlyTests(unittest.TestCase):
             self.observer.db.execute("UPDATE meta SET value=? WHERE key='paper_state'",(canonical(old),))
         self.funding.append({'time':self.now+100,'delta':{'coin':'LIT','szi':'100','usdc':'-1'}})
         self.event('z','CLOSE','SELL',100,stamp=self.now+200,coin='LIT',price=22,fee=2)
+        self.event('missed',stamp=self.now+300,coin='AGT',price=10,fee=4)
         self.now+=1000
         self.assertAlmostEqual(self.step()['cash'],1019.6)
+        self.assertFalse(self.paper.state()['broker']['positions'])
+        decision = self.observer.db.execute(
+            "SELECT result FROM paper_orders WHERE order_id LIKE '%:missed:open'").fetchone()[0]
+        self.assertEqual(json.loads(decision)['reason'],'pre_copy_cutover_no_replay')
         self.assertEqual(self.step()['source_decisions'],0)
         trade=json.loads(self.observer.db.execute(
             "SELECT payload FROM paper_journal WHERE kind='trade'").fetchone()[0])
         self.assertEqual((trade['exit'],trade['exit_fee'],trade['funding']), (22,.2,.1))
         self.assertEqual(trade['closed'],self.now-800)
+
+    def test_rounding_residue_does_not_block_next_source_position(self):
+        self.event('first',qty=24.67000000000002)
+        self.step()
+        self.now+=1000
+        self.event('close','CLOSE','SELL',24.67,stamp=self.now-2)
+        self.event('new',qty=6.3,position='next')
+        self.step()
+        self.assertAlmostEqual(self.position()['qty'],.63)
+        self.assertEqual(self.paper.state()['tracked']['AGT-USDT']['position_id'],'next')
 
     def test_reversal_preserves_inserted_order_and_splits_raw_fill_fee(self):
         self.event('first',price=100)

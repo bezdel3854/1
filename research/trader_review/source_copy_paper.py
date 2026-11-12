@@ -123,13 +123,13 @@ class SourceCopyPaper(Paper):
                 raise ValueError('Positive account equity required for copy scale')
             ratio = own_equity/source_equity
         if not math.isfinite(ratio) or ratio <= 0: raise ValueError('Invalid copy scale')
-        cutoff = old.get('copy_cutover_ms', now if migrating else None) if old else None
+        cutoff = now if migrating else old.get('copy_cutover_ms') if old else None
         journal, decisions = [], {}
         if migrating:
             # Keep existing position quantities and their established ratios. No
             # synthetic rebalancing or reconstruction of missed historical fills.
             journal.append(('policy_migration', {'from_version':old['policy']['version'],'to_version':POLICY['version'],
-                'cash_preserved':b.cash,'historical_fills_replayed':False,
+                'cash_before':b.cash,'historical_entries_replayed':False,
                 'account_copy_ratio':ratio,'copy_cutover_ms':cutoff}))
         for o in orders:
             ident = str(o['orderId'])
@@ -147,7 +147,9 @@ class SourceCopyPaper(Paper):
                 if side == p.side: raise ValueError('Contradictory source close')
                 remaining = tracked[s]['source_remaining']
                 close_qty = min(p.qty,o['quantity']*tracked[s]['copy_ratio'])
-                fraction = 1. if o['quantity'] >= remaining else close_qty/p.qty
+                source_flat = o['quantity'] >= remaining or math.isclose(
+                    o['quantity'], remaining, rel_tol=1e-12, abs_tol=1e-12)
+                fraction = 1. if source_flat else close_qty/p.qty
                 original = deepcopy(p)
                 for field in ('qty','entry_fee','margin','budget','funding'):
                     setattr(p,field,getattr(p,field)*fraction)
