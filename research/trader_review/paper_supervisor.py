@@ -1,4 +1,4 @@
-"""Supervise two independent paper workers on one persistent Railway volume."""
+"""Supervise independent paper workers on one persistent Railway volume."""
 import os
 import signal
 import subprocess
@@ -6,14 +6,15 @@ import sys
 import time
 
 ADDRESS='0x7611e4026305e5f3afa659dae315d602bbb8387d'
+RTB2_ADDRESS='0xfb941d2344b72ea9101400392b818173772d0ddf'
 
-def child_env(hyperliquid=False):
+def child_env(hyperliquid=False, *, address=ADDRESS, port='8081',
+              db_path='/data/hyperliquid-paper.sqlite'):
     env=dict(os.environ)
     if hyperliquid:
         for name in ('KOPYON_API_KEY','PREVIOUS_DB_PATH','TRADER_ID','TRADER_NAME','DB_PATH'):
             env.pop(name,None)
-        env.update(MODE='paper',PORT='8081',HL_TRADER_ADDRESS=ADDRESS,
-                   HL_DB_PATH='/data/hyperliquid-paper.sqlite')
+        env.update(MODE='paper',PORT=port,HL_TRADER_ADDRESS=address,HL_DB_PATH=db_path)
     return env
 
 def main():
@@ -22,20 +23,25 @@ def main():
         nonlocal stopping
         stopping=True
     signal.signal(signal.SIGTERM,stop);signal.signal(signal.SIGINT,stop)
-    specs=[('research.trader_review.finmonster_worker',False),
-           ('research.trader_review.hyperliquid_worker',True)]
+    specs={
+        'okeyyt': ('research.trader_review.finmonster_worker',child_env()),
+        'hyperliquid': ('research.trader_review.hyperliquid_worker',child_env(True)),
+        'rtb2': ('research.trader_review.hyperliquid_worker',
+                 child_env(True,address=RTB2_ADDRESS,port='8082',
+                           db_path='/data/hyperliquid-rtb2-paper.sqlite')),
+    }
     children={};retry={};attempts={}
     try:
         while not stopping:
-            for module,hl in specs:
-                process=children.get(module)
+            for name,(module,env) in specs.items():
+                process=children.get(name)
                 if process and process.poll() is not None:
-                    attempts[module]=attempts.get(module,0)+1
-                    retry[module]=time.monotonic()+min(300,5*2**min(attempts[module],6))
-                    children.pop(module)
-                    print('paper_worker_exited',module,process.returncode,flush=True)
-                if module not in children and time.monotonic()>=retry.get(module,0):
-                    children[module]=subprocess.Popen([sys.executable,'-m',module],env=child_env(hl))
+                    attempts[name]=attempts.get(name,0)+1
+                    retry[name]=time.monotonic()+min(300,5*2**min(attempts[name],6))
+                    children.pop(name)
+                    print('paper_worker_exited',name,process.returncode,flush=True)
+                if name not in children and time.monotonic()>=retry.get(name,0):
+                    children[name]=subprocess.Popen([sys.executable,'-m',module],env=env)
             time.sleep(1)
     finally:
         for process in children.values():
