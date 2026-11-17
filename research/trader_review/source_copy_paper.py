@@ -20,8 +20,10 @@ BINGX_POLICY = {'version': 4, 'source': 'hyperliquid-public-fills',
           'sizing': 'fixed_account_equity_ratio', 'source_exits_only': True,
           'virtual_fractional_quantities': True, 'profit_share_assumption': 0.}
 
-POLICY = {**BINGX_POLICY, 'version': 5, 'execution_prices': 'source_fills',
+FIXED_RATIO_POLICY = {**BINGX_POLICY, 'version': 5, 'execution_prices': 'source_fills',
           'execution_fees': 'scaled_source_fees', 'valuation': 'hyperliquid_mark'}
+POLICY = {**FIXED_RATIO_POLICY, 'version': 6,
+          'sizing': 'current_account_equity_ratio_per_position'}
 
 
 class CopyBroker(Broker):
@@ -67,7 +69,7 @@ class SourceCopyPaper(Paper):
         if old and (old.get('mode') != 'paper' or old.get('real_orders_enabled') is not False
                     or old.get('retired')):
             raise ValueError('Only an active paper account may migrate')
-        if old and old['policy'] not in (PREVIOUS_POLICY, BINGX_POLICY, POLICY):
+        if old and old['policy'] not in (PREVIOUS_POLICY, BINGX_POLICY, FIXED_RATIO_POLICY, POLICY):
             raise ValueError('Unrecognized paper policy')
         migrating = bool(old and old['policy'] != POLICY)
         b = CopyBroker.restore(old['broker'], Config()) if old else CopyBroker()
@@ -115,22 +117,17 @@ class SourceCopyPaper(Paper):
                 next_funding = next(funding, None)
 
         ratio = old.get('account_copy_ratio') if old else None
-        if ratio is None:
-            account = self.client.get('clearinghouseState',user=self.address)
-            source_equity = float(account['marginSummary']['accountValue'])
-            own_equity = b.equity(self.marks() if b.positions else {})
-            if not math.isfinite(source_equity) or source_equity <= 0 or own_equity <= 0:
-                raise ValueError('Positive account equity required for copy scale')
-            ratio = own_equity/source_equity
-        if not math.isfinite(ratio) or ratio <= 0: raise ValueError('Invalid copy scale')
-        cutoff = now if migrating else old.get('copy_cutover_ms') if old else None
+        source_equity = None
+        cutoff = old.get('copy_cutover_ms') if old else None
+        if migrating and old['policy'] != FIXED_RATIO_POLICY:
+            cutoff = now
         journal, decisions = [], {}
         if migrating:
             # Keep existing position quantities and their established ratios. No
             # synthetic rebalancing or reconstruction of missed historical fills.
             journal.append(('policy_migration', {'from_version':old['policy']['version'],'to_version':POLICY['version'],
                 'cash_before':b.cash,'historical_entries_replayed':False,
-                'account_copy_ratio':ratio,'copy_cutover_ms':cutoff}))
+                'previous_account_copy_ratio':ratio,'copy_cutover_ms':cutoff}))
         for o in orders:
             ident = str(o['orderId'])
             if ident in decisions or o['status'] != 'Filled': continue
@@ -173,7 +170,24 @@ class SourceCopyPaper(Paper):
                 elif s in b.positions and not same:
                     raise ValueError('Conflicting source position')
                 else:
-                    scale = tracked[s]['copy_ratio'] if same else ratio
+                    if same:
+                        scale = tracked[s]['copy_ratio']
+                    else:
+                        marks = self.marks() if b.positions else {}
+                        own_equity = b.equity(marks)
+                        if own_equity <= 0:
+                            result['reason'] = 'nonpositive_paper_equity'
+                            decisions[ident] = result
+                            continue
+                        if source_equity is None:
+                            account = self.client.get('clearinghouseState', user=self.address)
+                            source_equity = finite(account['marginSummary']['accountValue'], True)
+                        ratio = own_equity / source_equity
+                        if not math.isfinite(ratio) or ratio <= 0:
+                            raise ValueError('Invalid copy scale')
+                        scale = ratio
+                        result.update(paper_equity_at_sizing=own_equity,
+                                      source_equity_at_sizing=source_equity)
                     qty = o['quantity']*scale
                     fill, fee = fill_terms(o, qty)
                     if same:
@@ -188,6 +202,7 @@ class SourceCopyPaper(Paper):
                             'copy_ratio':scale}
                     b.cash-=fee
                     result.update(result='increase' if same else 'entry',
+                        account_copy_ratio=scale,
                         requested_paper_qty=qty,filled_paper_qty=qty,limited_by_risk_or_size=False)
                     b.event(stamp,result['result'],symbol=s,qty=qty,fill=fill,copy_ratio=scale)
             else: result['reason']='untracked_close_or_ambiguous_action'

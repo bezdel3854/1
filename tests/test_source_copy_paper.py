@@ -3,7 +3,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock
 
-from research.trader_review.source_copy_paper import SourceCopyPaper, PREVIOUS_POLICY, BINGX_POLICY
+from research.trader_review.source_copy_paper import (
+    SourceCopyPaper, PREVIOUS_POLICY, BINGX_POLICY, FIXED_RATIO_POLICY,
+)
 from research.trader_review.finmonster_feed import canonical
 from tests import test_copy_increases as fixtures
 
@@ -16,9 +18,10 @@ class SourceOnlyTests(unittest.TestCase):
         fixtures.CopyIncreaseTests.setUp(self)
         self.client=Mock()
         self.mark = 100
+        self.source_equity = 10000
         self.funding = []
         self.client.get.side_effect = lambda kind, **kwargs: {
-            'clearinghouseState': {'marginSummary': {'accountValue':'10000'}},
+            'clearinghouseState': {'marginSummary': {'accountValue':str(self.source_equity)}},
             'metaAndAssetCtxs': [{'universe':[{'name':'AGT'},{'name':'LIT'}]},
                                  [{'markPx':self.mark},{'markPx':20}]],
             'userFunding': self.funding,
@@ -72,6 +75,36 @@ class SourceOnlyTests(unittest.TestCase):
         self.assertTrue(all(t['reason']=='source_close' for t in trades))
         self.assertAlmostEqual(self.paper.state()['broker']['cash']-1000,
                                sum(t['net'] for t in trades))
+
+    def test_new_position_uses_fresh_account_equity(self):
+        self.source_equity = 50000
+        self.event('first', qty=50)
+        self.step()
+        self.assertEqual(self.position()['qty'] * self.position()['entry'], 100)
+        self.now += 1000
+        self.event('close', 'CLOSE', 'SELL', 50)
+        self.step()
+        self.source_equity = 25000
+        self.now += 1000
+        self.event('next', qty=50, position='next')
+        self.step()
+        self.assertEqual(self.position()['qty'] * self.position()['entry'], 200)
+        self.assertAlmostEqual(self.paper.state()['account_copy_ratio'], .04)
+
+    def test_fixed_ratio_migration_keeps_open_position_and_pending_increase(self):
+        self.event('first')
+        self.step()
+        old = self.paper.state()
+        old['policy'] = FIXED_RATIO_POLICY
+        with self.observer.db:
+            self.observer.db.execute("UPDATE meta SET value=? WHERE key='paper_state'",
+                                     (canonical(old),))
+        self.source_equity = 50000
+        self.now += 1000
+        self.event('pending', qty=10)
+        self.step()
+        self.assertEqual(self.position()['qty'], 11)
+        self.assertEqual(self.paper.state()['broker']['cash'], old['broker']['cash'])
 
     def test_migrate_preserves_history_position_and_cash_then_source_close(self):
         self.event('a');self.step();old=self.paper.state();old['policy']=PREVIOUS_POLICY
@@ -155,7 +188,7 @@ class SourceOnlyTests(unittest.TestCase):
         self.now+=1000
         self.step()
         self.assertEqual(self.position()['side'],-1)
-        self.assertAlmostEqual(self.position()['entry_fee'],.1)
+        self.assertAlmostEqual(self.position()['entry_fee'],.10198)
         trade=json.loads(self.observer.db.execute(
             "SELECT payload FROM paper_journal WHERE kind='trade'").fetchone()[0])
         self.assertAlmostEqual(trade['exit_fee'],.2)
@@ -177,13 +210,15 @@ class SourceOnlyTests(unittest.TestCase):
         self.now+=1000;self.event('c','CLOSE','SELL',95);self.step()
         self.assertFalse(self.paper.state()['broker']['positions'])
 
-    def test_short_source_reversal_and_accounting_without_margin_loss_cap(self):
+    def test_source_close_still_settles_when_paper_equity_turns_negative(self):
         self.event('a',side='SELL');self.step()
         self.now+=1000;self.mark=1000
         self.event('b','CLOSE','BUY',100,price=1000);self.event('c','OPEN','BUY',50,price=1000)
         self.step()
-        self.assertEqual(self.position()['side'],1)
-        self.assertEqual(self.position()['qty'],5)
+        self.assertFalse(self.paper.state()['broker']['positions'])
+        decision = self.observer.db.execute(
+            "SELECT result FROM paper_orders WHERE order_id LIKE '%:c:open'").fetchone()[0]
+        self.assertEqual(json.loads(decision)['reason'], 'nonpositive_paper_equity')
         trade=json.loads(self.observer.db.execute(
             "SELECT payload FROM paper_journal WHERE kind='trade'").fetchone()[0])
         self.assertEqual(trade['reason'],'source_close')
