@@ -72,7 +72,8 @@ def main():
     if args.db.name != "hyperliquid-bingx-live.sqlite":
         parser.error("Use a dedicated hyperliquid-bingx-live.sqlite database")
     execution = BingXExecution(
-        os.environ["BINGX_API_KEY"], os.environ["BINGX_API_SECRET"], args.db,
+        os.environ["BINGX_API_KEY"], os.environ["BINGX_API_SECRET"],
+        args.db if args.enable_orders else ":memory:",
         trading_enabled=args.enable_orders,
     )
     if not args.enable_orders:
