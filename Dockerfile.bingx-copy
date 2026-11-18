@@ -1,0 +1,6 @@
+FROM python:3.12-slim
+WORKDIR /app
+COPY research ./research
+ENV PYTHONUNBUFFERED=1
+ENTRYPOINT ["python", "-m", "research.trader_review.bingx_copy_worker"]
+CMD ["--db", "/data/hyperliquid-bingx-live.sqlite", "--address", "0x7611e4026305e5f3afa659dae315d602bbb8387d"]
