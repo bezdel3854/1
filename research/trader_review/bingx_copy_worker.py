@@ -30,7 +30,16 @@ def cycle(source, copier, execution):
         if event["action"] == "OPEN" and ((before < 0 and event["side"] == "BUY")
                                          or (before > 0 and event["side"] == "SELL")):
             before = Decimal(0)
-        if event["updatedAt"] > copier.cutover_ms and ":prebaseline:" not in event["positionId"]:
+        seed = copier.can_seed_from_add(event, before)
+        managed = db.execute(
+            "SELECT 1 FROM copied_positions WHERE epoch=?", (event["positionId"],)
+        ).fetchone()
+        planned = db.execute(
+            "SELECT 1 FROM copy_plans WHERE id=?", (event["orderId"],)
+        ).fetchone()
+        if event["updatedAt"] > copier.cutover_ms and (
+            ":prebaseline:" not in event["positionId"] or seed or managed or planned
+        ):
             symbol = event["symbol"][:-4] + "-USDT"
             contracts = execution._request("GET", "quote/contracts", symbol=symbol)
             contract = next(item for item in contracts if item["symbol"] == symbol)
@@ -42,10 +51,8 @@ def cycle(source, copier, execution):
                 Decimal(str(contract["tradeMinUSDT"])),
             )
             ratio = Decimal(0)
-            opening = event["action"] == "OPEN" and not before
-            if opening and not db.execute(
-                "SELECT 1 FROM copy_plans WHERE id=?", (event["orderId"],)
-            ).fetchone():
+            opening = event["action"] == "OPEN" and not managed and (not before or seed)
+            if opening and not planned:
                 account = source.client.get("clearinghouseState", user=source.address)
                 source_equity = Decimal(account["marginSummary"]["accountValue"])
                 if not source_equity.is_finite() or source_equity <= 0:
@@ -68,6 +75,7 @@ def main():
     parser.add_argument("--address", required=True)
     parser.add_argument("--once", action="store_true")
     parser.add_argument("--enable-orders", action="store_true")
+    parser.add_argument("--copy-add-once", action="store_true")
     args = parser.parse_args()
     if args.db.name != "hyperliquid-bingx-live.sqlite":
         parser.error("Use a dedicated hyperliquid-bingx-live.sqlite database")
@@ -89,6 +97,8 @@ def main():
         observer = Observer(args.db, args.address.lower(), "Hyperliquid BingX copy")
         source = FillObserver(observer.db, args.address)
         copier = HyperliquidBingXCopy(observer.db, execution, time.time_ns() // 1_000_000)
+        if args.copy_add_once:
+            copier.arm_add_once(time.time_ns() // 1_000_000)
         while True:
             cycle(source, copier, execution)
             if args.once:
