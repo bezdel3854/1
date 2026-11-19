@@ -151,11 +151,29 @@ class HyperliquidBingXCopy:
             )
         self.cutover_ms = db.execute("SELECT ms FROM copy_cutover WHERE id=1").fetchone()[0]
 
+    def arm_add_once(self, now_ms):
+        with self.db:
+            self.db.execute("INSERT OR IGNORE INTO meta VALUES ('bingx_add_once_after', ?)",
+                            (str(now_ms),))
+
+    def can_seed_from_add(self, observation, source_before):
+        if observation["action"] != "OPEN" or not source_before:
+            return False
+        state = dict(self.db.execute(
+            "SELECT key,value FROM meta WHERE key IN ('bingx_add_once_after','bingx_add_once_signal')"
+        ))
+        return (
+            "bingx_add_once_after" in state
+            and "bingx_add_once_signal" not in state
+            and observation["updatedAt"] > int(state["bingx_add_once_after"])
+            and not self.db.execute("SELECT 1 FROM copied_positions LIMIT 1").fetchone()
+        )
+
     def apply(self, observation, source_before, copy_ratio, market):
         """Return the resulting quantity once a fill is confirmed, or None for a skipped signal."""
         signal_id = observation["orderId"]
         epoch = observation["positionId"]
-        if observation["updatedAt"] <= self.cutover_ms or ":prebaseline:" in epoch:
+        if observation["updatedAt"] <= self.cutover_ms:
             return None
         if self.db.execute("SELECT 1 FROM copied_signals WHERE id=?", (signal_id,)).fetchone():
             return None
@@ -169,6 +187,9 @@ class HyperliquidBingXCopy:
         plan = self.db.execute(
             "SELECT ratio,before_qty,qty FROM copy_plans WHERE id=?", (signal_id,)
         ).fetchone()
+        seed = not row and not plan and self.can_seed_from_add(observation, source_before)
+        if ":prebaseline:" in epoch and not (row or plan or seed):
+            return None
         if plan:
             ratio, actual, quantity = map(Decimal, plan)
         else:
@@ -182,7 +203,7 @@ class HyperliquidBingXCopy:
                     ratio, actual = map(Decimal, row)
                     quantity = increase_quantity(source_quantity, ratio, step)
                 else:
-                    if source_before:
+                    if source_before and not seed:
                         return None
                     ratio, actual = copy_ratio, Decimal(0)
                     quantity = opening_quantity(source_quantity, ratio, price, step, min_qty, min_notional)
@@ -197,6 +218,9 @@ class HyperliquidBingXCopy:
                 quantity if action == "CLOSE" else Decimal(0),
             )
             with self.db:
+                if seed:
+                    self.db.execute("INSERT INTO meta VALUES ('bingx_add_once_signal', ?)",
+                                    (signal_id,))
                 self.db.execute(
                     "INSERT INTO copy_plans VALUES (?,?,?,?)",
                     (signal_id, str(ratio), str(actual), str(quantity)),
