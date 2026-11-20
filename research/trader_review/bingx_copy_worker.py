@@ -103,6 +103,8 @@ def main():
         copier = HyperliquidBingXCopy(observer.db, execution, time.time_ns() // 1_000_000)
         if args.copy_add_once:
             copier.arm_add_once(time.time_ns() // 1_000_000)
+        from .late_entry_probe import start_probe
+        start_probe(args.db)
         while True:
             try:
                 cycle(source, copier, execution)

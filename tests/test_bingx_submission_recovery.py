@@ -118,6 +118,7 @@ class SubmissionRecoveryTests(unittest.TestCase):
         with patch.object(sys, 'argv', argv), patch.dict('os.environ', {
                 'BINGX_API_KEY': 'test', 'BINGX_API_SECRET': 'test'}), \
                 patch.object(worker, 'BingXExecution'), patch.object(worker, 'HyperliquidBingXCopy'), \
+                patch('research.trader_review.late_entry_probe.start_probe'), \
                 patch.object(worker, 'cycle', side_effect=ReconciliationRequired('blocked')) as cycle, \
                 patch.object(worker.time, 'sleep', side_effect=[None, EndTest]), \
                 patch('builtins.print') as output:

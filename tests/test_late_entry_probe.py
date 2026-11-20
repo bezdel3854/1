@@ -1,0 +1,34 @@
+import json
+import sqlite3
+import unittest
+from research.trader_review.late_entry_probe import DAY_MS, RULES, initialize, sample
+
+
+class ProbeTests(unittest.TestCase):
+    def setUp(self):
+        self.s=sqlite3.connect(':memory:');self.o=sqlite3.connect(':memory:')
+        self.s.executescript('CREATE TABLE observations(order_id TEXT,payload TEXT,category TEXT);'
+                            'CREATE TABLE hl_fills(id TEXT,payload TEXT);'
+                            'CREATE TABLE polls(observed_ms INTEGER);INSERT INTO polls VALUES (1000);')
+    def tearDown(self):self.s.close();self.o.close()
+    def test_restart_keeps_original_window_and_rules(self):
+        a=initialize(self.o,self.s,1000);b=initialize(self.o,self.s,9999)
+        self.assertEqual(a,b);self.assertEqual(a['end_ms'],1000+3*DAY_MS)
+        self.assertFalse(RULES['real_orders_enabled'])
+    def test_records_new_events_quotes_and_health_without_source_writes(self):
+        state=initialize(self.o,self.s,1000)
+        event={'orderId':'hl:HYPE:1100:1:open','symbol':'HYPEUSDT','updatedAt':1100,'action':'OPEN'}
+        self.s.execute('INSERT INTO observations VALUES (?,?,?)',(event['orderId'],json.dumps(event),'observed'))
+        self.s.execute('INSERT INTO hl_fills VALUES (?,?)',('HYPE:1100:1','{}'))
+        changes=self.s.total_changes
+        self.assertTrue(sample(self.o,self.s,state,1200,lambda _: (1200,10,11,1,1)))
+        self.assertEqual(self.s.total_changes,changes)
+        self.assertEqual(self.o.execute('SELECT count(*) FROM source_events').fetchone()[0],1)
+        self.assertEqual(self.o.execute('SELECT count(*) FROM quotes').fetchone()[0],1)
+    def test_quote_failure_is_recorded_and_end_stops_sampling(self):
+        state=initialize(self.o,self.s,1000)
+        def bad(_):raise TimeoutError()
+        sample(self.o,self.s,state,1200,bad)
+        self.assertEqual(self.o.execute('SELECT count(*) FROM errors').fetchone()[0],1)
+        self.assertFalse(sample(self.o,self.s,state,state['end_ms'],bad))
+        self.assertEqual(json.loads(self.o.execute("SELECT value FROM meta WHERE key='status'").fetchone()[0]),'complete')
