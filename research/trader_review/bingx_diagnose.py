@@ -21,9 +21,9 @@ def main():
         print(json.dumps({table: db.execute('SELECT * FROM ' + table).fetchall()}), flush=True)
     print(json.dumps({'polls': db.execute(
         'SELECT observed_ms,payload FROM polls ORDER BY observed_ms DESC LIMIT 3').fetchall()}), flush=True)
-    for path in ('trade/positionSide/dual', 'user/positions'):
+    for path, version in (('positionSide/dual', 1), ('user/positions', 2)):
         try:
-            print(json.dumps({path: execution._request('GET', path)}), flush=True)
+            print(json.dumps({path: execution._request('GET', path, version=version)}), flush=True)
         except Exception as error:
             print(json.dumps({path: str(error)}), flush=True)
     allowed = {'symbol', 'side', 'positionSide', 'type', 'quantity', 'clientOrderId', 'reduceOnly'}

@@ -20,9 +20,32 @@ class SubmissionRecoveryTests(unittest.TestCase):
         self.path = self.folder.name + '/journal.sqlite'
         self.execution = BingXExecution('private-key', 'private-secret', self.path,
                                         trading_enabled=True)
+        self.mode_patch = patch.object(BingXExecution, 'hedge_mode', return_value=False)
+        self.mode_patch.start()
 
     def tearDown(self):
+        self.mode_patch.stop()
         self.folder.cleanup()
+
+    def test_hedge_mode_uses_correct_position_for_opens_and_reductions(self):
+        for side, reduction, expected in [('BUY', False, 'LONG'), ('SELL', False, 'SHORT'),
+                                           ('SELL', True, 'LONG'), ('BUY', True, 'SHORT')]:
+            with self.subTest(side=side, reduction=reduction):
+                with patch.object(self.execution, 'hedge_mode', return_value=True), \
+                        patch.object(self.execution, '_request', return_value={}) as request:
+                    self.execution.submit(str((side,reduction)), 'HYPE-USDT', side,
+                                          Decimal('1'), reduce_only=reduction)
+                    post = request.call_args_list[0]
+                    self.assertEqual(post.kwargs['positionSide'], expected)
+                    self.assertNotIn('reduceOnly', post.kwargs)
+
+    def test_mode_query_uses_v1_endpoint_and_parses_string_bool(self):
+        self.mode_patch.stop()
+        for value, expected in [(True, True), ('true', True), (False, False), ('false', False)]:
+            with patch.object(self.execution, '_request', return_value={'dualSidePosition': value}) as request:
+                self.assertEqual(self.execution.hedge_mode(), expected)
+                request.assert_called_once_with('GET', 'positionSide/dual', version=1)
+        self.mode_patch.start()
 
     def test_http_400_preserves_api_code_message_and_redacts_credentials(self):
         body = io.BytesIO(json.dumps({'code': 109400,

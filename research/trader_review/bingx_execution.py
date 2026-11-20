@@ -85,6 +85,12 @@ class BingXExecution:
     def order(self, symbol, client_id):
         return self._request("GET", "trade/order", symbol=symbol, clientOrderId=client_id)
 
+    def hedge_mode(self):
+        value = self._request("GET", "positionSide/dual", version=1)["dualSidePosition"]
+        if value not in (True, False, 'true', 'false'):
+            raise ValueError("Unknown BingX position mode")
+        return value is True or value == 'true'
+
     def submit(self, signal_id, symbol, side, quantity, *, reduce_only=False):
         if not self.trading_enabled:
             raise RuntimeError("BingX order submission is disabled")
@@ -101,6 +107,12 @@ class BingXExecution:
             "clientOrderId": client_id,
             "reduceOnly": "true" if reduce_only else "false",
         }
+        if self.hedge_mode():
+            # In hedge mode LONG/SHORT selects the position being changed;
+            # BUY/SELL selects increase vs reduction. reduceOnly is forbidden.
+            long_position = (side == 'BUY') != reduce_only
+            parameters['positionSide'] = 'LONG' if long_position else 'SHORT'
+            del parameters['reduceOnly']
         payload = json.dumps(parameters, sort_keys=True)
         # Commit before submitting. A timeout or restart leaves the order
         # pending reconciliation, with no second POST for the same signal.
