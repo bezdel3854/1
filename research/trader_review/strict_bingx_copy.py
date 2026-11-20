@@ -42,6 +42,7 @@ def source_snapshot(client, address):
 
 class StrictBingXExecution(BingXExecution):
     strict_sizing = True
+    required_source_protection = True
     def __init__(self, *args, source_client, source_address, expected_uid=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.source_client, self.source_address = source_client, source_address
@@ -103,11 +104,18 @@ class StrictBingXExecution(BingXExecution):
     def _contract(self, symbol, ratio, quantity):
         # Fetch target rules first so the source snapshot is fresh at compile.
         rules = self._rules(symbol)
-        equity = self.equity()
+        equity = self.contract_capital()
         account, orders, stamp = source_snapshot(self.source_client, self.source_address)
         return compile_contract(account, orders, symbol.removesuffix('-USDT'),
                                 equity, rules, observed_ms=stamp,
-                                ratio=ratio, target_quantity=quantity)
+                                ratio=ratio, target_quantity=quantity,
+                                require_protection=self.required_source_protection)
+
+    def contract_capital(self):
+        return self.equity()
+
+    def entry_brackets(self, contract):
+        return contract.entry_brackets()
 
     def opening_parameters(self, signal_id, symbol, side, quantity, deadline_ms):
         with sqlite3.connect(self.journal_path) as db:
@@ -154,7 +162,7 @@ class StrictBingXExecution(BingXExecution):
             raise CopyBlocked('cross_exchange_entry_price_deviation_exceeds_0.1_percent')
         if (side == 'BUY') != (contract.position_side == 'LONG'):
             raise CopyBlocked('source_reversed_before_dispatch')
-        brackets = contract.entry_brackets()
+        brackets = self.entry_brackets(contract)
         leverage = self._request('GET', 'trade/leverage', symbol=symbol)
         margin = self._request('GET', 'trade/marginType', symbol=symbol)
         hedge = self.hedge_mode()
@@ -174,14 +182,15 @@ class StrictBingXExecution(BingXExecution):
         if latest.fingerprint() != contract.fingerprint():
             raise CopyBlocked('source_contract_changed_before_dispatch')
         epoch = event['positionId']
+        recorded_contract = {**asdict(contract), 'entry_brackets_attached': bool(brackets)}
         with sqlite3.connect(self.journal_path) as db:
             db.execute('INSERT OR REPLACE INTO copy_contracts VALUES (?,?,?,?)',
-                       (epoch, symbol, str(ratio), json.dumps(asdict(contract), sort_keys=True)))
+                       (epoch, symbol, str(ratio), json.dumps(recorded_contract, sort_keys=True)))
             db.execute('INSERT OR IGNORE INTO copy_entry_children '
                        '(signal_id,epoch,symbol,quantity,before_ids,contract) VALUES (?,?,?,?,?,?)',
                        (signal_id, epoch, symbol, str(quantity),
                         json.dumps([str(o.get('orderID', o.get('orderId'))) for o in orders]),
-                        json.dumps(asdict(contract), sort_keys=True)))
+                        json.dumps(recorded_contract, sort_keys=True)))
         return brackets
 
     def submit(self, *args, **kwargs):
@@ -208,6 +217,20 @@ class StrictBingXExecution(BingXExecution):
             new_orders = [o for o in self._orders(symbol)
                           if str(o.get('orderID', o.get('orderId'))) not in before_ids]
             contract = json.loads(contract_json)
+            if not contract.get('entry_brackets_attached', True):
+                if self.environment != 'demo':
+                    raise CopyBlocked('detached_initial_protection_is_demo_only')
+                if new_orders:
+                    raise ReconciliationRequired('Unexpected demo orders during initial protection setup')
+                hedge = self.hedge_mode()
+                for raw in contract['exits']:
+                    spec = ExitOrder(**raw)
+                    self._dispatch_exit(db, epoch, dict(action='create',source_id=spec.source_id,
+                                                        parameters=spec.bingx(symbol,hedge=hedge)), symbol)
+                db.execute('UPDATE copy_entry_children SET adopted=1 WHERE signal_id=?', (signal_id,))
+                print(json.dumps({'copy_mode':'demo','source_exit_orders':len(contract['exits']),
+                                  'invented_protection':False}), flush=True)
+                return
             if len(new_orders) != len(contract['exits']):
                 raise ReconciliationRequired('Entry attached protection count differs from request')
             hedge = self.hedge_mode()
@@ -286,7 +309,7 @@ class StrictBingXExecution(BingXExecution):
                 owned = self._owned(db, epoch)
                 orders = self._orders(symbol)
                 desired = {o.source_id: o.bingx(symbol, hedge=hedge) for o in contract.exits}
-                if not owned:
+                if not owned and desired and self.required_source_protection:
                     raise ReconciliationRequired('Protection ownership metadata missing; never adopt manual orders')
                 # Actual existence/configuration is checked every cycle,
                 # including after restart, not just against cached requests.

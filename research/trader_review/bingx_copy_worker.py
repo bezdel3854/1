@@ -16,7 +16,7 @@ from .strict_bingx_copy import StrictBingXExecution
 from .hyperliquid_feed import PublicInfo
 
 
-def cycle(source, copier, execution, *, min_equity=Decimal('100'), allowed_symbols=None):
+def cycle(source, copier, execution, *, min_equity=Decimal('100'), allowed_symbols=None, copy_allocation=None):
     source.poll()
     db = copier.db
     if hasattr(execution, 'synchronize_exits'):
@@ -89,6 +89,10 @@ def cycle(source, copier, execution, *, min_equity=Decimal('100'), allowed_symbo
                 if not source_equity.is_finite() or source_equity <= 0:
                     raise ValueError("Invalid Hyperliquid equity")
                 equity = execution.equity()
+                if copy_allocation is not None:
+                    if execution.environment != 'demo':
+                        raise CopyBlocked('fixed_demo_allocation_cannot_be_used_on_live')
+                    equity = min(equity, copy_allocation)
                 if not equity.is_finite() or equity < min_equity:
                     # A signal seen before funding must never be replayed after funding.
                     with db:

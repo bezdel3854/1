@@ -37,7 +37,10 @@ def require_entry_deadline(deadline_ms):
 
 
 class BingXExecution:
-    def __init__(self, api_key, secret, journal_path, *, trading_enabled=False):
+    def __init__(self, api_key, secret, journal_path, *, trading_enabled=False, environment='live'):
+        if environment not in ('live', 'demo'):
+            raise ValueError('Unknown BingX environment')
+        self._environment = environment
         self.api_key = api_key
         self.secret = secret.encode()
         self.journal_path = journal_path
@@ -51,6 +54,14 @@ class BingXExecution:
                 "CREATE TABLE IF NOT EXISTS bingx_submission_errors "
                 "(client_id TEXT PRIMARY KEY, code INTEGER, message TEXT NOT NULL)"
             )
+
+    @property
+    def environment(self):
+        return self._environment
+
+    @property
+    def api_origin(self):
+        return {'live':'https://open-api.bingx.com', 'demo':'https://open-api-vst.bingx.com'}[self.environment]
 
     def _request(self, method, path, *, version=2, api_family='swap', _deadline_ms=None, **parameters):
         if api_family not in ('swap', 'account'):
@@ -82,7 +93,7 @@ class BingXExecution:
         query = urlencode(sorted(normalized.items()), quote_via=quote)
         signature = hmac.digest(self.secret, canonical.encode(), "sha256").hex()
         request = Request(
-            f"https://open-api.bingx.com/openApi/{api_family}/v{version}/{path}?{query}&signature={signature}",
+            f"{self.api_origin}/openApi/{api_family}/v{version}/{path}?{query}&signature={signature}",
             headers={"X-BX-APIKEY": self.api_key, "X-SOURCE-KEY": "BX-AI-SKILL"},
             method=method,
         )

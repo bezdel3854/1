@@ -131,7 +131,7 @@ class CopyContract:
 
 
 def compile_contract(account, orders, coin, target_equity, rules, *, observed_ms,
-                     now_ms=None, ratio=None, target_quantity=None):
+                     now_ms=None, ratio=None, target_quantity=None, require_protection=True):
     now_ms = time.time_ns() // 1_000_000 if now_ms is None else now_ms
     if not isinstance(observed_ms, int) or not 0 <= now_ms - observed_ms <= 5000:
         raise CopyBlocked('stale_or_future_source_snapshot')
@@ -206,11 +206,11 @@ def compile_contract(account, orders, coin, target_equity, rules, *, observed_ms
                                stop, limit, tif, 'MARK_PRICE' if trigger else None))
     stops = [o for o in exits if o.kind in ('STOP', 'STOP_MARKET')]
     profits = [o for o in exits if o.kind in ('TAKE_PROFIT', 'TAKE_PROFIT_MARKET', 'LIMIT')]
-    if not stops:
+    if not stops and require_protection:
         raise CopyBlocked('source_has_no_stop_loss')
-    if sum(number(o.quantity) for o in stops) < qty:
+    if require_protection and sum(number(o.quantity) for o in stops) < qty:
         raise CopyBlocked('source_stop_loss_does_not_cover_position')
-    if not profits:
+    if not profits and require_protection:
         raise CopyBlocked('source_has_no_take_profit')
     return CopyContract(coin+'-USDT', 'LONG' if long else 'SHORT', int(leverage), margin_type,
                         str(abs(source_qty)), str(qty), str(source_margin), str(target_margin),
