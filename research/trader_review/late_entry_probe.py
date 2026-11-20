@@ -33,10 +33,11 @@ def quote(symbol):
     data = body['data']
     if isinstance(data, list):
         data = next(row for row in data if row['symbol'] == symbol)
+    data = data.get('book_ticker',data)
     bid, ask = float(data.get('bidPrice',data.get('bid_price'))), float(data.get('askPrice',data.get('ask_price')))
     if not 0 < bid <= ask:
         raise ValueError('Invalid book')
-    return (int(data.get('time') or data.get('book_ticker',{}).get('lastUpdateId') or time.time_ns() // 1_000_000), bid, ask,
+    return (int(data.get('time') or data.get('lastUpdateId') or time.time_ns() // 1_000_000), bid, ask,
             float(data.get('bidQty') or data.get('bid_qty') or 0), float(data.get('askQty') or data.get('ask_qty') or 0))
 
 
