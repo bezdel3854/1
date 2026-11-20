@@ -1,10 +1,17 @@
 import json
 import sqlite3
 import unittest
-from research.trader_review.late_entry_probe import DAY_MS, RULES, initialize, sample
+import io
+from unittest.mock import patch
+from research.trader_review.late_entry_probe import DAY_MS, RULES, initialize, sample, quote
 
 
 class ProbeTests(unittest.TestCase):
+    def test_live_nested_snake_case_book_ticker(self):
+        body={'code':0,'data':{'book_ticker':{'symbol':'HYPE-USDT','bid_price':'65.936',
+            'ask_price':'65.937','bid_qty':'200.959','ask_qty':'0.2321','lastUpdateId':1795163800000}}}
+        with patch('research.trader_review.late_entry_probe.urlopen',return_value=io.BytesIO(json.dumps(body).encode())):
+            self.assertEqual(quote('HYPE-USDT'),(1795163800000,65.936,65.937,200.959,.2321))
     def setUp(self):
         self.s=sqlite3.connect(':memory:');self.o=sqlite3.connect(':memory:')
         self.s.executescript('CREATE TABLE observations(order_id TEXT,payload TEXT,category TEXT);'
