@@ -25,6 +25,10 @@ def cycle(source, copier, execution):
     ).fetchall()
     for rowid, payload, raw in rows:
         event = json.loads(payload)
+        if copier.skip_stale_entry(event):
+            with db:
+                db.execute("INSERT OR REPLACE INTO meta VALUES ('bingx_copy_row',?)", (str(rowid),))
+            continue
         fill = json.loads(raw)
         before = Decimal(fill["startPosition"])
         if event["action"] == "OPEN" and ((before < 0 and event["side"] == "BUY")
@@ -110,7 +114,7 @@ def main():
                     raise
             if args.once:
                 return
-            time.sleep(15)
+            time.sleep(5)
 
 
 if __name__ == "__main__":
