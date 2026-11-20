@@ -116,7 +116,7 @@ class SubmissionRecoveryTests(unittest.TestCase):
         argv = ['worker', '--db', self.folder.name + '/hyperliquid-bingx-live.sqlite',
                 '--address', 'public-address', '--enable-orders']
         with patch.object(sys, 'argv', argv), patch.dict('os.environ', {
-                'BINGX_API_KEY': 'test', 'BINGX_API_SECRET': 'test'}), \
+                'BINGX_API_KEY': 'test', 'BINGX_API_SECRET': 'test', 'BINGX_ACCOUNT_UID': '123'}), \
                 patch.object(worker, 'Observer', feed.Observer), \
                 patch.object(worker, 'FillObserver', hyper.FillObserver), \
                 patch.object(worker, 'BingXExecution'), patch.object(worker, 'HyperliquidBingXCopy'), \

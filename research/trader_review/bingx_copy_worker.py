@@ -11,11 +11,21 @@ from pathlib import Path
 from .bingx_execution import BingXAPIError, BingXExecution, HyperliquidBingXCopy, ReconciliationRequired
 from .finmonster_feed import Observer
 from .hyperliquid_feed import FillObserver
+from .full_copy_contract import CopyBlocked
+from .strict_bingx_copy import StrictBingXExecution
+from .hyperliquid_feed import PublicInfo
 
 
 def cycle(source, copier, execution, *, min_equity=Decimal('100'), allowed_symbols=None):
     source.poll()
     db = copier.db
+    if hasattr(execution, 'synchronize_exits'):
+        execution.open_blocker = None
+        try:
+            execution.synchronize_exits(db)
+        except (CopyBlocked, ReconciliationRequired, BingXAPIError) as error:
+            execution.open_blocker = str(error)
+            print(json.dumps({'copy_status': 'protection_blocked', 'error': str(error)}), flush=True)
     rows = db.execute(
         """SELECT o.rowid, o.payload, f.payload FROM observations o
            LEFT JOIN hl_fills f ON f.id = substr(o.order_id, 4, length(o.order_id) -
@@ -85,7 +95,25 @@ def cycle(source, copier, execution, *, min_equity=Decimal('100'), allowed_symbo
                         db.execute("INSERT OR REPLACE INTO meta VALUES ('bingx_copy_row',?)", (str(rowid),))
                     continue
                 ratio = equity / source_equity
-            copier.apply(event, abs(before), ratio, market)
+            if hasattr(execution, 'set_context'):
+                saved_ratio = db.execute('SELECT ratio FROM copied_positions WHERE epoch=?',
+                                         (event['positionId'],)).fetchone()
+                if not saved_ratio:
+                    saved_ratio = db.execute('SELECT ratio FROM copy_plans WHERE id=?',
+                                             (event['orderId'],)).fetchone()
+                execution.set_context(event, abs(before), Decimal(saved_ratio[0]) if saved_ratio else ratio)
+            try:
+                copier.apply(event, abs(before), ratio, market)
+            except CopyBlocked as error:
+                if event['action'] != 'OPEN' or execution.needs_reconciliation(event['orderId']):
+                    raise
+                # A refused, UNSENT entry is terminal, never a delayed catch-up.
+                # Continue processing later reductions in this same poll.
+                with db:
+                    db.execute('INSERT OR IGNORE INTO copy_skips VALUES (?,?,?,?,?)',
+                               (event['orderId'], event['updatedAt'], time.time_ns()//1_000_000,
+                                str(error), json.dumps(event, sort_keys=True)))
+                print(json.dumps({'copy_status': 'entry_blocked', 'reason': str(error)}), flush=True)
         with db:
             db.execute("INSERT OR REPLACE INTO meta VALUES ('bingx_copy_row',?)", (str(rowid),))
 
@@ -107,11 +135,16 @@ def main():
         parser.error('--symbols must use the form BTC-USDT')
     if args.db.name != "hyperliquid-bingx-live.sqlite":
         parser.error("Use a dedicated hyperliquid-bingx-live.sqlite database")
-    execution = BingXExecution(
-        os.environ["BINGX_API_KEY"], os.environ["BINGX_API_SECRET"],
-        args.db if args.enable_orders else ":memory:",
-        trading_enabled=args.enable_orders,
-    )
+    if args.enable_orders:
+        if not os.environ.get('BINGX_ACCOUNT_UID', '').isdigit():
+            parser.error('Set BINGX_ACCOUNT_UID from the verified intended exchange account before enabling orders')
+        execution = StrictBingXExecution(
+            os.environ['BINGX_API_KEY'], os.environ['BINGX_API_SECRET'], args.db,
+            trading_enabled=True, source_client=PublicInfo(), source_address=args.address,
+            expected_uid=os.environ['BINGX_ACCOUNT_UID'])
+    else:
+        execution = BingXExecution(os.environ['BINGX_API_KEY'], os.environ['BINGX_API_SECRET'],
+                                   ':memory:', trading_enabled=False)
     if not args.enable_orders:
         while True:
             print(json.dumps({"balance_read": execution.equity().is_finite(),
@@ -133,7 +166,7 @@ def main():
             try:
                 cycle(source, copier, execution, min_equity=args.min_equity,
                       allowed_symbols=frozenset(args.symbols) if args.symbols else None)
-            except (BingXAPIError, ReconciliationRequired) as error:
+            except (BingXAPIError, ReconciliationRequired, CopyBlocked) as error:
                 # Keep polling, but do not advance the failed signal, alter the
                 # position journal, or send another POST for its client ID.
                 print(json.dumps({"copy_status": "blocked", "error": str(error)}), flush=True)
