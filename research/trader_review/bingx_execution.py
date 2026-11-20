@@ -22,6 +22,19 @@ class ReconciliationRequired(RuntimeError):
     """An existing submission must be resolved without a second POST."""
 
 
+MAX_ENTRY_AGE_MS = 30_000
+MAX_SOURCE_CLOCK_SKEW_MS = 5_000
+
+
+class EntryExpired(RuntimeError):
+    """The entry has not been sent and must never be opened later."""
+
+
+def require_entry_deadline(deadline_ms):
+    if deadline_ms is not None and time.time_ns() // 1_000_000 >= deadline_ms:
+        raise EntryExpired('source entry exceeded 30 second deadline')
+
+
 class BingXExecution:
     def __init__(self, api_key, secret, journal_path, *, trading_enabled=False):
         self.api_key = api_key
@@ -38,8 +51,14 @@ class BingXExecution:
                 "(client_id TEXT PRIMARY KEY, code INTEGER, message TEXT NOT NULL)"
             )
 
-    def _request(self, method, path, *, version=2, **parameters):
+    def _request(self, method, path, *, version=2, _deadline_ms=None, **parameters):
+        require_entry_deadline(_deadline_ms)
         parameters["timestamp"] = time.time_ns() // 1_000_000
+        if _deadline_ms is not None:
+            remaining = _deadline_ms - parameters['timestamp']
+            require_entry_deadline(_deadline_ms)
+            # Bound acceptance at the exchange as well as local dispatch.
+            parameters['recvWindow'] = min(5000, remaining)
         query = urlencode(sorted(parameters.items()))
         signature = hmac.digest(self.secret, query.encode(), "sha256").hex()
         request = Request(
@@ -48,6 +67,7 @@ class BingXExecution:
             method=method,
         )
         try:
+            require_entry_deadline(_deadline_ms)
             with urlopen(request, timeout=10) as response:
                 result = json.load(response)
         except HTTPError as error:
@@ -91,13 +111,32 @@ class BingXExecution:
             raise ValueError("Unknown BingX position mode")
         return value is True or value == 'true'
 
-    def submit(self, signal_id, symbol, side, quantity, *, reduce_only=False):
+    def has_submission(self, signal_id):
+        client_id = hashlib.sha256(signal_id.encode()).hexdigest()[:40]
+        with sqlite3.connect(self.journal_path) as journal:
+            return bool(journal.execute(
+                'SELECT 1 FROM bingx_submissions WHERE client_id=?', (client_id,)
+            ).fetchone())
+
+    def needs_reconciliation(self, signal_id):
+        client_id = hashlib.sha256(signal_id.encode()).hexdigest()[:40]
+        with sqlite3.connect(self.journal_path) as journal:
+            row = journal.execute('SELECT e.code FROM bingx_submissions s LEFT JOIN '
+                                  'bingx_submission_errors e ON e.client_id=s.client_id '
+                                  'WHERE s.client_id=?', (client_id,)).fetchone()
+        # Only explicit, definitive rejections can expire. Timeouts, system
+        # errors and accepted orders remain fenced until reconciled.
+        return bool(row and row[0] not in {109400, 109425, 101400, 101204, 101206, 100421})
+
+    def submit(self, signal_id, symbol, side, quantity, *, reduce_only=False, deadline_ms=None):
         if not self.trading_enabled:
             raise RuntimeError("BingX order submission is disabled")
         if not signal_id or side not in {"BUY", "SELL"} or not quantity.is_finite() or quantity <= 0:
             raise ValueError("Order requires a signal ID, valid side and positive quantity")
 
         client_id = hashlib.sha256(signal_id.encode()).hexdigest()[:40]
+        if not self.has_submission(signal_id):
+            require_entry_deadline(deadline_ms)
         parameters = {
             "symbol": symbol,
             "side": side,
@@ -135,7 +174,18 @@ class BingXExecution:
             )
         if inserted:
             try:
-                self._request("POST", "trade/order", **parameters)
+                require_entry_deadline(deadline_ms)
+                if deadline_ms is None:
+                    self._request("POST", "trade/order", **parameters)
+                else:
+                    self._request("POST", "trade/order", _deadline_ms=deadline_ms, **parameters)
+            except EntryExpired:
+                # No network request was made. Release only this unsent claim;
+                # ambiguous network failures keep their claim for reconciliation.
+                with sqlite3.connect(self.journal_path) as journal:
+                    journal.execute('DELETE FROM bingx_submissions WHERE client_id=? AND parameters=?',
+                                    (client_id, payload))
+                raise
             except BingXAPIError as error:
                 with sqlite3.connect(self.journal_path) as journal:
                     journal.execute("INSERT OR REPLACE INTO bingx_submission_errors VALUES (?,?,?)",
@@ -211,6 +261,11 @@ class HyperliquidBingXCopy:
                 "CREATE TABLE IF NOT EXISTS copy_plans "
                 "(id TEXT PRIMARY KEY, ratio TEXT NOT NULL, before_qty TEXT NOT NULL, qty TEXT NOT NULL)"
             )
+            db.execute(
+                'CREATE TABLE IF NOT EXISTS copy_skips '
+                '(id TEXT PRIMARY KEY, source_ms INTEGER NOT NULL, decided_ms INTEGER NOT NULL, '
+                'reason TEXT NOT NULL, observation TEXT NOT NULL)'
+            )
         self.cutover_ms = db.execute("SELECT ms FROM copy_cutover WHERE id=1").fetchone()[0]
 
     def arm_add_once(self, now_ms):
@@ -231,6 +286,32 @@ class HyperliquidBingXCopy:
             and not self.db.execute("SELECT 1 FROM copied_positions LIMIT 1").fetchone()
         )
 
+    def record_expired_entry(self, observation, reason):
+        signal_id = observation['orderId']
+        with self.db:
+            self.db.execute('INSERT OR IGNORE INTO copy_skips VALUES (?,?,?,?,?)',
+                            (signal_id, observation['updatedAt'], time.time_ns() // 1_000_000,
+                             reason, json.dumps(observation, sort_keys=True)))
+            # An unsent, expired seed must not consume the one-time permission.
+            self.db.execute("DELETE FROM meta WHERE key='bingx_add_once_signal' AND value=? "
+                            'AND NOT EXISTS (SELECT 1 FROM copied_positions)', (signal_id,))
+        print(json.dumps({'copy_status': 'skipped', 'signal_id': signal_id, 'reason': reason}), flush=True)
+
+    def skip_stale_entry(self, observation):
+        if observation['action'] != 'OPEN' or observation['updatedAt'] <= self.cutover_ms:
+            return False
+        signal_id = observation['orderId']
+        if self.db.execute('SELECT 1 FROM copy_skips WHERE id=?', (signal_id,)).fetchone():
+            return True
+        # Already-dispatched orders must be reconciled even after the deadline.
+        if self.execution.needs_reconciliation(signal_id):
+            return False
+        age = time.time_ns() // 1_000_000 - int(observation['updatedAt'])
+        if age >= MAX_ENTRY_AGE_MS or age < -MAX_SOURCE_CLOCK_SKEW_MS:
+            self.record_expired_entry(observation, 'stale_entry' if age >= 0 else 'future_source_timestamp')
+            return True
+        return False
+
     def apply(self, observation, source_before, copy_ratio, market):
         """Return the resulting quantity once a fill is confirmed, or None for a skipped signal."""
         signal_id = observation["orderId"]
@@ -238,6 +319,8 @@ class HyperliquidBingXCopy:
         if observation["updatedAt"] <= self.cutover_ms:
             return None
         if self.db.execute("SELECT 1 FROM copied_signals WHERE id=?", (signal_id,)).fetchone():
+            return None
+        if self.skip_stale_entry(observation):
             return None
         row = self.db.execute(
             "SELECT ratio, quantity FROM copied_positions WHERE epoch=?", (epoch,)
@@ -287,9 +370,14 @@ class HyperliquidBingXCopy:
                     "INSERT INTO copy_plans VALUES (?,?,?,?)",
                     (signal_id, str(ratio), str(actual), str(quantity)),
                 )
-        result = self.execution.submit(
-            signal_id, symbol, observation["side"], quantity, reduce_only=action == "CLOSE"
-        )
+        options = {'reduce_only': action == 'CLOSE'}
+        if action == 'OPEN':
+            options['deadline_ms'] = int(observation['updatedAt']) + MAX_ENTRY_AGE_MS
+        try:
+            result = self.execution.submit(signal_id, symbol, observation['side'], quantity, **options)
+        except EntryExpired:
+            self.record_expired_entry(observation, 'expired_before_dispatch')
+            return None
         order = result.get("order", result)
         if order["status"] != "FILLED" or Decimal(str(order["executedQty"])) != quantity:
             raise RuntimeError("BingX order requires reconciliation before processing more signals")
