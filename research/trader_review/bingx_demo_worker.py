@@ -151,6 +151,8 @@ def main():
     parser.add_argument('--seed-current',action='store_true')
     parser.add_argument('--once',action='store_true')
     args=parser.parse_args()
+    if args.seed_current:
+        parser.error('Existing source positions must not be copied; wait for a new entry')
     if not ADDRESS.fullmatch(args.address) or not args.uid.isdigit():parser.error('Invalid source/UID')
     if args.db.name!='hyperliquid-bingx-demo.sqlite':parser.error('Dedicated demo DB name required')
     args.db.parent.mkdir(parents=True,exist_ok=True)
@@ -163,11 +165,33 @@ def main():
             source_address=args.address,expected_uid=args.uid)
         execution.verify_account_identity()
         equity=execution.equity()
-        if equity < args.allocation:raise RuntimeError('Insufficient ACTUAL VST exchange equity')
+        if equity < 10:raise RuntimeError('Insufficient ACTUAL VST exchange equity')
         copier=HyperliquidBingXCopy(observer.db,execution,time.time_ns()//1_000_000)
         print(json.dumps({'mode':'BINGX_VST','api_origin':execution.api_origin,
                           'actual_exchange_equity':str(equity),'allocation_from_vst':str(args.allocation),
                           'source':args.address}),flush=True)
+        funding = observer.db.execute("SELECT value FROM meta WHERE key='demo_funding_verified'").fetchone()
+        if not funding:
+            while True:
+                actual = execution.equity()
+                if actual == args.allocation:
+                    if execution._request('GET','user/positions') or execution._orders(None):
+                        raise CopyBlocked('initial_demo_funding_requires_empty_exchange_account')
+                    # Do not replay fills that occurred while funding was pending.
+                    source.poll()
+                    start = time.time_ns()//1_000_000
+                    with observer.db:
+                        observer.db.execute("INSERT OR REPLACE INTO meta VALUES ('demo_funding_verified',?)",
+                            (json.dumps({'actual_equity':str(actual),'time_ms':start}),))
+                        observer.db.execute('UPDATE copy_cutover SET ms=? WHERE id=1',(start,))
+                    copier.cutover_ms = start
+                    print(json.dumps({'mode':'BINGX_VST','status':'funding_confirmed_waiting_for_new_entry',
+                                      'actual_exchange_equity':str(actual)}),flush=True)
+                    break
+                print(json.dumps({'mode':'BINGX_VST','status':'paused_until_actual_300_vst_funding',
+                                  'actual_exchange_equity':str(actual),'required_equity':str(args.allocation)}),flush=True)
+                if args.once:return
+                time.sleep(15)
         if args.seed_current:
             try:
                 seed_snapshot(source,copier,execution)
