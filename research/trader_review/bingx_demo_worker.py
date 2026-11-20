@@ -53,20 +53,19 @@ class BingXDemoExecution(StrictBingXExecution):
         return min(capital, self.contract_capital()) * Decimal('.99') / denominator
 
     def opening_parameters(self, signal_id, symbol, side, quantity, deadline_ms):
-        parameters = super().opening_parameters(signal_id, symbol, side, quantity, deadline_ms)
         # Cross mode uses the exchange wallet as collateral. Bound the total
         # position sizing to this allocation rather than its 100,000 VST balance.
         positions = self._request('GET', 'user/positions')
         used = sum((abs(Decimal(str(p['positionAmt']))) * Decimal(str(p['markPrice'])) /
                     Decimal(str(p['leverage'])) for p in positions), Decimal(0))
         rules = self._rules(symbol)
-        account, _, _ = source_snapshot(self.source_client, self.source_address)
+        account = self.source_client.get('clearinghouseState', user=self.source_address)
         source = next(p['position'] for p in account['assetPositions']
                       if p['position']['coin'] == symbol.removesuffix('-USDT'))
         additional = quantity * Decimal(str(rules['price'])) / Decimal(str(source['leverage']['value']))
-        if used + additional > self.contract_capital() * Decimal('.99'):
+        if used + additional > self.contract_capital():
             raise CopyBlocked('aggregate_demo_margin_exceeds_300_allocation')
-        return parameters
+        return super().opening_parameters(signal_id, symbol, side, quantity, deadline_ms)
 
     def entry_brackets(self, contract):
         try:
@@ -86,8 +85,8 @@ def seed_snapshot(source, copier, execution):
         if state[0] != 'complete':
             # Recovery is allowed only with positive evidence that no order was
             # ever dispatched and no exchange exposure exists. Preserve plans.
-            for table in ('bingx_submissions', 'copied_positions', 'copy_contracts',
-                          'copy_exit_dispatch', 'copy_entry_children'):
+            for table in ('bingx_submissions', 'copied_positions', 'copy_exit_dispatch',
+                          'copy_exit_orders'):
                 if db.execute('SELECT count(*) FROM ' + table).fetchone()[0]:
                     raise RuntimeError('Interrupted demo seed requires reconciliation; no automatic repeat')
             if any(Decimal(str(p['positionAmt'])) for p in execution._request('GET','user/positions')):
@@ -95,6 +94,13 @@ def seed_snapshot(source, copier, execution):
             if execution._orders(None):
                 raise CopyBlocked('demo_seed_recovery_found_exchange_orders')
             with db:
+                db.execute('CREATE TABLE IF NOT EXISTS demo_abandoned_preflight '
+                           '(reconciled_ms INTEGER, table_name TEXT, payload TEXT)')
+                for table in ('copy_contracts', 'copy_entry_children'):
+                    for row in db.execute('SELECT * FROM ' + table).fetchall():
+                        db.execute('INSERT INTO demo_abandoned_preflight VALUES (?,?,?)',
+                                   (time.time_ns()//1_000_000,table,json.dumps(row)))
+                    db.execute('DELETE FROM ' + table)
                 db.execute("INSERT OR REPLACE INTO meta VALUES ('demo_unsent_seed_reconciled',?)",
                            (str(time.time_ns()//1_000_000),))
                 db.execute("DELETE FROM meta WHERE key='demo_seed_state'")
