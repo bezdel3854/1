@@ -8,6 +8,18 @@ import time
 from decimal import Decimal, ROUND_CEILING, ROUND_DOWN
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError
+
+
+class BingXAPIError(RuntimeError):
+    def __init__(self, code, message):
+        self.code = code
+        self.message = message
+        super().__init__(f"BingX API code {code}: {message}")
+
+
+class ReconciliationRequired(RuntimeError):
+    """An existing submission must be resolved without a second POST."""
 
 
 class BingXExecution:
@@ -21,6 +33,10 @@ class BingXExecution:
                 "CREATE TABLE IF NOT EXISTS bingx_submissions "
                 "(client_id TEXT PRIMARY KEY, parameters TEXT NOT NULL)"
             )
+            journal.execute(
+                "CREATE TABLE IF NOT EXISTS bingx_submission_errors "
+                "(client_id TEXT PRIMARY KEY, code INTEGER, message TEXT NOT NULL)"
+            )
 
     def _request(self, method, path, *, version=2, **parameters):
         parameters["timestamp"] = time.time_ns() // 1_000_000
@@ -31,10 +47,22 @@ class BingXExecution:
             headers={"X-BX-APIKEY": self.api_key},
             method=method,
         )
-        with urlopen(request, timeout=10) as response:
-            result = json.load(response)
+        try:
+            with urlopen(request, timeout=10) as response:
+                result = json.load(response)
+        except HTTPError as error:
+            # BingX may return its structured rejection with HTTP 400.
+            try:
+                result = json.load(error)
+            except (ValueError, TypeError):
+                raise RuntimeError(f"BingX HTTP {error.code}; response unavailable") from None
         if result["code"] != 0:
-            raise RuntimeError(f"BingX API code {result['code']}")
+            message = str(result.get("msg", "No API error description"))
+            # The exchange message is untrusted; never log request credentials.
+            for private in (self.api_key, self.secret.decode(), signature, query):
+                if private:
+                    message = message.replace(private, "[REDACTED]")
+            raise BingXAPIError(result["code"], message[:1000])
         return result["data"]
 
     def equity(self):
@@ -57,6 +85,12 @@ class BingXExecution:
     def order(self, symbol, client_id):
         return self._request("GET", "trade/order", symbol=symbol, clientOrderId=client_id)
 
+    def hedge_mode(self):
+        value = self._request("GET", "positionSide/dual", version=1)["dualSidePosition"]
+        if value not in (True, False, 'true', 'false'):
+            raise ValueError("Unknown BingX position mode")
+        return value is True or value == 'true'
+
     def submit(self, signal_id, symbol, side, quantity, *, reduce_only=False):
         if not self.trading_enabled:
             raise RuntimeError("BingX order submission is disabled")
@@ -73,6 +107,12 @@ class BingXExecution:
             "clientOrderId": client_id,
             "reduceOnly": "true" if reduce_only else "false",
         }
+        if self.hedge_mode():
+            # In hedge mode LONG/SHORT selects the position being changed;
+            # BUY/SELL selects increase vs reduction. reduceOnly is forbidden.
+            long_position = (side == 'BUY') != reduce_only
+            parameters['positionSide'] = 'LONG' if long_position else 'SHORT'
+            del parameters['reduceOnly']
         payload = json.dumps(parameters, sort_keys=True)
         # Commit before submitting. A timeout or restart leaves the order
         # pending reconciliation, with no second POST for the same signal.
@@ -83,11 +123,33 @@ class BingXExecution:
             saved_payload = journal.execute(
                 "SELECT parameters FROM bingx_submissions WHERE client_id = ?", (client_id,)
             ).fetchone()[0]
+            rejection = journal.execute(
+                "SELECT code,message FROM bingx_submission_errors WHERE client_id=?", (client_id,)
+            ).fetchone()
         if saved_payload != payload:
             raise ValueError("Order parameters changed for an existing signal")
+        if rejection:
+            raise ReconciliationRequired(
+                f"Submission {client_id} rejected: BingX API code {rejection[0]}: {rejection[1]}; "
+                "no automatic resubmission"
+            )
         if inserted:
-            self._request("POST", "trade/order", **parameters)
-        return self.order(symbol, client_id)
+            try:
+                self._request("POST", "trade/order", **parameters)
+            except BingXAPIError as error:
+                with sqlite3.connect(self.journal_path) as journal:
+                    journal.execute("INSERT OR REPLACE INTO bingx_submission_errors VALUES (?,?,?)",
+                                    (client_id, error.code, error.message))
+                raise
+        try:
+            return self.order(symbol, client_id)
+        except BingXAPIError as error:
+            if error.code == 109421:
+                raise ReconciliationRequired(
+                    f"Submission {client_id} not found on BingX; "
+                    "check exchange history and the saved request before any resubmission"
+                ) from None
+            raise
 
 
 def opening_quantity(source_quantity, copy_ratio, price, quantity_step, minimum_quantity,
@@ -242,3 +304,4 @@ class HyperliquidBingXCopy:
                 self.db.execute("DELETE FROM copied_positions WHERE epoch=?", (epoch,))
             self.db.execute("INSERT INTO copied_signals VALUES (?)", (signal_id,))
         return remaining
+

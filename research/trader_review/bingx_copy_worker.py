@@ -7,7 +7,7 @@ import time
 from decimal import Decimal
 from pathlib import Path
 
-from .bingx_execution import BingXExecution, HyperliquidBingXCopy
+from .bingx_execution import BingXAPIError, BingXExecution, HyperliquidBingXCopy, ReconciliationRequired
 from .finmonster_feed import Observer
 from .hyperliquid_feed import FillObserver
 
@@ -100,7 +100,14 @@ def main():
         if args.copy_add_once:
             copier.arm_add_once(time.time_ns() // 1_000_000)
         while True:
-            cycle(source, copier, execution)
+            try:
+                cycle(source, copier, execution)
+            except (BingXAPIError, ReconciliationRequired) as error:
+                # Keep polling, but do not advance the failed signal, alter the
+                # position journal, or send another POST for its client ID.
+                print(json.dumps({"copy_status": "blocked", "error": str(error)}), flush=True)
+                if args.once:
+                    raise
             if args.once:
                 return
             time.sleep(15)
@@ -108,3 +115,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
