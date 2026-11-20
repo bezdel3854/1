@@ -33,6 +33,14 @@ class DemoTests(unittest.TestCase):
         self.assertEqual(x.equity(),D('100000'))
         self.assertEqual(x.contract_capital(),D('300'))
 
+    def test_underwater_source_is_scaled_down_to_allocated_margin(self):
+        x=self.make()
+        x.equity=lambda:D('100000')
+        account={'marginSummary':{'accountValue':'1648','totalMarginUsed':'1860'}}
+        ratio=x.copy_ratio(account,D('300'))
+        self.assertEqual((ratio*D('1860')).quantize(D('.000001')),D('297'))
+        self.assertLess(ratio,D('300')/D('1648'))
+
     def test_demo_copies_absence_of_stop_without_inventing_one(self):
         a,o,r=fixture();o=[]
         contract=compile_contract(a,o,'BTC',300,r,observed_ms=1000,now_ms=1000,require_protection=False)

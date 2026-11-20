@@ -81,7 +81,7 @@ class StrictBingXExecution(BingXExecution):
                 if number(p['positionAmt']) != 0]
 
     def _orders(self, symbol):
-        data = self._request('GET', 'trade/openOrders', symbol=symbol)
+        data = self._request('GET', 'trade/openOrders', **({'symbol': symbol} if symbol else {}))
         out = data.get('orders') if isinstance(data, dict) else data
         if not isinstance(out, list):
             raise CopyBlocked('invalid_target_open_orders')

@@ -99,6 +99,8 @@ def cycle(source, copier, execution, *, min_equity=Decimal('100'), allowed_symbo
                         db.execute("INSERT OR REPLACE INTO meta VALUES ('bingx_copy_row',?)", (str(rowid),))
                     continue
                 ratio = equity / source_equity
+                if copy_allocation is not None and hasattr(execution, 'copy_ratio'):
+                    ratio = execution.copy_ratio(account, equity)
             if hasattr(execution, 'set_context'):
                 saved_ratio = db.execute('SELECT ratio FROM copied_positions WHERE epoch=?',
                                          (event['positionId'],)).fetchone()

@@ -42,6 +42,32 @@ class BingXDemoExecution(StrictBingXExecution):
         # A spending allocation from actual VST funds, never a fake account balance.
         return min(self.equity(), self.allocation)
 
+    def copy_ratio(self, account, capital):
+        summary = account['marginSummary']
+        # An underwater source may use more margin than its current equity.
+        # Scale DOWN to fit actual allocated demo funds; leave 1% for fees.
+        denominator = max(Decimal(summary['accountValue']),
+                          Decimal(summary['totalMarginUsed']))
+        if denominator <= 0:
+            raise CopyBlocked('invalid_source_capital')
+        return min(capital, self.contract_capital()) * Decimal('.99') / denominator
+
+    def opening_parameters(self, signal_id, symbol, side, quantity, deadline_ms):
+        parameters = super().opening_parameters(signal_id, symbol, side, quantity, deadline_ms)
+        # Cross mode uses the exchange wallet as collateral. Bound the total
+        # position sizing to this allocation rather than its 100,000 VST balance.
+        positions = self._request('GET', 'user/positions')
+        used = sum((abs(Decimal(str(p['positionAmt']))) * Decimal(str(p['markPrice'])) /
+                    Decimal(str(p['leverage'])) for p in positions), Decimal(0))
+        rules = self._rules(symbol)
+        account, _, _ = source_snapshot(self.source_client, self.source_address)
+        source = next(p['position'] for p in account['assetPositions']
+                      if p['position']['coin'] == symbol.removesuffix('-USDT'))
+        additional = quantity * Decimal(str(rules['price'])) / Decimal(str(source['leverage']['value']))
+        if used + additional > self.contract_capital() * Decimal('.99'):
+            raise CopyBlocked('aggregate_demo_margin_exceeds_300_allocation')
+        return parameters
+
     def entry_brackets(self, contract):
         try:
             return contract.entry_brackets()
@@ -58,8 +84,22 @@ def seed_snapshot(source, copier, execution):
     state = db.execute("SELECT value FROM meta WHERE key='demo_seed_state'").fetchone()
     if state:
         if state[0] != 'complete':
-            raise RuntimeError('Interrupted demo seed requires reconciliation; no automatic repeat')
-        return
+            # Recovery is allowed only with positive evidence that no order was
+            # ever dispatched and no exchange exposure exists. Preserve plans.
+            for table in ('bingx_submissions', 'copied_positions', 'copy_contracts',
+                          'copy_exit_dispatch', 'copy_entry_children'):
+                if db.execute('SELECT count(*) FROM ' + table).fetchone()[0]:
+                    raise RuntimeError('Interrupted demo seed requires reconciliation; no automatic repeat')
+            if any(Decimal(str(p['positionAmt'])) for p in execution._request('GET','user/positions')):
+                raise CopyBlocked('demo_seed_recovery_found_exchange_position')
+            if execution._orders(None):
+                raise CopyBlocked('demo_seed_recovery_found_exchange_orders')
+            with db:
+                db.execute("INSERT OR REPLACE INTO meta VALUES ('demo_unsent_seed_reconciled',?)",
+                           (str(time.time_ns()//1_000_000),))
+                db.execute("DELETE FROM meta WHERE key='demo_seed_state'")
+        else:
+            return
     source.poll()
     account, _, stamp = source_snapshot(source.client, source.address)
     source.poll()
@@ -72,7 +112,7 @@ def seed_snapshot(source, copier, execution):
     with db:
         db.execute("INSERT INTO meta VALUES ('demo_seed_state','in_progress')")
         db.execute("INSERT OR REPLACE INTO meta VALUES ('demo_initial_snapshot_ms',?)",(str(stamp),))
-    ratio = execution.contract_capital()/Decimal(account['marginSummary']['accountValue'])
+    ratio = execution.copy_ratio(account, execution.contract_capital())
     now = time.time_ns()//1_000_000
     for p in positions:
         coin = p['coin']
@@ -122,7 +162,15 @@ def main():
         print(json.dumps({'mode':'BINGX_VST','api_origin':execution.api_origin,
                           'actual_exchange_equity':str(equity),'allocation_from_vst':str(args.allocation),
                           'source':args.address}),flush=True)
-        if args.seed_current:seed_snapshot(source,copier,execution)
+        if args.seed_current:
+            try:
+                seed_snapshot(source,copier,execution)
+            except Exception as error:
+                print(json.dumps({'mode':'BINGX_VST','status':'seed_blocked',
+                                  'error':str(error)}),flush=True)
+                # Keep diagnostics accessible, while sending no further orders.
+                if args.once:raise
+                while True:time.sleep(30)
         while True:
             try:
                 cycle(source,copier,execution,min_equity=Decimal('10'),copy_allocation=args.allocation)
