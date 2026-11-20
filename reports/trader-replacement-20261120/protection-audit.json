@@ -1,0 +1,1231 @@
+{
+  "observed_date": "2026-11-20/21 Asia/Irkutsk",
+  "wallets": 120,
+  "errors": 0,
+  "snapshots": [
+    {
+      "address": "0x575b23050320190199371e3be881a18f81ff90c6",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xeda02861f8134a219ef1d751c48a3611bbb08e50",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x279818c822e5c6135d989df50d0bba96e9564ce5",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x6efc6a8651a39bd53be089b51bd50723b6b8f70d",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x708f713637e28c014705fec1bab002992f53d4ea",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x39be8fad61f5fa0cdfa2fc97c30a59833f58705d",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x3690b9ad799f9ee1c7fcf3f9725ccfa68e86c363",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xad9e76ae56249330db620eaa4b1a74f7c8e96df5",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xb4773a58bfa5eb5f1029334d5dbde2f12cd35d42",
+      "orders": [],
+      "total_open_order_count": 1
+    },
+    {
+      "address": "0x625ecd6f45d13b367c7c7883d8264adccfa6a354",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x9d8eb9038a76e134f4017506d0ed63b060caa377",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x8e72963d3411d1d0fc093c984963a3497e001c9c",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x66339a4c857997b2cb3a1139cc37f68fbdf9a795",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x9e39d6282e4525526f33092c8aad27005e0ea02d",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xb72062989aa928567d3d304f3846dec8118ed207",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x217a1b7f4f8cdd0dc8e2f734477683642646edaa",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x398433dd94502cb28814d145a4fb8e98deba601b",
+      "orders": [
+        {
+          "coin": "ETH",
+          "side": "A",
+          "limitPx": "1572.3",
+          "sz": "1.0",
+          "oid": 602430536620,
+          "timestamp": 1794460424604,
+          "triggerCondition": "Price above 1747",
+          "isTrigger": true,
+          "triggerPx": "1747.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Take Profit Market",
+          "origSz": "1.0",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "ETH",
+          "side": "A",
+          "limitPx": "1752.3",
+          "sz": "1.0",
+          "oid": 602430429011,
+          "timestamp": 1794460414574,
+          "triggerCondition": "Price above 1947",
+          "isTrigger": true,
+          "triggerPx": "1947.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Take Profit Market",
+          "origSz": "1.0",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "ETH",
+          "side": "A",
+          "limitPx": "1086.5",
+          "sz": "1.4",
+          "oid": 460828538786,
+          "timestamp": 1780762842233,
+          "triggerCondition": "Price above 1181",
+          "isTrigger": true,
+          "triggerPx": "1181.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Take Profit Market",
+          "origSz": "1.4",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "ETH",
+          "side": "A",
+          "limitPx": "1107.6",
+          "sz": "1.4",
+          "oid": 460828330967,
+          "timestamp": 1780762831130,
+          "triggerCondition": "Price above 1204",
+          "isTrigger": true,
+          "triggerPx": "1204.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Take Profit Market",
+          "origSz": "1.4",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "ETH",
+          "side": "A",
+          "limitPx": "1128.8",
+          "sz": "1.4",
+          "oid": 460828199183,
+          "timestamp": 1780762824820,
+          "triggerCondition": "Price above 1227",
+          "isTrigger": true,
+          "triggerPx": "1227.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Take Profit Market",
+          "origSz": "1.4",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "ETH",
+          "side": "A",
+          "limitPx": "1149.0",
+          "sz": "1.4",
+          "oid": 460828055935,
+          "timestamp": 1780762815956,
+          "triggerCondition": "Price above 1249",
+          "isTrigger": true,
+          "triggerPx": "1249.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Take Profit Market",
+          "origSz": "1.4",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "ETH",
+          "side": "A",
+          "limitPx": "1172.0",
+          "sz": "1.4",
+          "oid": 460827944807,
+          "timestamp": 1780762805240,
+          "triggerCondition": "Price above 1274",
+          "isTrigger": true,
+          "triggerPx": "1274.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Take Profit Market",
+          "origSz": "1.4",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "ETH",
+          "side": "A",
+          "limitPx": "1214.4",
+          "sz": "1.4",
+          "oid": 460827570190,
+          "timestamp": 1780762767639,
+          "triggerCondition": "Price above 1320",
+          "isTrigger": true,
+          "triggerPx": "1320.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Take Profit Market",
+          "origSz": "1.4",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "ETH",
+          "side": "A",
+          "limitPx": "1194.1",
+          "sz": "1.4",
+          "oid": 460826669648,
+          "timestamp": 1780762700579,
+          "triggerCondition": "Price above 1298",
+          "isTrigger": true,
+          "triggerPx": "1298.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Take Profit Market",
+          "origSz": "1.4",
+          "tif": null,
+          "cloid": null
+        }
+      ],
+      "total_open_order_count": 121
+    },
+    {
+      "address": "0xf780adb6ca4a737d2a8def6dd445b0c0276d70e1",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x01d4b01032d930bbd0e71efd64c4bb5ce9064ce9",
+      "orders": [],
+      "total_open_order_count": 326
+    },
+    {
+      "address": "0x7f1e97d8eb3ddb8659cb59d611becc438f89b7a2",
+      "orders": [
+        {
+          "coin": "BTC",
+          "side": "B",
+          "limitPx": "83271.0",
+          "sz": "0.0",
+          "oid": 610008995029,
+          "timestamp": 1795077034326,
+          "triggerCondition": "Price above 75701",
+          "isTrigger": true,
+          "triggerPx": "75701.0",
+          "children": [],
+          "isPositionTpsl": true,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "0.0",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "ETH",
+          "side": "B",
+          "limitPx": "2479.6",
+          "sz": "0.0",
+          "oid": 601449834460,
+          "timestamp": 1794384112805,
+          "triggerCondition": "Price above 2254.2",
+          "isTrigger": true,
+          "triggerPx": "2254.2",
+          "children": [],
+          "isPositionTpsl": true,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "0.0",
+          "tif": null,
+          "cloid": null
+        }
+      ],
+      "total_open_order_count": 2
+    },
+    {
+      "address": "0x6041f881358c71d64bc9253c9ba0391df69f7d98",
+      "orders": [],
+      "total_open_order_count": 3
+    },
+    {
+      "address": "0x418aa6bf98a2b2bc93779f810330d88cde488888",
+      "orders": [],
+      "total_open_order_count": 18
+    },
+    {
+      "address": "0x369daedbefcb30b82154338c8fd613a70c60d251",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x3acd5ce5f905125c512d442d5e80b061892fa012",
+      "orders": [],
+      "total_open_order_count": 2
+    },
+    {
+      "address": "0xb9d1a4528ece05d7451a1e8f42f60c93a390e350",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xf86aff1428030020d32e69d769f14fac7bc12513",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x4cc8fd533c66e0e5652be6c808cb826dc878fb85",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xfcc1484a45e900e6b0f31e738008903a16ab8dce",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x4c38ac78bfdda318bd6f15312b34585b0ca72d07",
+      "orders": [
+        {
+          "coin": "BTC",
+          "side": "A",
+          "limitPx": "53100.0",
+          "sz": "0.0",
+          "oid": 611554824355,
+          "timestamp": 1795189855451,
+          "triggerCondition": "Price below 59000",
+          "isTrigger": true,
+          "triggerPx": "59000.0",
+          "children": [],
+          "isPositionTpsl": true,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "0.0",
+          "tif": null,
+          "cloid": null
+        }
+      ],
+      "total_open_order_count": 1
+    },
+    {
+      "address": "0xf14e093a765f7376e15e4baae9e4de36ae32fed3",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x4a78b12e1be2fb4712ea947284d6fda9b1703766",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xdad130ad870dc81139b2a7b1416ab8d68144f76f",
+      "orders": [],
+      "total_open_order_count": 2
+    },
+    {
+      "address": "0x1b824a8134f90cd2379935c0b381f5f586530b03",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xfd041f7e1851da14e250b02251d12f896dc172fe",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xaaaaaaaaaaaacd68773db2f15568d351b80cec00",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xce32f3152b93aecfd40a43b25dcf3703984f3730",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x4ba8c207ce9ba74ff71aa3a9bc5a430f4b79cdfd",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x2ba553d9f990a3b66b03b2dc0d030dfc1c061036",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xff3f81bf116731567f2d8f7f38c057fc9f4d316d",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xe6fe2362f915d627ecbf401b0ceef3dd2b2b79bd",
+      "orders": [],
+      "total_open_order_count": 2
+    },
+    {
+      "address": "0xeef6a534817a3838ebb750968abf37c8d1977ad8",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x297cae2d9ee3dd444bcdf881fe1e76653e3b6667",
+      "orders": [],
+      "total_open_order_count": 1
+    },
+    {
+      "address": "0x7979b2535c637928ff6eba01c0c25bcca458bff5",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xb2ff174a5eae8260943ed4499ff95282884369a6",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x5d908c88be270889c0953e7dff1c8e1d699ceea3",
+      "orders": [
+        {
+          "coin": "BTC",
+          "side": "B",
+          "limitPx": "65120.0",
+          "sz": "0.0",
+          "oid": 611124745923,
+          "timestamp": 1795159323927,
+          "triggerCondition": "Price below 59200",
+          "isTrigger": true,
+          "triggerPx": "59200.0",
+          "children": [],
+          "isPositionTpsl": true,
+          "reduceOnly": true,
+          "orderType": "Take Profit Market",
+          "origSz": "0.0",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "BTC",
+          "side": "B",
+          "limitPx": "69960.0",
+          "sz": "0.0",
+          "oid": 611124745922,
+          "timestamp": 1795159323927,
+          "triggerCondition": "Price above 63600",
+          "isTrigger": true,
+          "triggerPx": "63600.0",
+          "children": [],
+          "isPositionTpsl": true,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "0.0",
+          "tif": null,
+          "cloid": null
+        }
+      ],
+      "total_open_order_count": 2
+    },
+    {
+      "address": "0x9960e1e896038fc00d71040224758da65948817b",
+      "orders": [],
+      "total_open_order_count": 7
+    },
+    {
+      "address": "0x74add7ab00f01d9f8a12331e19dda66b93bf1b9e",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xf1dd55cdb935f3a95529e44473ea1565745e43c2",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x34568cb6bb15afc4d314a88304b93b616dbde77c",
+      "orders": [],
+      "total_open_order_count": 7
+    },
+    {
+      "address": "0xc87c7a63fce82e5929524eebff820a16fdca1147",
+      "orders": [
+        {
+          "coin": "XRP",
+          "side": "B",
+          "limitPx": "1.111",
+          "sz": "0.0",
+          "oid": 605324012924,
+          "timestamp": 1794689261451,
+          "triggerCondition": "Price above 1.01",
+          "isTrigger": true,
+          "triggerPx": "1.01",
+          "children": [],
+          "isPositionTpsl": true,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "0.0",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "XRP",
+          "side": "B",
+          "limitPx": "1.1319",
+          "sz": "3932.0",
+          "oid": 604398963152,
+          "timestamp": 1794604392610,
+          "triggerCondition": "Price above 1.029",
+          "isTrigger": true,
+          "triggerPx": "1.029",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "3932.0",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "BTC",
+          "side": "B",
+          "limitPx": "76975.0",
+          "sz": "0.0547",
+          "oid": 604114934907,
+          "timestamp": 1794584484713,
+          "triggerCondition": "Price above 69978",
+          "isTrigger": true,
+          "triggerPx": "69978.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "0.0547",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "DASH",
+          "side": "B",
+          "limitPx": "49.5",
+          "sz": "21.14",
+          "oid": 602181372488,
+          "timestamp": 1794439505084,
+          "triggerCondition": "Price above 45",
+          "isTrigger": true,
+          "triggerPx": "45.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "21.14",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "SOL",
+          "side": "B",
+          "limitPx": "96.8",
+          "sz": "28.25",
+          "oid": 600198824117,
+          "timestamp": 1794282475305,
+          "triggerCondition": "Price above 88",
+          "isTrigger": true,
+          "triggerPx": "88.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "28.25",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "WLFI",
+          "side": "B",
+          "limitPx": "0.0561",
+          "sz": "8278.0",
+          "oid": 595850478046,
+          "timestamp": 1793894877288,
+          "triggerCondition": "Price above 0.051",
+          "isTrigger": true,
+          "triggerPx": "0.051",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "8278.0",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "2Z",
+          "side": "B",
+          "limitPx": "0.0286",
+          "sz": "16488.0",
+          "oid": 592577930297,
+          "timestamp": 1793632932904,
+          "triggerCondition": "Price above 0.026",
+          "isTrigger": true,
+          "triggerPx": "0.026",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "16488.0",
+          "tif": null,
+          "cloid": null
+        }
+      ],
+      "total_open_order_count": 7
+    },
+    {
+      "address": "0x327141e8857d9c395ceb88e7fa3ce16d330b95d3",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x745208f70c7d558764569257d1ed776a307cda9d",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x8e7caac48ec38978960d485e65d0880628c3375f",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x2db6cbe4fdca5bdd964dbffe75b9e34d784f45c3",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xd1bfda082e5d5c1226b8e758f488c81811e8723a",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x9909c128feea2b6046026d75c0a29451d3427aa9",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xdcc200cee7a6453fbc5e26d6c7c91708f80fcfd5",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xb4f9a85a424daef309bf1a7ad3b8476554abfb00",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x75d449330bc75729fee2d1a0e82daf706e166b98",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xcf345af7d6463ff46812c78b7a11b91735b3e0e7",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xa7372d4a1effa129af3ef0203b792c6440f175fa",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x7e3b58b109e0fdbb743423c4b2844c94b24df505",
+      "orders": [
+        {
+          "coin": "BTC",
+          "side": "B",
+          "limitPx": "67100.0",
+          "sz": "1.0",
+          "oid": 611368595615,
+          "timestamp": 1795180783604,
+          "triggerCondition": "Price below 61000",
+          "isTrigger": true,
+          "triggerPx": "61000.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Take Profit Market",
+          "origSz": "1.0",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "BTC",
+          "side": "A",
+          "limitPx": "54540.0",
+          "sz": "0.1",
+          "oid": 609619880934,
+          "timestamp": 1795039901748,
+          "triggerCondition": "Price above 60600",
+          "isTrigger": true,
+          "triggerPx": "60600.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Take Profit Market",
+          "origSz": "0.1",
+          "tif": null,
+          "cloid": null
+        }
+      ],
+      "total_open_order_count": 9
+    },
+    {
+      "address": "0x15fc806d0011a1bcb3d1e610506544ab7db4198c",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x03e20e0b1c71dafdd9ccb826b4a3744d2df17c89",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xd7a2b1f9c4a672638ae556e387c2bf9bf7b8ef59",
+      "orders": [],
+      "total_open_order_count": 4
+    },
+    {
+      "address": "0x9538a7e2c495ccc288ef48b5df0d6cc6a45378cd",
+      "orders": [
+        {
+          "coin": "ZEC",
+          "side": "B",
+          "limitPx": "550.0",
+          "sz": "0.0",
+          "oid": 610482938860,
+          "timestamp": 1795111272591,
+          "triggerCondition": "Price below 500",
+          "isTrigger": true,
+          "triggerPx": "500.0",
+          "children": [],
+          "isPositionTpsl": true,
+          "reduceOnly": true,
+          "orderType": "Take Profit Market",
+          "origSz": "0.0",
+          "tif": null,
+          "cloid": null
+        }
+      ],
+      "total_open_order_count": 1
+    },
+    {
+      "address": "0x15bdd7a0f3c58ba3b15cd31701c2db46e13afb78",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x3ed46593ed1fd21f1ca11dd45541d51076957039",
+      "orders": [
+        {
+          "coin": "BTC",
+          "side": "B",
+          "limitPx": "81510.0",
+          "sz": "0.0",
+          "oid": 610188924854,
+          "timestamp": 1795096112861,
+          "triggerCondition": "Price above 74100",
+          "isTrigger": true,
+          "triggerPx": "74100.0",
+          "children": [],
+          "isPositionTpsl": true,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "0.0",
+          "tif": null,
+          "cloid": null
+        }
+      ],
+      "total_open_order_count": 1
+    },
+    {
+      "address": "0x3c8e732696f689e95dfc2014ecda62aa94a37b7f",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x4736a38ef97bc31c9f7c97e6bd47d35868386a09",
+      "orders": [],
+      "total_open_order_count": 17
+    },
+    {
+      "address": "0x0c1a14341119c84ab0bc65910851d11eef8b46f4",
+      "orders": [],
+      "total_open_order_count": 2
+    },
+    {
+      "address": "0x9d3697b3426cbe84e053ea0f9d4b3c2dd06820af",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x65bc3560b8768d158c19e94cd84ce8a146ba09c8",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x0fe2c00301f089c59f1789a0dab7d7438527d74b",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x2a03c2065d96b9808309646d29768b69b56b0043",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x582ec4ad24fc4dd8f78c32b3928de7c1bd945776",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x8c57e3c4af5b1ac13b2895db009cdd7eaccaecf1",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x78dd1a37d929803ba903688c0c9df8ea472eb389",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x603351dc1d59709d75f230e2fef348d069db520a",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x35253444b02b147e258ffc8ce81e2b4df3336f34",
+      "orders": [
+        {
+          "coin": "SOL",
+          "side": "B",
+          "limitPx": "209.0",
+          "sz": "150.0",
+          "oid": 557820454815,
+          "timestamp": 1790498404007,
+          "triggerCondition": "Price above 190",
+          "isTrigger": true,
+          "triggerPx": "190.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "150.0",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "SOL",
+          "side": "B",
+          "limitPx": "203.5",
+          "sz": "150.0",
+          "oid": 557820417845,
+          "timestamp": 1790498398854,
+          "triggerCondition": "Price above 185",
+          "isTrigger": true,
+          "triggerPx": "185.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "150.0",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "SOL",
+          "side": "B",
+          "limitPx": "198.0",
+          "sz": "150.0",
+          "oid": 557820380655,
+          "timestamp": 1790498392851,
+          "triggerCondition": "Price above 180",
+          "isTrigger": true,
+          "triggerPx": "180.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "150.0",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "SOL",
+          "side": "B",
+          "limitPx": "192.5",
+          "sz": "150.0",
+          "oid": 557820341671,
+          "timestamp": 1790498387318,
+          "triggerCondition": "Price above 175",
+          "isTrigger": true,
+          "triggerPx": "175.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "150.0",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "SOL",
+          "side": "B",
+          "limitPx": "187.0",
+          "sz": "250.0",
+          "oid": 557820265422,
+          "timestamp": 1790498374748,
+          "triggerCondition": "Price above 170",
+          "isTrigger": true,
+          "triggerPx": "170.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "250.0",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "SOL",
+          "side": "B",
+          "limitPx": "181.5",
+          "sz": "500.0",
+          "oid": 557819923552,
+          "timestamp": 1790498333670,
+          "triggerCondition": "Price above 165",
+          "isTrigger": true,
+          "triggerPx": "165.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "500.0",
+          "tif": null,
+          "cloid": null
+        },
+        {
+          "coin": "SOL",
+          "side": "B",
+          "limitPx": "176.0",
+          "sz": "500.0",
+          "oid": 557819872468,
+          "timestamp": 1790498328018,
+          "triggerCondition": "Price above 160",
+          "isTrigger": true,
+          "triggerPx": "160.0",
+          "children": [],
+          "isPositionTpsl": false,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "500.0",
+          "tif": null,
+          "cloid": null
+        }
+      ],
+      "total_open_order_count": 38
+    },
+    {
+      "address": "0xa893ef6026ce7e749d10add8f8a034ef07c18047",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x6adc6084b9765e0130a3cbff02af6f11edb0072d",
+      "orders": [],
+      "total_open_order_count": 1
+    },
+    {
+      "address": "0x8bd31f540fb105cfd23120177074131265cc82d2",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xae431f74c290f6e65593ebcca21068cf24725200",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x3ae8ab3abc0632b782a8746a012edf37994346d6",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xa36ddd9924cd2ae6128a3060d3fe6b8bb221fc41",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xbe7aab71362c6e401c8853fba0f063f6a0ca2a38",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x67d4efe87d546d1351952263aed60921cffc8eee",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x5aab60f736ee39a4272aa874db2604085ea4eaef",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xe8d89110c52df4ca33e75e060e3c72dcbf6c8dda",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x9deff5731245f7c6fe3a0b0e29a15cf3edcc9410",
+      "orders": [],
+      "total_open_order_count": 63
+    },
+    {
+      "address": "0x360d4e08c678e013fd9b22e0bc56e523a2b853bd",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x2a64d50b73aff43a43aaa236130fc816c9fb35c1",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x9d38c10c8bc8a9675268da9d888dbce8fbbb7168",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x6faf4312b8b5bb032f76dffe100c52c810f056a0",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xa77efd22ed33d502d107569bed8f8fde949ce2a8",
+      "orders": [
+        {
+          "coin": "HYPE",
+          "side": "B",
+          "limitPx": "74.525",
+          "sz": "0.0",
+          "oid": 610659819525,
+          "timestamp": 1795122500142,
+          "triggerCondition": "Price above 67.75",
+          "isTrigger": true,
+          "triggerPx": "67.75",
+          "children": [],
+          "isPositionTpsl": true,
+          "reduceOnly": true,
+          "orderType": "Stop Market",
+          "origSz": "0.0",
+          "tif": null,
+          "cloid": null
+        }
+      ],
+      "total_open_order_count": 1
+    },
+    {
+      "address": "0x6a03c175e9de1dca7ff2c15cd5a833fed5bdc8d5",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xbad27601efdf6e5e0d025c72f7e9ce98fc2a7968",
+      "orders": [],
+      "total_open_order_count": 1
+    },
+    {
+      "address": "0xd46979f07f5d1e86ae2dcc5e6e0f3af5fe270471",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x0b1c3722b601d811edc9fff00320a33cb78d83f0",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xdba58895f69be2261646ae0c7183a0c8984a95c2",
+      "orders": [
+        {
+          "coin": "BTC",
+          "side": "B",
+          "limitPx": "59951.0",
+          "sz": "0.0",
+          "oid": 611543341729,
+          "timestamp": 1795189412703,
+          "triggerCondition": "Price below 59000",
+          "isTrigger": true,
+          "triggerPx": "59000.0",
+          "children": [],
+          "isPositionTpsl": true,
+          "reduceOnly": true,
+          "orderType": "Take Profit Market",
+          "origSz": "0.0",
+          "tif": null,
+          "cloid": null
+        }
+      ],
+      "total_open_order_count": 1
+    },
+    {
+      "address": "0x1e329376f7e2c91222db7fb81e8c4642271ceebb",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xce99948917088ee86b206c85b681459f0ad3fe76",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x85d48e326cb3db87e32af9869424c05165180915",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x147736039deef80c9c9745a68dd0163ccac9f148",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x74c8b2b012b161c3f2b52ebb2b142944c79b86af",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x58dfdbee1d0d157aded161c16bd40a61bd15deab",
+      "orders": [],
+      "total_open_order_count": 1
+    },
+    {
+      "address": "0x19c3dc3d0b90fbbd37fd369134c530f193c5007f",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x79d2707f6307fca7628fc4ef81ccd54a96e29237",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x79c26b3468fea1ca206c918758d978ca9079bd39",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xb3162ca43d7455be5b4f6dbf3236435b709ed894",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x4b3adc2574a649c17c3c7d5ed2b7197b23eab284",
+      "orders": [],
+      "total_open_order_count": 1
+    },
+    {
+      "address": "0x8c88425e0fd25360e4824fdaff9cd1c21a9cecd6",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x35519de6193f0e6581032d87236988629e35a281",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x556d1343c2451da50a4a2c4e728d0c240908a7e0",
+      "orders": [],
+      "total_open_order_count": 16
+    },
+    {
+      "address": "0xf524d20408d9f426c74903924941efd1aae5e59d",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x41ade767480d5b1c9ecf606b13622cca3c61d8a6",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x340e669fc0ccfa36b29a6cbdfcc919570643b7fc",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0xff216cf7ced1399701387a0b80b5a2ead7961081",
+      "orders": [],
+      "total_open_order_count": 0
+    },
+    {
+      "address": "0x92d1c553dd602a9b727eb234762afabd0c27c60e",
+      "orders": [],
+      "total_open_order_count": 9
+    }
+  ],
+  "selection": "Visible reduce-only trigger exits; other order counts retained, other payloads omitted"
+}

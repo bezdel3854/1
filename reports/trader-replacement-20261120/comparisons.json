@@ -1,0 +1,767 @@
+[
+  {
+    "address": "0xf1dd55cdb935f3a95529e44473ea1565745e43c2",
+    "equity": 24613.171803,
+    "supported_fills7": 144,
+    "supported_opens7": 33,
+    "completed7": 28,
+    "hold_median_min": 82.82045,
+    "min_scaled_open": 0.04926325667024394,
+    "median_scaled_open": 69.04519452437512,
+    "below10": 3,
+    "coins": [
+      [
+        "NEAR",
+        21
+      ],
+      [
+        "BNB",
+        20
+      ],
+      [
+        "PUMP",
+        20
+      ],
+      [
+        "ADA",
+        17
+      ],
+      [
+        "UNI",
+        15
+      ]
+    ],
+    "portfolio": {
+      "day": {
+        "pnl": 6498.204891,
+        "vol": "444756.07",
+        "points": 15
+      },
+      "week": {
+        "pnl": 9252.475169,
+        "vol": "2866593.4700000002",
+        "points": 67
+      },
+      "month": {
+        "pnl": 18639.012212,
+        "vol": "4208824.5800000001",
+        "points": 50
+      },
+      "allTime": {
+        "pnl": 25155.736625,
+        "vol": "11603169.8000000007",
+        "points": 68
+      },
+      "perpDay": {
+        "pnl": 6498.1106,
+        "vol": "444756.07",
+        "points": 15
+      },
+      "perpWeek": {
+        "pnl": 9252.37291,
+        "vol": "2866593.4700000002",
+        "points": 67
+      },
+      "perpMonth": {
+        "pnl": 18638.726888,
+        "vol": "4208824.5800000001",
+        "points": 61
+      },
+      "perpAllTime": {
+        "pnl": 24770.4206,
+        "vol": "11598763.3200000003",
+        "points": 91
+      }
+    }
+  },
+  {
+    "address": "0xd7a2b1f9c4a672638ae556e387c2bf9bf7b8ef59",
+    "equity": 249164.646506,
+    "supported_fills7": 463,
+    "supported_opens7": 25,
+    "completed7": 23,
+    "hold_median_min": 344.3286,
+    "min_scaled_open": 0.12803581827260466,
+    "median_scaled_open": 45.135017127035276,
+    "below10": 9,
+    "coins": [
+      [
+        "ETH",
+        186
+      ],
+      [
+        "BTC",
+        177
+      ],
+      [
+        "SOL",
+        95
+      ],
+      [
+        "ZK",
+        5
+      ]
+    ],
+    "portfolio": {
+      "day": {
+        "pnl": -33784.882459,
+        "vol": "3694578.4199999999",
+        "points": 12
+      },
+      "week": {
+        "pnl": 15369.233771,
+        "vol": "45010421.2100000009",
+        "points": 59
+      },
+      "month": {
+        "pnl": 15369.233771,
+        "vol": "45010421.2100000009",
+        "points": 20
+      },
+      "allTime": {
+        "pnl": 15369.233771,
+        "vol": "45010421.2100000009",
+        "points": 60
+      },
+      "perpDay": {
+        "pnl": -33784.989822,
+        "vol": "3694578.4199999999",
+        "points": 12
+      },
+      "perpWeek": {
+        "pnl": 15368.333771,
+        "vol": "45010421.2100000009",
+        "points": 59
+      },
+      "perpMonth": {
+        "pnl": 15368.333771,
+        "vol": "45010421.2100000009",
+        "points": 30
+      },
+      "perpAllTime": {
+        "pnl": 15368.333771,
+        "vol": "45010421.2100000009",
+        "points": 60
+      }
+    }
+  },
+  {
+    "address": "0x4736a38ef97bc31c9f7c97e6bd47d35868386a09",
+    "equity": 14253.016418,
+    "supported_fills7": 307,
+    "supported_opens7": 61,
+    "completed7": 46,
+    "hold_median_min": 251.74736666666666,
+    "min_scaled_open": 0.08917475520443899,
+    "median_scaled_open": 2.2225874945315733,
+    "below10": 46,
+    "coins": [
+      [
+        "MORPHO",
+        24
+      ],
+      [
+        "XAI",
+        19
+      ],
+      [
+        "INIT",
+        17
+      ],
+      [
+        "LAYER",
+        16
+      ],
+      [
+        "XMR",
+        15
+      ]
+    ],
+    "portfolio": {
+      "day": {
+        "pnl": 1075.118113,
+        "vol": "205051.84",
+        "points": 13
+      },
+      "week": {
+        "pnl": 1581.601633,
+        "vol": "285511.25",
+        "points": 61
+      },
+      "month": {
+        "pnl": 1195.216496,
+        "vol": "312406.24",
+        "points": 45
+      },
+      "allTime": {
+        "pnl": 3626.532654,
+        "vol": "20099564.3500000015",
+        "points": 104
+      },
+      "perpDay": {
+        "pnl": 1073.767348,
+        "vol": "205051.84",
+        "points": 13
+      },
+      "perpWeek": {
+        "pnl": 1576.162654,
+        "vol": "285511.25",
+        "points": 61
+      },
+      "perpMonth": {
+        "pnl": 1190.086178,
+        "vol": "312406.24",
+        "points": 60
+      },
+      "perpAllTime": {
+        "pnl": 3618.022654,
+        "vol": "20099564.3500000015",
+        "points": 132
+      }
+    }
+  },
+  {
+    "address": "0xd1bfda082e5d5c1226b8e758f488c81811e8723a",
+    "equity": 39527.054043,
+    "supported_fills7": 1248,
+    "supported_opens7": 78,
+    "completed7": 78,
+    "hold_median_min": 7.068908333333333,
+    "min_scaled_open": 0.028737377538034906,
+    "median_scaled_open": 0.9076149533171018,
+    "below10": 66,
+    "coins": [
+      [
+        "ASTER",
+        213
+      ],
+      [
+        "ZEC",
+        167
+      ],
+      [
+        "RESOLV",
+        143
+      ],
+      [
+        "XAI",
+        106
+      ],
+      [
+        "AXS",
+        94
+      ]
+    ],
+    "portfolio": {
+      "day": {
+        "pnl": 175.194815,
+        "vol": "382767.17",
+        "points": 18
+      },
+      "week": {
+        "pnl": 7506.258403,
+        "vol": "2553337.54",
+        "points": 124
+      },
+      "month": {
+        "pnl": 33043.995157,
+        "vol": "11791680.5700000003",
+        "points": 114
+      },
+      "allTime": {
+        "pnl": 34418.885095,
+        "vol": "79468756.9200000018",
+        "points": 102
+      },
+      "perpDay": {
+        "pnl": 347.173855,
+        "vol": "382579.14",
+        "points": 18
+      },
+      "perpWeek": {
+        "pnl": 7798.656357,
+        "vol": "2552062.3100000001",
+        "points": 125
+      },
+      "perpMonth": {
+        "pnl": 33499.624616,
+        "vol": "11784941.9800000004",
+        "points": 115
+      },
+      "perpAllTime": {
+        "pnl": 34242.490624,
+        "vol": "79394306.1899999976",
+        "points": 107
+      }
+    }
+  },
+  {
+    "address": "0x5d908c88be270889c0953e7dff1c8e1d699ceea3",
+    "equity": 58310.28456,
+    "supported_fills7": 235,
+    "supported_opens7": 18,
+    "completed7": 17,
+    "hold_median_min": 551.0880666666667,
+    "min_scaled_open": 92.97981385635688,
+    "median_scaled_open": 397.0064142943773,
+    "below10": 0,
+    "coins": [
+      [
+        "ZEC",
+        176
+      ],
+      [
+        "BTC",
+        23
+      ],
+      [
+        "HYPE",
+        14
+      ],
+      [
+        "ETH",
+        7
+      ],
+      [
+        "XPL",
+        6
+      ]
+    ],
+    "portfolio": {
+      "day": {
+        "pnl": 168649.052459,
+        "vol": "6985109.8399999999",
+        "points": 16
+      },
+      "week": {
+        "pnl": 166276.784281,
+        "vol": "22975894.6499999985",
+        "points": 61
+      },
+      "month": {
+        "pnl": 252622.416629,
+        "vol": "59657438.2400000021",
+        "points": 47
+      },
+      "allTime": {
+        "pnl": 1416375.443349,
+        "vol": "149248568.5099999905",
+        "points": 41
+      },
+      "perpDay": {
+        "pnl": 170227.022839,
+        "vol": "6920799.8799999999",
+        "points": 16
+      },
+      "perpWeek": {
+        "pnl": 174819.220581,
+        "vol": "22670531.4499999993",
+        "points": 62
+      },
+      "perpMonth": {
+        "pnl": 290931.715874,
+        "vol": "57033470.6799999997",
+        "points": 56
+      },
+      "perpAllTime": {
+        "pnl": 1113362.864443,
+        "vol": "143427447.5900000036",
+        "points": 61
+      }
+    }
+  },
+  {
+    "address": "0xb2ff174a5eae8260943ed4499ff95282884369a6",
+    "equity": 2098.648419,
+    "supported_fills7": 89,
+    "supported_opens7": 23,
+    "completed7": 22,
+    "hold_median_min": 93.663025,
+    "min_scaled_open": 9.50255029353728,
+    "median_scaled_open": 298.2800967213867,
+    "below10": 1,
+    "coins": [
+      [
+        "UNI",
+        38
+      ],
+      [
+        "BTC",
+        27
+      ],
+      [
+        "HYPE",
+        16
+      ],
+      [
+        "XMR",
+        8
+      ]
+    ],
+    "portfolio": {
+      "day": {
+        "pnl": 2003.683299,
+        "vol": "144679.22",
+        "points": 14
+      },
+      "week": {
+        "pnl": 4693.080579,
+        "vol": "906758.48",
+        "points": 62
+      },
+      "month": {
+        "pnl": 4229.343914,
+        "vol": "995651.04",
+        "points": 45
+      },
+      "allTime": {
+        "pnl": 21590.038062,
+        "vol": "28670152.9800000004",
+        "points": 55
+      },
+      "perpDay": {
+        "pnl": 2003.708709,
+        "vol": "144679.22",
+        "points": 14
+      },
+      "perpWeek": {
+        "pnl": 4693.160629,
+        "vol": "906673.51",
+        "points": 64
+      },
+      "perpMonth": {
+        "pnl": 4619.060629,
+        "vol": "993303.9",
+        "points": 57
+      },
+      "perpAllTime": {
+        "pnl": 18465.000629,
+        "vol": "28494257.620000001",
+        "points": 75
+      }
+    }
+  },
+  {
+    "address": "0x4ba8c207ce9ba74ff71aa3a9bc5a430f4b79cdfd",
+    "equity": 9336.402809,
+    "supported_fills7": 108,
+    "supported_opens7": 8,
+    "completed7": 7,
+    "hold_median_min": 18.073066666666666,
+    "min_scaled_open": 246.87565769742915,
+    "median_scaled_open": 1541.2263042789846,
+    "below10": 0,
+    "coins": [
+      [
+        "ETH",
+        105
+      ],
+      [
+        "BTC",
+        3
+      ]
+    ],
+    "portfolio": {
+      "day": {
+        "pnl": 50501.138188,
+        "vol": "2810835.9100000001",
+        "points": 14
+      },
+      "week": {
+        "pnl": 40562.595607,
+        "vol": "6804042.9100000001",
+        "points": 61
+      },
+      "month": {
+        "pnl": 40562.595607,
+        "vol": "6804042.9100000001",
+        "points": 23
+      },
+      "allTime": {
+        "pnl": 40562.595607,
+        "vol": "6804042.9100000001",
+        "points": 61
+      },
+      "perpDay": {
+        "pnl": 50500.941757,
+        "vol": "2810835.9100000001",
+        "points": 14
+      },
+      "perpWeek": {
+        "pnl": 40562.169789,
+        "vol": "6804042.9100000001",
+        "points": 61
+      },
+      "perpMonth": {
+        "pnl": 40562.169789,
+        "vol": "6804042.9100000001",
+        "points": 27
+      },
+      "perpAllTime": {
+        "pnl": 40562.169789,
+        "vol": "6804042.9100000001",
+        "points": 61
+      }
+    }
+  },
+  {
+    "address": "0x67d4efe87d546d1351952263aed60921cffc8eee",
+    "equity": 488726.624559,
+    "supported_fills7": 59,
+    "supported_opens7": 9,
+    "completed7": 8,
+    "hold_median_min": 291.55095833333337,
+    "min_scaled_open": 0.5548063608048152,
+    "median_scaled_open": 53.75064561676793,
+    "below10": 1,
+    "coins": [
+      [
+        "BTC",
+        59
+      ]
+    ],
+    "portfolio": {
+      "day": {
+        "pnl": 66487.847281,
+        "vol": "5575169.1799999997",
+        "points": 13
+      },
+      "week": {
+        "pnl": 91857.059106,
+        "vol": "17307802.5199999996",
+        "points": 62
+      },
+      "month": {
+        "pnl": 247816.119481,
+        "vol": "50489405.3900000006",
+        "points": 45
+      },
+      "allTime": {
+        "pnl": 271567.456039,
+        "vol": "84491899.6200000048",
+        "points": 42
+      },
+      "perpDay": {
+        "pnl": 66487.832717,
+        "vol": "5575169.1799999997",
+        "points": 13
+      },
+      "perpWeek": {
+        "pnl": 91822.099484,
+        "vol": "16904340.3299999982",
+        "points": 62
+      },
+      "perpMonth": {
+        "pnl": 247781.107705,
+        "vol": "50085943.200000003",
+        "points": 53
+      },
+      "perpAllTime": {
+        "pnl": 273920.104559,
+        "vol": "82736190.1200000048",
+        "points": 49
+      }
+    }
+  },
+  {
+    "address": "0x92d1c553dd602a9b727eb234762afabd0c27c60e",
+    "equity": 395508.997965,
+    "supported_fills7": 839,
+    "supported_opens7": 11,
+    "completed7": 10,
+    "hold_median_min": 628.1796416666666,
+    "min_scaled_open": 0.0017380009141051958,
+    "median_scaled_open": 3.174139072585891,
+    "below10": 9,
+    "coins": [
+      [
+        "VVV",
+        257
+      ],
+      [
+        "ZEC",
+        249
+      ],
+      [
+        "HYPE",
+        249
+      ],
+      [
+        "BTC",
+        79
+      ],
+      [
+        "DOT",
+        5
+      ]
+    ],
+    "portfolio": {
+      "day": {
+        "pnl": -158835.006912,
+        "vol": "3981793.9900000002",
+        "points": 13
+      },
+      "week": {
+        "pnl": 35073.983676,
+        "vol": "19079940.3299999982",
+        "points": 62
+      },
+      "month": {
+        "pnl": 36812.855082,
+        "vol": "21106758.3299999982",
+        "points": 24
+      },
+      "allTime": {
+        "pnl": 36812.855082,
+        "vol": "21106758.3299999982",
+        "points": 67
+      },
+      "perpDay": {
+        "pnl": -158834.586448,
+        "vol": "3981793.9900000002",
+        "points": 13
+      },
+      "perpWeek": {
+        "pnl": 35073.398057,
+        "vol": "19079940.3299999982",
+        "points": 62
+      },
+      "perpMonth": {
+        "pnl": 36812.10292,
+        "vol": "21106758.3299999982",
+        "points": 25
+      },
+      "perpAllTime": {
+        "pnl": 36812.10292,
+        "vol": "21106758.3299999982",
+        "points": 67
+      }
+    }
+  },
+  {
+    "address": "0x603351dc1d59709d75f230e2fef348d069db520a",
+    "equity": 272822.436624,
+    "supported_fills7": 204,
+    "supported_opens7": 3,
+    "completed7": 2,
+    "hold_median_min": 3879.8321666666666,
+    "min_scaled_open": 24.67755039031435,
+    "median_scaled_open": 311.88183478366795,
+    "below10": 0,
+    "coins": [
+      [
+        "HYPE",
+        188
+      ],
+      [
+        "BTC",
+        16
+      ]
+    ],
+    "portfolio": {
+      "day": {
+        "pnl": -111846.30475,
+        "vol": "5620840.79",
+        "points": 15
+      },
+      "week": {
+        "pnl": 87975.318558,
+        "vol": "10057018.7100000009",
+        "points": 62
+      },
+      "month": {
+        "pnl": 75688.177896,
+        "vol": "12321608.1400000006",
+        "points": 33
+      },
+      "allTime": {
+        "pnl": 75688.177896,
+        "vol": "12321608.1400000006",
+        "points": 46
+      },
+      "perpDay": {
+        "pnl": -111846.440472,
+        "vol": "5620840.79",
+        "points": 15
+      },
+      "perpWeek": {
+        "pnl": 87975.110914,
+        "vol": "10057018.7100000009",
+        "points": 62
+      },
+      "perpMonth": {
+        "pnl": 75687.962174,
+        "vol": "12321608.1400000006",
+        "points": 36
+      },
+      "perpAllTime": {
+        "pnl": 75687.962174,
+        "vol": "12321608.1400000006",
+        "points": 48
+      }
+    }
+  },
+  {
+    "address": "0xa77efd22ed33d502d107569bed8f8fde949ce2a8",
+    "equity": 23889.479374,
+    "supported_fills7": 11,
+    "supported_opens7": 5,
+    "completed7": 4,
+    "hold_median_min": 0.4738083333333334,
+    "min_scaled_open": 441.78569995930576,
+    "median_scaled_open": 448.56235519174777,
+    "below10": 0,
+    "coins": [
+      [
+        "HYPE",
+        8
+      ],
+      [
+        "BTC",
+        3
+      ]
+    ],
+    "portfolio": {
+      "day": {
+        "pnl": -1581.371649,
+        "vol": "1216492.1399999999",
+        "points": 13
+      },
+      "week": {
+        "pnl": -12782.453203,
+        "vol": "1216492.1399999999",
+        "points": 64
+      },
+      "month": {
+        "pnl": -24423.3099,
+        "vol": "1216492.1399999999",
+        "points": 45
+      },
+      "allTime": {
+        "pnl": 20219.376137,
+        "vol": "2995751.3799999999",
+        "points": 33
+      },
+      "perpDay": {
+        "pnl": 10760.930332,
+        "vol": "1203498.99",
+        "points": 13
+      },
+      "perpWeek": {
+        "pnl": 10760.930332,
+        "vol": "1203498.99",
+        "points": 64
+      },
+      "perpMonth": {
+        "pnl": 10760.930332,
+        "vol": "1203498.99",
+        "points": 46
+      },
+      "perpAllTime": {
+        "pnl": 9862.830332,
+        "vol": "2590364.9399999999",
+        "points": 35
+      }
+    }
+  }
+]

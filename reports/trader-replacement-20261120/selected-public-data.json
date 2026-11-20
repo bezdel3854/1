@@ -1,0 +1,4006 @@
+{
+  "retrieved_at_utc": "2026-11-20T15:43:09.278846+00:00",
+  "source": "POST https://api.hyperliquid.xyz/info; userFills aggregateByTime=true, clearinghouseState, portfolio",
+  "selected": {
+    "leaderboard": {
+      "ethAddress": "0x67d4efe87d546d1351952263aed60921cffc8eee",
+      "accountValue": "576426.472501",
+      "windowPerformances": [
+        [
+          "day",
+          {
+            "pnl": "39024.183743",
+            "roi": "0.0726163333",
+            "vlm": "5575169.1799999997"
+          }
+        ],
+        [
+          "week",
+          {
+            "pnl": "64393.395568",
+            "roi": "0.1239633578",
+            "vlm": "17307802.5199999996"
+          }
+        ],
+        [
+          "month",
+          {
+            "pnl": "220352.455943",
+            "roi": "0.5134404146",
+            "vlm": "50489405.3900000006"
+          }
+        ],
+        [
+          "allTime",
+          {
+            "pnl": "246456.440229",
+            "roi": "0.5963728321",
+            "vlm": "84491899.6200000048"
+          }
+        ]
+      ],
+      "prize": 0,
+      "displayName": null
+    },
+    "fills": [
+      {
+        "coin": "BTC",
+        "px": "62034.0",
+        "sz": "5.0",
+        "side": "A",
+        "time": 1795144623388,
+        "startPosition": "-10.0",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0x8ce663e200951bcf8e6004492e2390020bf900c79b983aa130af0f34bf98f5ba",
+        "oid": 610949894331,
+        "crossed": true,
+        "fee": "108.559498",
+        "tid": 661753087308878,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "61719.795164",
+        "sz": "5.0",
+        "side": "A",
+        "time": 1795142489094,
+        "startPosition": "-5.0",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0x52e897cf36758fa5546204492dadf502044e00b4d178ae77f6b14321f579698f",
+        "oid": 610918020381,
+        "crossed": true,
+        "fee": "108.009639",
+        "tid": 538000517516516,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "61799.2783293333",
+        "sz": "15.0",
+        "side": "A",
+        "time": 1795142457817,
+        "startPosition": "10.0",
+        "dir": "Close Long",
+        "closedPnl": "66.43366",
+        "hash": "0x8eb917a865cea228903204492dac3a0209f2008e00c1c0fa3281c2fb24c27c13",
+        "oid": 610917521678,
+        "crossed": true,
+        "fee": "324.446195",
+        "tid": 108331009964572,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "61778.0",
+        "sz": "5.0",
+        "side": "B",
+        "time": 1795131569151,
+        "startPosition": "5.0",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0xf842072937409c0ff9bb04492b57db0202e5000ed243bae29c0ab27bf64475fa",
+        "oid": 610756374154,
+        "crossed": true,
+        "fee": "108.111493",
+        "tid": 350641230513639,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "61810.286118",
+        "sz": "5.0",
+        "side": "B",
+        "time": 1795131430885,
+        "startPosition": "0.0",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0x9e38f3a2367195779fb204492b504b0202200087d174b44942019ef4f5756f62",
+        "oid": 610754492653,
+        "crossed": true,
+        "fee": "108.167994",
+        "tid": 495959860660196,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "61791.4124713333",
+        "sz": "15.0",
+        "side": "A",
+        "time": 1795131113488,
+        "startPosition": "15.0",
+        "dir": "Close Long",
+        "closedPnl": "310.68707",
+        "hash": "0xfceab448a1b73b31fe6404492b3eaf000025cc2e3cba5a04a0b35f9b60bb151c",
+        "oid": 610744919592,
+        "crossed": true,
+        "fee": "324.404881",
+        "tid": 457493720927905,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "62175.0",
+        "sz": "5.0",
+        "side": "B",
+        "time": 1795129306250,
+        "startPosition": "10.0",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0xb357e057757e7753b4d104492adb060216a9003d1071962557208baa3472513e",
+        "oid": 610730594231,
+        "crossed": true,
+        "fee": "108.806242",
+        "tid": 645437041165384,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "61569.0",
+        "sz": "5.0",
+        "side": "B",
+        "time": 1795124506903,
+        "startPosition": "5.0",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0x45540a8badc1a80646cd044929d57202025a007148c4c6d8e91cb5de6cc581f0",
+        "oid": 610686884643,
+        "crossed": true,
+        "fee": "107.745743",
+        "tid": 980849243345425,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "61568.323846",
+        "sz": "5.0",
+        "side": "B",
+        "time": 1795124476569,
+        "startPosition": "0.0",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0x62dd49af64d0270c6457044929d3c602074f0094ffd345de06a5f50223d400f7",
+        "oid": 610686506113,
+        "crossed": true,
+        "fee": "107.744558",
+        "tid": 885225767788372,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "62281.0",
+        "sz": "15.0",
+        "side": "B",
+        "time": 1795118566928,
+        "startPosition": "-15.0",
+        "dir": "Close Short",
+        "closedPnl": "10062.0",
+        "hash": "0xbcb387b8fa340aa7be2d0449288f1b0207ac009e95372979607c330bb937e492",
+        "oid": 610593813711,
+        "crossed": true,
+        "fee": "326.975241",
+        "tid": 398103060863205,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "62300.0",
+        "sz": "1.35285",
+        "side": "B",
+        "time": 1795118389008,
+        "startPosition": "-16.35285",
+        "dir": "Close Short",
+        "closedPnl": "881.78763",
+        "hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "oid": 610590303275,
+        "crossed": false,
+        "fee": "6.742604",
+        "tid": 364993614968727,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "62298.0163058827",
+        "sz": "3.64715",
+        "side": "B",
+        "time": 1795118352339,
+        "startPosition": "-20.0",
+        "dir": "Close Short",
+        "closedPnl": "2384.4472",
+        "hash": "0x7a0263e5288b2fff7b7c044928837702040d00cac38e4ed11dcb0f37e78f09ea",
+        "oid": 610590303275,
+        "crossed": true,
+        "fee": "79.523567",
+        "tid": 103295699963200,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "62466.0",
+        "sz": "5.0",
+        "side": "B",
+        "time": 1795117862705,
+        "startPosition": "-25.0",
+        "dir": "Close Short",
+        "closedPnl": "2429.0",
+        "hash": "0xf510b84abda4c17ef68a04492868a50204c9003058a7e05198d9639d7ca89b69",
+        "oid": 610583311701,
+        "crossed": true,
+        "fee": "109.315493",
+        "tid": 105130589154037,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "63432.18035",
+        "sz": "3.0",
+        "side": "A",
+        "time": 1795061006048,
+        "startPosition": "-22.0",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0xf31c406e12c6a64bf49504491c537e0201ee0053adc9c51e96e4ebc0d1ca8036",
+        "oid": 609858876603,
+        "crossed": true,
+        "fee": "66.603781",
+        "tid": 839897337032516,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "63245.81226",
+        "sz": "2.0",
+        "side": "A",
+        "time": 1795060872566,
+        "startPosition": "-20.0",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0xc311da2940572a1ec48b04491c4c11020110000edb5a48f066da857bff5b0409",
+        "oid": 609857029724,
+        "crossed": true,
+        "fee": "44.272058",
+        "tid": 808472265604766,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "63102.0",
+        "sz": "5.0",
+        "side": "A",
+        "time": 1795060260696,
+        "startPosition": "-15.0",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0xba4ea249dd741d78bbc804491c2acb021190002f78773c4a5e174d9c9c77f763",
+        "oid": 609850749471,
+        "crossed": true,
+        "fee": "110.428496",
+        "tid": 56859069214577,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "62979.97002",
+        "sz": "5.0",
+        "side": "A",
+        "time": 1795059400596,
+        "startPosition": "-10.0",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0x58f34939984b66d95a6d04491bfbf002024c001f334e85abfcbbf48c574f40c3",
+        "oid": 609841079723,
+        "crossed": true,
+        "fee": "110.214938",
+        "tid": 1004307944071919,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "62659.80512",
+        "sz": "10.0",
+        "side": "A",
+        "time": 1795056377266,
+        "startPosition": "0.0",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0xbd7027df4588189cbee904491b56030204a100c4e08b376e6138d332048bf287",
+        "oid": 609803832153,
+        "crossed": true,
+        "fee": "219.309294",
+        "tid": 132024653602145,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "62540.475008",
+        "sz": "5.0",
+        "side": "A",
+        "time": 1795043601517,
+        "startPosition": "5.0",
+        "dir": "Close Long",
+        "closedPnl": "1347.37504",
+        "hash": "0xa0db3abcddb83394a25404491899db0204e400a278bb526644a3e60f9cbc0d7f",
+        "oid": 609648447189,
+        "crossed": true,
+        "fee": "109.445813",
+        "tid": 424123365270487,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "62271.0",
+        "sz": "5.0",
+        "side": "B",
+        "time": 1795042834758,
+        "startPosition": "0.0",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0xc7ad5e5dda3f4466c9270449186fb20202790043753263386b7609b099331e51",
+        "oid": 609641077796,
+        "crossed": true,
+        "fee": "108.974249",
+        "tid": 43735737123361,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "62582.3884626666",
+        "sz": "15.0",
+        "side": "B",
+        "time": 1795041327406,
+        "startPosition": "-15.0",
+        "dir": "Close Short",
+        "closedPnl": "40513.6730600001",
+        "hash": "0xf661d5c3725bd135f7db0449181e6f01da00eda90d5ef0089a2a8116315fab20",
+        "oid": 609629266329,
+        "crossed": true,
+        "fee": "328.557515",
+        "tid": 20192956117335,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "65000.0",
+        "sz": "1.60799",
+        "side": "A",
+        "time": 1794797539321,
+        "startPosition": "-13.39201",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0x445ce0360f5db5df45d60448e3fba7020712001baa50d4b1e8258b88ce518fc9",
+        "oid": 606596166348,
+        "crossed": false,
+        "fee": "8.361548",
+        "tid": 381118100971663,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "65000.0",
+        "sz": "1.50503",
+        "side": "A",
+        "time": 1794797539268,
+        "startPosition": "-11.88698",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0x05e6248c91a12b8e075f0448e3fba6020b4400722ca44a60a9aecfdf50a50578",
+        "oid": 606596166348,
+        "crossed": false,
+        "fee": "7.826156",
+        "tid": 820865000827413,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "65000.0",
+        "sz": "0.00208",
+        "side": "A",
+        "time": 1794797538005,
+        "startPosition": "-11.8849",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "oid": 606596166348,
+        "crossed": false,
+        "fee": "0.010816",
+        "tid": 1093871932560480,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "65000.0",
+        "sz": "0.7347",
+        "side": "A",
+        "time": 1794797536536,
+        "startPosition": "-11.1502",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0x3f9c13d985727a8341150448e3fb8202043d00bf20759955e364bf2c4476546d",
+        "oid": 606596166348,
+        "crossed": false,
+        "fee": "3.82044",
+        "tid": 183979765020298,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "65000.0",
+        "sz": "0.00033",
+        "side": "A",
+        "time": 1794797536024,
+        "startPosition": "-11.14987",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "oid": 606596166348,
+        "crossed": false,
+        "fee": "0.001716",
+        "tid": 1002116641676645,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "65000.0",
+        "sz": "0.06568",
+        "side": "A",
+        "time": 1794797535816,
+        "startPosition": "-11.08419",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0xf304184dd70ea023f47d0448e3fb7802057000337201bef696ccc3a096027a0e",
+        "oid": 606596166348,
+        "crossed": false,
+        "fee": "0.341536",
+        "tid": 575915305155417,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "65000.0",
+        "sz": "0.37226",
+        "side": "A",
+        "time": 1794797535669,
+        "startPosition": "-10.71193",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0xafe2b53d058ef835b15c0448e3fb760204220022a082170753ab608fc482d220",
+        "oid": 606596166348,
+        "crossed": false,
+        "fee": "1.935752",
+        "tid": 817664747820361,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "65000.0",
+        "sz": "0.50117",
+        "side": "A",
+        "time": 1794797535606,
+        "startPosition": "-10.21076",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0x1abaa5eb25a8f7c01c340448e3fb7502053900d0c0ac1692be83513de4acd1aa",
+        "oid": 606596166348,
+        "crossed": false,
+        "fee": "2.606084",
+        "tid": 735631530527766,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "65000.0",
+        "sz": "0.21076",
+        "side": "A",
+        "time": 1794797495715,
+        "startPosition": "-10.0",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0x69410c916be7ef606aba0448e3f940020306007706eb0e320d09b7e42aebc94b",
+        "oid": 606596166348,
+        "crossed": true,
+        "fee": "4.794789",
+        "tid": 776581962573406,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "65386.0",
+        "sz": "5.0",
+        "side": "A",
+        "time": 1794745257771,
+        "startPosition": "-5.0",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0x61e7c90d4b308af163610448d8d3080204db00f2e633a9c305b074600a3464dc",
+        "oid": 606056980558,
+        "crossed": true,
+        "fee": "114.425494",
+        "tid": 191048364375428,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "65463.926958",
+        "sz": "5.0",
+        "side": "A",
+        "time": 1794740912574,
+        "startPosition": "0.0",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0xc377a9bfafe1647fc4f10448d7e61a02038400a54ae48351674055126ee53e6a",
+        "oid": 606019466121,
+        "crossed": true,
+        "fee": "114.561859",
+        "tid": 952036258282799,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "65475.5121604545",
+        "sz": "22.0",
+        "side": "A",
+        "time": 1794735308741,
+        "startPosition": "22.0",
+        "dir": "Close Long",
+        "closedPnl": "3663.26753",
+        "hash": "0x62282772af301eea63a10448d6b3b102020e00584a333dbc05f0d2c56e33f8d5",
+        "oid": 605969069438,
+        "crossed": true,
+        "fee": "504.161415",
+        "tid": 324779151414922,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "62812.0",
+        "sz": "1.5",
+        "side": "B",
+        "time": 1794704669144,
+        "startPosition": "20.5",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0x50003e109ccc570851790448d0226402069000f637cf75daf3c8e9635bc030f2",
+        "oid": 605583275851,
+        "crossed": true,
+        "fee": "32.976298",
+        "tid": 576019901620951,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "63610.391016",
+        "sz": "5.0",
+        "side": "B",
+        "time": 1794694132544,
+        "startPosition": "15.5",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0x4d8218a8e6c5aca74efb0448cdda8a0208f2008e81c8cb79f14ac3fba5c98691",
+        "oid": 605418772640,
+        "crossed": true,
+        "fee": "127.220779",
+        "tid": 634982022078731,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "65191.0",
+        "sz": "0.5",
+        "side": "B",
+        "time": 1794670299647,
+        "startPosition": "15.0",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0xbba35e4169ab7598bd1d0448c8b7130204e3002704ae946a5f6c099428af4f83",
+        "oid": 605054751169,
+        "crossed": true,
+        "fee": "13.0382",
+        "tid": 223297746751904,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "65242.0",
+        "sz": "2.5",
+        "side": "B",
+        "time": 1794669948561,
+        "startPosition": "12.5",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0x55963f3d5a03f27d570f0448c8a3870202950022f507114ff95eea901907cc67",
+        "oid": 605048577739,
+        "crossed": true,
+        "fee": "65.242",
+        "tid": 331467192674896,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "65693.0",
+        "sz": "2.5",
+        "side": "B",
+        "time": 1794668988196,
+        "startPosition": "10.0",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0x829a3128c2f2555184130448c86e8002025f000e5df574232662dc7b81f62f3c",
+        "oid": 605032521444,
+        "crossed": true,
+        "fee": "65.692998",
+        "tid": 241747513575094,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "65900.0",
+        "sz": "3.0",
+        "side": "B",
+        "time": 1794667161401,
+        "startPosition": "7.0",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0x62ef010ccdf9482c64680448c809b601010018f268fc66fe06b7ac5f8cfd2217",
+        "oid": 605004153702,
+        "crossed": false,
+        "fee": "23.724",
+        "tid": 152448621282769,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "66164.37251",
+        "sz": "2.0",
+        "side": "B",
+        "time": 1794666304053,
+        "startPosition": "5.0",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0xac2ac03720db3a25ada40448c7da9d02069c001cbbde58f74ff36b89dfdf1410",
+        "oid": 604988393225,
+        "crossed": true,
+        "fee": "52.931496",
+        "tid": 878340059873900,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "66892.0",
+        "sz": "2.0",
+        "side": "B",
+        "time": 1794664044390,
+        "startPosition": "3.0",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0x3e9fc366750ddfbe40190448c75eea020196004c1000fe90e2686eb93401b9a8",
+        "oid": 604957510327,
+        "crossed": true,
+        "fee": "53.513597",
+        "tid": 821141834797108,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "66600.0",
+        "sz": "1.0",
+        "side": "B",
+        "time": 1794662675678,
+        "startPosition": "2.0",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0x89a15c46dcc8825d8b1b0448c7143e0203ce002c77cba12f2d6a07999bcc5c48",
+        "oid": 604873556368,
+        "crossed": false,
+        "fee": "7.992",
+        "tid": 744374570770946,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "66900.0",
+        "sz": "1.0",
+        "side": "B",
+        "time": 1794661090306,
+        "startPosition": "1.0",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0xc1321eac2deb9f0ec2ab0448c6bd2e00006d3691c8eebde064fac9feecef78f9",
+        "oid": 604873482155,
+        "crossed": false,
+        "fee": "8.027996",
+        "tid": 759331679207866,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "67283.0",
+        "sz": "1.0",
+        "side": "B",
+        "time": 1794653980709,
+        "startPosition": "0.0",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0x9873eab5db944d4899ed0448c53a1202011f009b76976c1a3c3c96089a982733",
+        "oid": 604873206214,
+        "crossed": true,
+        "fee": "26.913197",
+        "tid": 885427336589960,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "67272.9556585715",
+        "sz": "7.0",
+        "side": "B",
+        "time": 1794653920724,
+        "startPosition": "-7.0",
+        "dir": "Close Short",
+        "closedPnl": "-322.38961",
+        "hash": "0x2594a464fd82f67c270e0448c536b5020127004a9886154ec95d4fb7bc86d066",
+        "oid": 604872749468,
+        "crossed": true,
+        "fee": "188.364265",
+        "tid": 754890757732758,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "67236.0",
+        "sz": "5.0",
+        "side": "A",
+        "time": 1794653324411,
+        "startPosition": "-2.0",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0x66eabef9b9c39fd268640448c515de0201fe00df54c6bea40ab36a4c78c779bd",
+        "oid": 604868899156,
+        "crossed": true,
+        "fee": "134.471995",
+        "tid": 342812181564966,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "67214.0",
+        "sz": "0.00022",
+        "side": "A",
+        "time": 1794653208393,
+        "startPosition": "-1.99978",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0xb396dd314f5bbbafb5100448c50f8e020b4f0016ea5eda81575f88840e5f959a",
+        "oid": 604868078010,
+        "crossed": true,
+        "fee": "0.005914",
+        "tid": 63217788074142,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "67221.0",
+        "sz": "0.187",
+        "side": "A",
+        "time": 1794653191802,
+        "startPosition": "-1.81278",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0x97879791db7c8da799010448c50eab0201100077767fac793b5042e49a706792",
+        "oid": 604867962440,
+        "crossed": true,
+        "fee": "5.028129",
+        "tid": 935306718047610,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "67202.5258001522",
+        "sz": "1.81278",
+        "side": "A",
+        "time": 1794652527560,
+        "startPosition": "0.0",
+        "dir": "Open Short",
+        "closedPnl": "0.0",
+        "hash": "0x24f9c8550ed92b9b26730448c4eab302018e003aa9dc4a6dc8c273a7cddd0585",
+        "oid": 604863331597,
+        "crossed": true,
+        "fee": "48.729351",
+        "tid": 877232464395061,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "67222.0",
+        "sz": "10.0",
+        "side": "A",
+        "time": 1794651758505,
+        "startPosition": "10.0",
+        "dir": "Close Long",
+        "closedPnl": "256.0000000001",
+        "hash": "0xff288fe147f7eed200a20448c4c34d02086e00c6e2fb0da5a2f13b3406fbc8bd",
+        "oid": 604858032182,
+        "crossed": true,
+        "fee": "268.887988",
+        "tid": 499480790374483,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "67350.0",
+        "sz": "0.37756",
+        "side": "B",
+        "time": 1794623640531,
+        "startPosition": "9.62244",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0x5c5db43e34eb5a355dd70448becdf802047e0023cfee790700265f90f3ef3420",
+        "oid": 604587126576,
+        "crossed": true,
+        "fee": "10.171465",
+        "tid": 59358398951044,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "@142",
+        "px": "67300.0",
+        "sz": "2.9982",
+        "side": "A",
+        "time": 1794623565346,
+        "startPosition": "2.9982000013",
+        "dir": "Sell",
+        "closedPnl": "95.45690746",
+        "hash": "0xf014cc072ef4a641f18e0448bec9bc0205f300ecc9f7c51493dd7759edf8802c",
+        "oid": 604585796787,
+        "crossed": false,
+        "fee": "60.53365799",
+        "tid": 412412904599331,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "67180.0",
+        "sz": "4.62244",
+        "side": "B",
+        "time": 1794623410593,
+        "startPosition": "5.0",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0x157bb80d25492dff16f50448bec12a0213fa00f2c04c4cd1b944635fe44d07e9",
+        "oid": 604582102313,
+        "crossed": true,
+        "fee": "124.214206",
+        "tid": 805900831730312,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "67200.0",
+        "sz": "4.95137",
+        "side": "B",
+        "time": 1794623410593,
+        "startPosition": "0.04863",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0x834bcb4df07b7b2f84c50448bec12a020c2500338b7e9a01271476a0af7f551a",
+        "oid": 604581707844,
+        "crossed": false,
+        "fee": "39.927844",
+        "tid": 659769073715323,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "67200.0",
+        "sz": "0.00029",
+        "side": "B",
+        "time": 1794623410452,
+        "startPosition": "0.04834",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0x239bc5df0cd4c51325150448bec12802076500c4a7d7e3e5c7647131cbd89efd",
+        "oid": 604581707844,
+        "crossed": false,
+        "fee": "0.002338",
+        "tid": 1079321677121373,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "67200.0",
+        "sz": "0.00087",
+        "side": "B",
+        "time": 1794623410389,
+        "startPosition": "0.04747",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0x87a6ddac85c3278e89200448bec127020c91009220c646602b6f88ff44c70179",
+        "oid": 604581707844,
+        "crossed": false,
+        "fee": "0.007014",
+        "tid": 1124245321228470,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "67200.0",
+        "sz": "0.04747",
+        "side": "B",
+        "time": 1794623409309,
+        "startPosition": "0.0",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0xa4a96d28a7c05c6da6230448bec117021001000e42c37b3f4872187b66c43658",
+        "oid": 604581707844,
+        "crossed": false,
+        "fee": "0.382798",
+        "tid": 774338782548678,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "@142",
+        "px": "67227.80106",
+        "sz": "3.0",
+        "side": "B",
+        "time": 1794623333968,
+        "startPosition": "0.0",
+        "dir": "Buy",
+        "closedPnl": "0.0",
+        "hash": "0x68d56e0c513bd4b26a4f0448bebcfe0203ed00f1ec3ef3840c9e195f103fae9d",
+        "oid": 604580083631,
+        "crossed": true,
+        "fee": "0.0017999987",
+        "tid": 428996819817497,
+        "feeToken": "UBTC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "68345.441999",
+        "sz": "10.0",
+        "side": "A",
+        "time": 1794620671826,
+        "startPosition": "10.0",
+        "dir": "Close Long",
+        "closedPnl": "-5.534555",
+        "hash": "0x797380c7da7884907aed0448be2aaf02036c00ad757ba3621d3c2c1a997c5e7b",
+        "oid": 604551493220,
+        "crossed": true,
+        "fee": "273.381752",
+        "tid": 431386347404223,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "68346.0",
+        "sz": "10.0",
+        "side": "B",
+        "time": 1794619678529,
+        "startPosition": "0.0",
+        "dir": "Open Long",
+        "closedPnl": "0.0",
+        "hash": "0x1197749fe25a35cb13110448bdf46a0202b300857d5d549db5601ff2a15e0fb5",
+        "oid": 604544623104,
+        "crossed": true,
+        "fee": "273.383988",
+        "tid": 543409546298412,
+        "feeToken": "USDC",
+        "twapId": null
+      },
+      {
+        "coin": "BTC",
+        "px": "68347.694719",
+        "sz": "10.0",
+        "side": "B",
+        "time": 1794619528517,
+        "startPosition": "-10.0",
+        "dir": "Close Short",
+        "closedPnl": "15103.05281",
+        "hash": "0x0541b1ea43398a4c06bb0448bdec530206a400cfde3ca91ea90a5d3d023d6436",
+        "oid": 604543456039,
+        "crossed": true,
+        "fee": "273.390769",
+        "tid": 854875895744323,
+        "feeToken": "USDC",
+        "twapId": null
+      }
+    ],
+    "state": {
+      "marginSummary": {
+        "accountValue": "488726.624559",
+        "totalNtlPos": "902325.0",
+        "totalRawUsd": "1391051.6245589999",
+        "totalMarginUsed": "451162.5"
+      },
+      "crossMarginSummary": {
+        "accountValue": "488726.624559",
+        "totalNtlPos": "902325.0",
+        "totalRawUsd": "1391051.6245589999",
+        "totalMarginUsed": "451162.5"
+      },
+      "crossMaintenanceMarginUsed": "11279.0625",
+      "withdrawable": "37564.124559",
+      "assetPositions": [
+        {
+          "type": "oneWay",
+          "position": {
+            "coin": "BTC",
+            "szi": "-15.0",
+            "leverage": {
+              "type": "cross",
+              "value": 2
+            },
+            "entryPx": "61850.0",
+            "positionValue": "902325.0",
+            "unrealizedPnl": "25425.7171",
+            "returnOnEquity": "0.0548115278",
+            "liquidationPx": "99148.9782910947",
+            "marginUsed": "451162.5",
+            "maxLeverage": 40,
+            "cumFunding": {
+              "allTime": "-8251.485391",
+              "sinceOpen": "-9.210006",
+              "sinceChange": "-1.427257"
+            }
+          }
+        }
+      ],
+      "time": 1795189162456
+    },
+    "portfolio": [
+      [
+        "day",
+        {
+          "accountValueHistory": [
+            [
+              1795096800051,
+              "537402.288758"
+            ],
+            [
+              1795105200080,
+              "559700.254845"
+            ],
+            [
+              1795113600021,
+              "558164.483203"
+            ],
+            [
+              1795120800028,
+              "579110.50483"
+            ],
+            [
+              1795129200017,
+              "584744.9093459999"
+            ],
+            [
+              1795136400037,
+              "581666.4895349999"
+            ],
+            [
+              1795143600039,
+              "573322.2703269999"
+            ],
+            [
+              1795150800045,
+              "583271.899632"
+            ],
+            [
+              1795158000068,
+              "575352.650254"
+            ],
+            [
+              1795166400041,
+              "580937.661209"
+            ],
+            [
+              1795173600064,
+              "580264.729728"
+            ],
+            [
+              1795182000025,
+              "585251.285036"
+            ],
+            [
+              1795189209869,
+              "603890.136039"
+            ]
+          ],
+          "pnlHistory": [
+            [
+              1795096800051,
+              "0.0"
+            ],
+            [
+              1795105200080,
+              "22297.966087"
+            ],
+            [
+              1795113600021,
+              "20762.194445"
+            ],
+            [
+              1795120800028,
+              "41708.216072"
+            ],
+            [
+              1795129200017,
+              "47342.620588"
+            ],
+            [
+              1795136400037,
+              "44264.200777"
+            ],
+            [
+              1795143600039,
+              "35919.981569"
+            ],
+            [
+              1795150800045,
+              "45869.610874"
+            ],
+            [
+              1795158000068,
+              "37950.361496"
+            ],
+            [
+              1795166400041,
+              "43535.372451"
+            ],
+            [
+              1795173600064,
+              "42862.44097"
+            ],
+            [
+              1795182000025,
+              "47848.996278"
+            ],
+            [
+              1795189209869,
+              "66487.847281"
+            ]
+          ],
+          "vlm": "5575169.1799999997"
+        }
+      ],
+      [
+        "week",
+        {
+          "accountValueHistory": [
+            [
+              1794579600051,
+              "519455.076933"
+            ],
+            [
+              1794588000010,
+              "525552.317458"
+            ],
+            [
+              1794602400050,
+              "523736.778591"
+            ],
+            [
+              1794609600078,
+              "528936.313459"
+            ],
+            [
+              1794620776009,
+              "525050.0714669999"
+            ],
+            [
+              1794628800004,
+              "520113.155589"
+            ],
+            [
+              1794643200061,
+              "524370.104953"
+            ],
+            [
+              1794651600043,
+              "526067.3288369999"
+            ],
+            [
+              1794660000015,
+              "524062.528353"
+            ],
+            [
+              1794676800038,
+              "510708.540067"
+            ],
+            [
+              1794684000041,
+              "513489.323057"
+            ],
+            [
+              1794692400056,
+              "503948.498276"
+            ],
+            [
+              1794708000074,
+              "464109.332143"
+            ],
+            [
+              1794720000057,
+              "516569.793575"
+            ],
+            [
+              1794728400068,
+              "495636.140259"
+            ],
+            [
+              1794735600110,
+              "526663.063289"
+            ],
+            [
+              1794752400023,
+              "527044.1635340001"
+            ],
+            [
+              1794759600041,
+              "535649.312521"
+            ],
+            [
+              1794775200063,
+              "529992.2620099999"
+            ],
+            [
+              1794782400076,
+              "529248.5323580001"
+            ],
+            [
+              1794790800029,
+              "531762.969986"
+            ],
+            [
+              1794806400073,
+              "533176.212659"
+            ],
+            [
+              1794814800012,
+              "532042.205434"
+            ],
+            [
+              1794822000035,
+              "541968.628278"
+            ],
+            [
+              1794838800054,
+              "539642.48953"
+            ],
+            [
+              1794847200014,
+              "536366.795979"
+            ],
+            [
+              1794861600055,
+              "531690.5372200001"
+            ],
+            [
+              1794868800055,
+              "526279.711821"
+            ],
+            [
+              1794876000087,
+              "537969.625128"
+            ],
+            [
+              1794892800014,
+              "532892.135705"
+            ],
+            [
+              1794900000036,
+              "537180.546886"
+            ],
+            [
+              1794915600022,
+              "534851.086738"
+            ],
+            [
+              1794922800041,
+              "531845.4738330001"
+            ],
+            [
+              1794931200004,
+              "544481.902046"
+            ],
+            [
+              1794945600077,
+              "550212.229049"
+            ],
+            [
+              1794954000026,
+              "540030.8812300001"
+            ],
+            [
+              1794962400051,
+              "534128.695994"
+            ],
+            [
+              1794978000037,
+              "540040.628378"
+            ],
+            [
+              1794985200059,
+              "537244.871121"
+            ],
+            [
+              1795002000080,
+              "543473.35485"
+            ],
+            [
+              1795010400013,
+              "547669.8913350001"
+            ],
+            [
+              1795017600057,
+              "559494.134617"
+            ],
+            [
+              1795033200045,
+              "565658.194758"
+            ],
+            [
+              1795041470462,
+              "563127.589648"
+            ],
+            [
+              1795056000027,
+              "564256.5447570001"
+            ],
+            [
+              1795063200065,
+              "550050.40969"
+            ],
+            [
+              1795071600049,
+              "544320.508955"
+            ],
+            [
+              1795080000024,
+              "543635.394797"
+            ],
+            [
+              1795088400045,
+              "540003.728134"
+            ],
+            [
+              1795096800051,
+              "537402.288758"
+            ],
+            [
+              1795105200080,
+              "559700.254845"
+            ],
+            [
+              1795113600021,
+              "558164.483203"
+            ],
+            [
+              1795120800028,
+              "579110.50483"
+            ],
+            [
+              1795129200017,
+              "584744.9093459999"
+            ],
+            [
+              1795136400037,
+              "581666.4895349999"
+            ],
+            [
+              1795143600039,
+              "573322.2703269999"
+            ],
+            [
+              1795150800045,
+              "583271.899632"
+            ],
+            [
+              1795158000068,
+              "575352.650254"
+            ],
+            [
+              1795166400041,
+              "580937.661209"
+            ],
+            [
+              1795173600064,
+              "580264.729728"
+            ],
+            [
+              1795182000025,
+              "585251.285036"
+            ],
+            [
+              1795189209869,
+              "603890.136039"
+            ]
+          ],
+          "pnlHistory": [
+            [
+              1794579600051,
+              "0.0"
+            ],
+            [
+              1794588000010,
+              "6097.240525"
+            ],
+            [
+              1794602400050,
+              "4281.701658"
+            ],
+            [
+              1794609600078,
+              "9481.236526"
+            ],
+            [
+              1794620776009,
+              "8816.994534"
+            ],
+            [
+              1794628800004,
+              "3880.078656"
+            ],
+            [
+              1794643200061,
+              "8137.02802"
+            ],
+            [
+              1794651600043,
+              "9834.251904"
+            ],
+            [
+              1794660000015,
+              "7829.45142"
+            ],
+            [
+              1794676800038,
+              "-5524.536866"
+            ],
+            [
+              1794684000041,
+              "-2743.753876"
+            ],
+            [
+              1794692400056,
+              "-12284.578657"
+            ],
+            [
+              1794708000074,
+              "-52123.74479"
+            ],
+            [
+              1794720000057,
+              "336.716642"
+            ],
+            [
+              1794728400068,
+              "-20596.936674"
+            ],
+            [
+              1794735600110,
+              "10429.986356"
+            ],
+            [
+              1794752400023,
+              "10811.086601"
+            ],
+            [
+              1794759600041,
+              "19416.235588"
+            ],
+            [
+              1794775200063,
+              "13759.185077"
+            ],
+            [
+              1794782400076,
+              "13015.455425"
+            ],
+            [
+              1794790800029,
+              "15529.893053"
+            ],
+            [
+              1794806400073,
+              "16943.135726"
+            ],
+            [
+              1794814800012,
+              "15809.128501"
+            ],
+            [
+              1794822000035,
+              "25735.551345"
+            ],
+            [
+              1794838800054,
+              "23409.412597"
+            ],
+            [
+              1794847200014,
+              "20133.719046"
+            ],
+            [
+              1794861600055,
+              "15457.460287"
+            ],
+            [
+              1794868800055,
+              "10046.634888"
+            ],
+            [
+              1794876000087,
+              "21736.548195"
+            ],
+            [
+              1794892800014,
+              "16659.058772"
+            ],
+            [
+              1794900000036,
+              "20947.469953"
+            ],
+            [
+              1794915600022,
+              "18618.009805"
+            ],
+            [
+              1794922800041,
+              "15612.3969"
+            ],
+            [
+              1794931200004,
+              "28248.825113"
+            ],
+            [
+              1794945600077,
+              "33979.152116"
+            ],
+            [
+              1794954000026,
+              "23797.804297"
+            ],
+            [
+              1794962400051,
+              "17895.619061"
+            ],
+            [
+              1794978000037,
+              "23807.551445"
+            ],
+            [
+              1794985200059,
+              "21011.794188"
+            ],
+            [
+              1795002000080,
+              "27240.277917"
+            ],
+            [
+              1795010400013,
+              "31436.814402"
+            ],
+            [
+              1795017600057,
+              "43261.057684"
+            ],
+            [
+              1795033200045,
+              "49425.117825"
+            ],
+            [
+              1795041470462,
+              "51094.512715"
+            ],
+            [
+              1795056000027,
+              "52223.467824"
+            ],
+            [
+              1795063200065,
+              "38017.332757"
+            ],
+            [
+              1795071600049,
+              "32287.432022"
+            ],
+            [
+              1795080000024,
+              "31602.317864"
+            ],
+            [
+              1795088400045,
+              "27970.651201"
+            ],
+            [
+              1795096800051,
+              "25369.211825"
+            ],
+            [
+              1795105200080,
+              "47667.177912"
+            ],
+            [
+              1795113600021,
+              "46131.40627"
+            ],
+            [
+              1795120800028,
+              "67077.427897"
+            ],
+            [
+              1795129200017,
+              "72711.832413"
+            ],
+            [
+              1795136400037,
+              "69633.412602"
+            ],
+            [
+              1795143600039,
+              "61289.193394"
+            ],
+            [
+              1795150800045,
+              "71238.822699"
+            ],
+            [
+              1795158000068,
+              "63319.573321"
+            ],
+            [
+              1795166400041,
+              "68904.584276"
+            ],
+            [
+              1795173600064,
+              "68231.652795"
+            ],
+            [
+              1795182000025,
+              "73218.208103"
+            ],
+            [
+              1795189209869,
+              "91857.059106"
+            ]
+          ],
+          "vlm": "17307802.5199999996"
+        }
+      ],
+      [
+        "month",
+        {
+          "accountValueHistory": [
+            [
+              1792536000132,
+              "429168.506558"
+            ],
+            [
+              1792622400062,
+              "406181.820735"
+            ],
+            [
+              1792712400026,
+              "455797.400649"
+            ],
+            [
+              1792797255235,
+              "462074.69739"
+            ],
+            [
+              1792882800036,
+              "461487.536986"
+            ],
+            [
+              1792970400008,
+              "467699.904968"
+            ],
+            [
+              1793052000053,
+              "470228.074885"
+            ],
+            [
+              1793140800060,
+              "470290.124198"
+            ],
+            [
+              1793229600007,
+              "469391.350347"
+            ],
+            [
+              1793314800047,
+              "488829.0224"
+            ],
+            [
+              1793397600013,
+              "510538.792351"
+            ],
+            [
+              1793488800038,
+              "510538.791328"
+            ],
+            [
+              1793574000088,
+              "510538.791083"
+            ],
+            [
+              1793662800004,
+              "524152.555352"
+            ],
+            [
+              1793749200061,
+              "514224.280783"
+            ],
+            [
+              1793835600061,
+              "479594.284471"
+            ],
+            [
+              1793914800049,
+              "531107.250138"
+            ],
+            [
+              1794002400059,
+              "533007.944825"
+            ],
+            [
+              1794094800056,
+              "534435.185721"
+            ],
+            [
+              1794175225842,
+              "540890.813133"
+            ],
+            [
+              1794267600059,
+              "544010.091222"
+            ],
+            [
+              1794348000067,
+              "521980.245556"
+            ],
+            [
+              1794436800036,
+              "520445.644885"
+            ],
+            [
+              1794525600123,
+              "528372.206186"
+            ],
+            [
+              1794556800062,
+              "495621.987549"
+            ],
+            [
+              1794588000010,
+              "525552.317458"
+            ],
+            [
+              1794620776009,
+              "525050.0714669999"
+            ],
+            [
+              1794651600043,
+              "526067.3288369999"
+            ],
+            [
+              1794684000041,
+              "513489.323057"
+            ],
+            [
+              1794720000057,
+              "516569.793575"
+            ],
+            [
+              1794752400023,
+              "527044.1635340001"
+            ],
+            [
+              1794782400076,
+              "529248.5323580001"
+            ],
+            [
+              1794814800012,
+              "532042.205434"
+            ],
+            [
+              1794847200014,
+              "536366.795979"
+            ],
+            [
+              1794876000087,
+              "537969.625128"
+            ],
+            [
+              1794915600022,
+              "534851.086738"
+            ],
+            [
+              1794945600077,
+              "550212.229049"
+            ],
+            [
+              1794978000037,
+              "540040.628378"
+            ],
+            [
+              1795010400013,
+              "547669.8913350001"
+            ],
+            [
+              1795041470462,
+              "563127.589648"
+            ],
+            [
+              1795071600049,
+              "544320.508955"
+            ],
+            [
+              1795105200080,
+              "559700.254845"
+            ],
+            [
+              1795136400037,
+              "581666.4895349999"
+            ],
+            [
+              1795166400041,
+              "580937.661209"
+            ],
+            [
+              1795189209869,
+              "603890.136039"
+            ]
+          ],
+          "pnlHistory": [
+            [
+              1792536000132,
+              "0.0"
+            ],
+            [
+              1792622400062,
+              "-22986.685823"
+            ],
+            [
+              1792712400026,
+              "26628.894091"
+            ],
+            [
+              1792797255235,
+              "37706.190832"
+            ],
+            [
+              1792882800036,
+              "37119.030428"
+            ],
+            [
+              1792970400008,
+              "43331.39841"
+            ],
+            [
+              1793052000053,
+              "50865.568327"
+            ],
+            [
+              1793140800060,
+              "50927.61764"
+            ],
+            [
+              1793229600007,
+              "50028.843789"
+            ],
+            [
+              1793314800047,
+              "91616.935842"
+            ],
+            [
+              1793397600013,
+              "119356.705793"
+            ],
+            [
+              1793488800038,
+              "119356.70477"
+            ],
+            [
+              1793574000088,
+              "119356.704525"
+            ],
+            [
+              1793662800004,
+              "132970.468794"
+            ],
+            [
+              1793749200061,
+              "123042.194225"
+            ],
+            [
+              1793835600061,
+              "88412.197913"
+            ],
+            [
+              1793914800049,
+              "154775.57358"
+            ],
+            [
+              1794002400059,
+              "156676.268267"
+            ],
+            [
+              1794094800056,
+              "158103.509163"
+            ],
+            [
+              1794175225842,
+              "174589.796575"
+            ],
+            [
+              1794267600059,
+              "177709.074664"
+            ],
+            [
+              1794348000067,
+              "158484.228998"
+            ],
+            [
+              1794436800036,
+              "156949.628327"
+            ],
+            [
+              1794525600123,
+              "164876.189628"
+            ],
+            [
+              1794556800062,
+              "132125.970991"
+            ],
+            [
+              1794588000010,
+              "162056.3009"
+            ],
+            [
+              1794620776009,
+              "164776.054909"
+            ],
+            [
+              1794651600043,
+              "165793.312279"
+            ],
+            [
+              1794684000041,
+              "153215.306499"
+            ],
+            [
+              1794720000057,
+              "156295.777017"
+            ],
+            [
+              1794752400023,
+              "166770.146976"
+            ],
+            [
+              1794782400076,
+              "168974.5158"
+            ],
+            [
+              1794814800012,
+              "171768.188876"
+            ],
+            [
+              1794847200014,
+              "176092.779421"
+            ],
+            [
+              1794876000087,
+              "177695.60857"
+            ],
+            [
+              1794915600022,
+              "174577.07018"
+            ],
+            [
+              1794945600077,
+              "189938.212491"
+            ],
+            [
+              1794978000037,
+              "179766.61182"
+            ],
+            [
+              1795010400013,
+              "187395.874777"
+            ],
+            [
+              1795041470462,
+              "207053.57309"
+            ],
+            [
+              1795071600049,
+              "188246.492397"
+            ],
+            [
+              1795105200080,
+              "203626.238287"
+            ],
+            [
+              1795136400037,
+              "225592.472977"
+            ],
+            [
+              1795166400041,
+              "224863.644651"
+            ],
+            [
+              1795189209869,
+              "247816.119481"
+            ]
+          ],
+          "vlm": "50489405.3900000006"
+        }
+      ],
+      [
+        "allTime",
+        {
+          "accountValueHistory": [
+            [
+              1788991200058,
+              "0.0"
+            ],
+            [
+              1788994800058,
+              "71669.606728"
+            ],
+            [
+              1789597200054,
+              "268478.885862"
+            ],
+            [
+              1790199600053,
+              "449042.67399"
+            ],
+            [
+              1790804400122,
+              "434003.46632"
+            ],
+            [
+              1791415200033,
+              "440925.023426"
+            ],
+            [
+              1792021200067,
+              "450161.251746"
+            ],
+            [
+              1792536000132,
+              "429168.506558"
+            ],
+            [
+              1792622400062,
+              "406181.820735"
+            ],
+            [
+              1792712400026,
+              "455797.400649"
+            ],
+            [
+              1792797255235,
+              "462074.69739"
+            ],
+            [
+              1792882800036,
+              "461487.536986"
+            ],
+            [
+              1792970400008,
+              "467699.904968"
+            ],
+            [
+              1793052000053,
+              "470228.074885"
+            ],
+            [
+              1793140800060,
+              "470290.124198"
+            ],
+            [
+              1793229600007,
+              "469391.350347"
+            ],
+            [
+              1793314800047,
+              "488829.0224"
+            ],
+            [
+              1793397600013,
+              "510538.792351"
+            ],
+            [
+              1793488800038,
+              "510538.791328"
+            ],
+            [
+              1793574000088,
+              "510538.791083"
+            ],
+            [
+              1793662800004,
+              "524152.555352"
+            ],
+            [
+              1793749200061,
+              "514224.280783"
+            ],
+            [
+              1793835600061,
+              "479594.284471"
+            ],
+            [
+              1793914800049,
+              "531107.250138"
+            ],
+            [
+              1794002400059,
+              "533007.944825"
+            ],
+            [
+              1794094800056,
+              "534435.185721"
+            ],
+            [
+              1794175225842,
+              "540890.813133"
+            ],
+            [
+              1794267600059,
+              "544010.091222"
+            ],
+            [
+              1794348000067,
+              "521980.245556"
+            ],
+            [
+              1794436800036,
+              "520445.644885"
+            ],
+            [
+              1794525600123,
+              "528372.206186"
+            ],
+            [
+              1794588000010,
+              "525552.317458"
+            ],
+            [
+              1794651600043,
+              "526067.3288369999"
+            ],
+            [
+              1794720000057,
+              "516569.793575"
+            ],
+            [
+              1794782400076,
+              "529248.5323580001"
+            ],
+            [
+              1794847200014,
+              "536366.795979"
+            ],
+            [
+              1794915600022,
+              "534851.086738"
+            ],
+            [
+              1794978000037,
+              "540040.628378"
+            ],
+            [
+              1795041470462,
+              "563127.589648"
+            ],
+            [
+              1795105200080,
+              "559700.254845"
+            ],
+            [
+              1795173600064,
+              "580264.729728"
+            ],
+            [
+              1795189209869,
+              "603890.136039"
+            ]
+          ],
+          "pnlHistory": [
+            [
+              1788991200058,
+              "0.0"
+            ],
+            [
+              1788994800058,
+              "-8629.133272"
+            ],
+            [
+              1789597200054,
+              "-26158.284138"
+            ],
+            [
+              1790199600053,
+              "31895.48399"
+            ],
+            [
+              1790804400122,
+              "18356.27632"
+            ],
+            [
+              1791415200033,
+              "25277.833426"
+            ],
+            [
+              1792021200067,
+              "42044.061746"
+            ],
+            [
+              1792536000132,
+              "23751.336558"
+            ],
+            [
+              1792622400062,
+              "764.650735"
+            ],
+            [
+              1792712400026,
+              "50380.230649"
+            ],
+            [
+              1792797255235,
+              "61457.52739"
+            ],
+            [
+              1792882800036,
+              "60870.366986"
+            ],
+            [
+              1792970400008,
+              "67082.734968"
+            ],
+            [
+              1793052000053,
+              "74616.904885"
+            ],
+            [
+              1793140800060,
+              "74678.954198"
+            ],
+            [
+              1793229600007,
+              "73780.180347"
+            ],
+            [
+              1793314800047,
+              "115368.2724"
+            ],
+            [
+              1793397600013,
+              "143108.042351"
+            ],
+            [
+              1793488800038,
+              "143108.041328"
+            ],
+            [
+              1793574000088,
+              "143108.041083"
+            ],
+            [
+              1793662800004,
+              "156721.805352"
+            ],
+            [
+              1793749200061,
+              "146793.530783"
+            ],
+            [
+              1793835600061,
+              "112163.534471"
+            ],
+            [
+              1793914800049,
+              "178526.910138"
+            ],
+            [
+              1794002400059,
+              "180427.604825"
+            ],
+            [
+              1794094800056,
+              "181854.845721"
+            ],
+            [
+              1794175225842,
+              "198341.133133"
+            ],
+            [
+              1794267600059,
+              "201460.411222"
+            ],
+            [
+              1794348000067,
+              "182235.565556"
+            ],
+            [
+              1794436800036,
+              "180700.964885"
+            ],
+            [
+              1794525600123,
+              "188627.526186"
+            ],
+            [
+              1794588000010,
+              "185807.637458"
+            ],
+            [
+              1794651600043,
+              "189544.648837"
+            ],
+            [
+              1794720000057,
+              "180047.113575"
+            ],
+            [
+              1794782400076,
+              "192725.852358"
+            ],
+            [
+              1794847200014,
+              "199844.115979"
+            ],
+            [
+              1794915600022,
+              "198328.406738"
+            ],
+            [
+              1794978000037,
+              "203517.948378"
+            ],
+            [
+              1795041470462,
+              "230804.909648"
+            ],
+            [
+              1795105200080,
+              "227377.574845"
+            ],
+            [
+              1795173600064,
+              "247942.049728"
+            ],
+            [
+              1795189209869,
+              "271567.456039"
+            ]
+          ],
+          "vlm": "84491899.6200000048"
+        }
+      ],
+      [
+        "perpDay",
+        {
+          "accountValueHistory": [
+            [
+              1795096800051,
+              "514510.211842"
+            ],
+            [
+              1795105200080,
+              "536808.178437"
+            ],
+            [
+              1795113600021,
+              "535272.405718"
+            ],
+            [
+              1795120800028,
+              "0.0"
+            ],
+            [
+              1795129200017,
+              "313691.513979"
+            ],
+            [
+              1795136400037,
+              "466412.564702"
+            ],
+            [
+              1795143600039,
+              "303457.782749"
+            ],
+            [
+              1795150800045,
+              "473078.189324"
+            ],
+            [
+              1795158000068,
+              "460579.136812"
+            ],
+            [
+              1795166400041,
+              "466164.148056"
+            ],
+            [
+              1795173600064,
+              "465491.216831"
+            ],
+            [
+              1795182000025,
+              "470477.773126"
+            ],
+            [
+              1795189209869,
+              "489116.624559"
+            ]
+          ],
+          "pnlHistory": [
+            [
+              1795096800051,
+              "0.0"
+            ],
+            [
+              1795105200080,
+              "22297.966595"
+            ],
+            [
+              1795113600021,
+              "20762.193876"
+            ],
+            [
+              1795120800028,
+              "41708.198158"
+            ],
+            [
+              1795129200017,
+              "47342.612137"
+            ],
+            [
+              1795136400037,
+              "44264.19286"
+            ],
+            [
+              1795143600039,
+              "35919.960907"
+            ],
+            [
+              1795150800045,
+              "45869.597482"
+            ],
+            [
+              1795158000068,
+              "37950.34497"
+            ],
+            [
+              1795166400041,
+              "43535.356214"
+            ],
+            [
+              1795173600064,
+              "42862.424989"
+            ],
+            [
+              1795182000025,
+              "47848.981284"
+            ],
+            [
+              1795189209869,
+              "66487.832717"
+            ]
+          ],
+          "vlm": "5575169.1799999997"
+        }
+      ],
+      [
+        "perpWeek",
+        {
+          "accountValueHistory": [
+            [
+              1794579600051,
+              "355343.695075"
+            ],
+            [
+              1794588000010,
+              "361440.936262"
+            ],
+            [
+              1794602400050,
+              "340465.873812"
+            ],
+            [
+              1794609600078,
+              "345665.409169"
+            ],
+            [
+              1794620776009,
+              "0.0"
+            ],
+            [
+              1794628800004,
+              "330443.053709"
+            ],
+            [
+              1794643200061,
+              "334700.001907"
+            ],
+            [
+              1794651600043,
+              "336397.225949"
+            ],
+            [
+              1794660000015,
+              "332258.854435"
+            ],
+            [
+              1794676800038,
+              "506152.217143"
+            ],
+            [
+              1794684000041,
+              "508933.000035"
+            ],
+            [
+              1794692400056,
+              "499392.176218"
+            ],
+            [
+              1794708000074,
+              "456008.869915"
+            ],
+            [
+              1794720000057,
+              "508469.329753"
+            ],
+            [
+              1794728400068,
+              "487535.67692"
+            ],
+            [
+              1794735600110,
+              "0.0"
+            ],
+            [
+              1794752400023,
+              "327146.368862"
+            ],
+            [
+              1794759600041,
+              "335751.518087"
+            ],
+            [
+              1794775200063,
+              "330094.467278"
+            ],
+            [
+              1794782400076,
+              "329350.737476"
+            ],
+            [
+              1794790800029,
+              "331865.175599"
+            ],
+            [
+              1794806400073,
+              "489857.361459"
+            ],
+            [
+              1794814800012,
+              "488723.354166"
+            ],
+            [
+              1794822000035,
+              "498649.77696"
+            ],
+            [
+              1794838800054,
+              "496323.638279"
+            ],
+            [
+              1794847200014,
+              "493047.944653"
+            ],
+            [
+              1794861600055,
+              "488371.685144"
+            ],
+            [
+              1794868800055,
+              "482960.859068"
+            ],
+            [
+              1794876000087,
+              "494650.77256"
+            ],
+            [
+              1794892800014,
+              "489573.282601"
+            ],
+            [
+              1794900000036,
+              "493861.694144"
+            ],
+            [
+              1794915600022,
+              "491532.234203"
+            ],
+            [
+              1794922800041,
+              "488526.621184"
+            ],
+            [
+              1794931200004,
+              "501163.049994"
+            ],
+            [
+              1794945600077,
+              "506893.377171"
+            ],
+            [
+              1794954000026,
+              "496712.028844"
+            ],
+            [
+              1794962400051,
+              "490809.843299"
+            ],
+            [
+              1794978000037,
+              "496721.776196"
+            ],
+            [
+              1794985200059,
+              "493926.01882"
+            ],
+            [
+              1795002000080,
+              "500154.502587"
+            ],
+            [
+              1795010400013,
+              "504351.039481"
+            ],
+            [
+              1795017600057,
+              "516175.28371"
+            ],
+            [
+              1795033200045,
+              "522339.343402"
+            ],
+            [
+              1795041470462,
+              "0.0"
+            ],
+            [
+              1795056000027,
+              "460560.0"
+            ],
+            [
+              1795063200065,
+              "527158.333333"
+            ],
+            [
+              1795071600049,
+              "521428.432203"
+            ],
+            [
+              1795080000024,
+              "520743.31803"
+            ],
+            [
+              1795088400045,
+              "517111.651156"
+            ],
+            [
+              1795096800051,
+              "514510.211842"
+            ],
+            [
+              1795105200080,
+              "536808.178437"
+            ],
+            [
+              1795113600021,
+              "535272.405718"
+            ],
+            [
+              1795120800028,
+              "0.0"
+            ],
+            [
+              1795129200017,
+              "313691.513979"
+            ],
+            [
+              1795136400037,
+              "466412.564702"
+            ],
+            [
+              1795143600039,
+              "303457.782749"
+            ],
+            [
+              1795150800045,
+              "473078.189324"
+            ],
+            [
+              1795158000068,
+              "460579.136812"
+            ],
+            [
+              1795166400041,
+              "466164.148056"
+            ],
+            [
+              1795173600064,
+              "465491.216831"
+            ],
+            [
+              1795182000025,
+              "470477.773126"
+            ],
+            [
+              1795189209869,
+              "489116.624559"
+            ]
+          ],
+          "pnlHistory": [
+            [
+              1794579600051,
+              "0.0"
+            ],
+            [
+              1794588000010,
+              "6097.241187"
+            ],
+            [
+              1794602400050,
+              "4281.698737"
+            ],
+            [
+              1794609600078,
+              "9481.234094"
+            ],
+            [
+              1794620776009,
+              "8816.984925"
+            ],
+            [
+              1794628800004,
+              "3845.138634"
+            ],
+            [
+              1794643200061,
+              "8102.086832"
+            ],
+            [
+              1794651600043,
+              "9799.310874"
+            ],
+            [
+              1794660000015,
+              "7794.49936"
+            ],
+            [
+              1794676800038,
+              "-5559.477932"
+            ],
+            [
+              1794684000041,
+              "-2778.69504"
+            ],
+            [
+              1794692400056,
+              "-12319.518857"
+            ],
+            [
+              1794708000074,
+              "-52158.67516"
+            ],
+            [
+              1794720000057,
+              "301.784678"
+            ],
+            [
+              1794728400068,
+              "-20631.868155"
+            ],
+            [
+              1794735600110,
+              "10395.054925"
+            ],
+            [
+              1794752400023,
+              "10776.153787"
+            ],
+            [
+              1794759600041,
+              "19381.303012"
+            ],
+            [
+              1794775200063,
+              "13724.252203"
+            ],
+            [
+              1794782400076,
+              "12980.522401"
+            ],
+            [
+              1794790800029,
+              "15494.960524"
+            ],
+            [
+              1794806400073,
+              "16908.196384"
+            ],
+            [
+              1794814800012,
+              "15774.189091"
+            ],
+            [
+              1794822000035,
+              "25700.611885"
+            ],
+            [
+              1794838800054,
+              "23374.473204"
+            ],
+            [
+              1794847200014,
+              "20098.779578"
+            ],
+            [
+              1794861600055,
+              "15422.520069"
+            ],
+            [
+              1794868800055,
+              "10011.693993"
+            ],
+            [
+              1794876000087,
+              "21701.607485"
+            ],
+            [
+              1794892800014,
+              "16624.117526"
+            ],
+            [
+              1794900000036,
+              "20912.529069"
+            ],
+            [
+              1794915600022,
+              "18583.069128"
+            ],
+            [
+              1794922800041,
+              "15577.456109"
+            ],
+            [
+              1794931200004,
+              "28213.884919"
+            ],
+            [
+              1794945600077,
+              "33944.212096"
+            ],
+            [
+              1794954000026,
+              "23762.863769"
+            ],
+            [
+              1794962400051,
+              "17860.678224"
+            ],
+            [
+              1794978000037,
+              "23772.611121"
+            ],
+            [
+              1794985200059,
+              "20976.853745"
+            ],
+            [
+              1795002000080,
+              "27205.337512"
+            ],
+            [
+              1795010400013,
+              "31401.874406"
+            ],
+            [
+              1795017600057,
+              "43226.118635"
+            ],
+            [
+              1795033200045,
+              "49390.178327"
+            ],
+            [
+              1795041470462,
+              "51059.564925"
+            ],
+            [
+              1795056000027,
+              "52188.514925"
+            ],
+            [
+              1795063200065,
+              "37982.388258"
+            ],
+            [
+              1795071600049,
+              "32252.487128"
+            ],
+            [
+              1795080000024,
+              "31567.372955"
+            ],
+            [
+              1795088400045,
+              "27935.706081"
+            ],
+            [
+              1795096800051,
+              "25334.266767"
+            ],
+            [
+              1795105200080,
+              "47632.233362"
+            ],
+            [
+              1795113600021,
+              "46096.460643"
+            ],
+            [
+              1795120800028,
+              "67042.464925"
+            ],
+            [
+              1795129200017,
+              "72676.878904"
+            ],
+            [
+              1795136400037,
+              "69598.459627"
+            ],
+            [
+              1795143600039,
+              "61254.227674"
+            ],
+            [
+              1795150800045,
+              "71203.864249"
+            ],
+            [
+              1795158000068,
+              "63284.611737"
+            ],
+            [
+              1795166400041,
+              "68869.622981"
+            ],
+            [
+              1795173600064,
+              "68196.691756"
+            ],
+            [
+              1795182000025,
+              "73183.248051"
+            ],
+            [
+              1795189209869,
+              "91822.099484"
+            ]
+          ],
+          "vlm": "16904340.3299999982"
+        }
+      ],
+      [
+        "perpMonth",
+        {
+          "accountValueHistory": [
+            [
+              1792536000132,
+              "397596.786854"
+            ],
+            [
+              1792622400062,
+              "387686.034648"
+            ],
+            [
+              1792712400026,
+              "437301.633834"
+            ],
+            [
+              1792797255235,
+              "0.0"
+            ],
+            [
+              1792882800036,
+              "407760.037643"
+            ],
+            [
+              1792970400008,
+              "344205.235927"
+            ],
+            [
+              1793052000053,
+              "275056.666666"
+            ],
+            [
+              1793140800060,
+              "269265.0"
+            ],
+            [
+              1793229600007,
+              "411147.825674"
+            ],
+            [
+              1793314800047,
+              "404709.749291"
+            ],
+            [
+              1793397600013,
+              "0.0"
+            ],
+            [
+              1793488800038,
+              "0.0"
+            ],
+            [
+              1793574000088,
+              "0.0"
+            ],
+            [
+              1793662800004,
+              "274181.521126"
+            ],
+            [
+              1793749200061,
+              "264253.245385"
+            ],
+            [
+              1793835600061,
+              "447070.788725"
+            ],
+            [
+              1793914800049,
+              "0.0"
+            ],
+            [
+              1794002400059,
+              "255946.846852"
+            ],
+            [
+              1794094800056,
+              "257374.088299"
+            ],
+            [
+              1794175225842,
+              "0.0"
+            ],
+            [
+              1794267600059,
+              "255595.038996"
+            ],
+            [
+              1794348000067,
+              "511740.18794"
+            ],
+            [
+              1794436800036,
+              "368247.30363"
+            ],
+            [
+              1794525600123,
+              "440201.683677"
+            ],
+            [
+              1794556800062,
+              "463483.76047"
+            ],
+            [
+              1794579600051,
+              "355343.695075"
+            ],
+            [
+              1794609600078,
+              "345665.409169"
+            ],
+            [
+              1794620776009,
+              "0.0"
+            ],
+            [
+              1794628800004,
+              "330443.053709"
+            ],
+            [
+              1794660000015,
+              "332258.854435"
+            ],
+            [
+              1794676800038,
+              "506152.217143"
+            ],
+            [
+              1794708000074,
+              "456008.869915"
+            ],
+            [
+              1794735600110,
+              "0.0"
+            ],
+            [
+              1794752400023,
+              "327146.368862"
+            ],
+            [
+              1794782400076,
+              "329350.737476"
+            ],
+            [
+              1794806400073,
+              "489857.361459"
+            ],
+            [
+              1794838800054,
+              "496323.638279"
+            ],
+            [
+              1794868800055,
+              "482960.859068"
+            ],
+            [
+              1794900000036,
+              "493861.694144"
+            ],
+            [
+              1794931200004,
+              "501163.049994"
+            ],
+            [
+              1794962400051,
+              "490809.843299"
+            ],
+            [
+              1795002000080,
+              "500154.502587"
+            ],
+            [
+              1795033200045,
+              "522339.343402"
+            ],
+            [
+              1795041470462,
+              "0.0"
+            ],
+            [
+              1795056000027,
+              "460560.0"
+            ],
+            [
+              1795088400045,
+              "517111.651156"
+            ],
+            [
+              1795120800028,
+              "0.0"
+            ],
+            [
+              1795129200017,
+              "313691.513979"
+            ],
+            [
+              1795136400037,
+              "466412.564702"
+            ],
+            [
+              1795143600039,
+              "303457.782749"
+            ],
+            [
+              1795150800045,
+              "473078.189324"
+            ],
+            [
+              1795182000025,
+              "470477.773126"
+            ],
+            [
+              1795189209869,
+              "489116.624559"
+            ]
+          ],
+          "pnlHistory": [
+            [
+              1792536000132,
+              "0.0"
+            ],
+            [
+              1792622400062,
+              "-22986.692206"
+            ],
+            [
+              1792712400026,
+              "26628.90698"
+            ],
+            [
+              1792797255235,
+              "37706.193146"
+            ],
+            [
+              1792882800036,
+              "37119.010789"
+            ],
+            [
+              1792970400008,
+              "43331.359073"
+            ],
+            [
+              1793052000053,
+              "50865.529812"
+            ],
+            [
+              1793140800060,
+              "50927.543146"
+            ],
+            [
+              1793229600007,
+              "50028.76882"
+            ],
+            [
+              1793314800047,
+              "91616.822437"
+            ],
+            [
+              1793397600013,
+              "119356.593146"
+            ],
+            [
+              1793488800038,
+              "119356.593146"
+            ],
+            [
+              1793574000088,
+              "119356.593146"
+            ],
+            [
+              1793662800004,
+              "132970.364272"
+            ],
+            [
+              1793749200061,
+              "123042.088531"
+            ],
+            [
+              1793835600061,
+              "88412.101871"
+            ],
+            [
+              1793914800049,
+              "154775.473146"
+            ],
+            [
+              1794002400059,
+              "156676.169998"
+            ],
+            [
+              1794094800056,
+              "158103.411445"
+            ],
+            [
+              1794175225842,
+              "174589.713146"
+            ],
+            [
+              1794267600059,
+              "177708.992142"
+            ],
+            [
+              1794348000067,
+              "158484.161086"
+            ],
+            [
+              1794436800036,
+              "156949.566776"
+            ],
+            [
+              1794525600123,
+              "164876.126823"
+            ],
+            [
+              1794556800062,
+              "132125.913616"
+            ],
+            [
+              1794579600051,
+              "155959.008221"
+            ],
+            [
+              1794609600078,
+              "165440.242315"
+            ],
+            [
+              1794620776009,
+              "164775.993146"
+            ],
+            [
+              1794628800004,
+              "159804.146855"
+            ],
+            [
+              1794660000015,
+              "163753.507581"
+            ],
+            [
+              1794676800038,
+              "150399.530289"
+            ],
+            [
+              1794708000074,
+              "103800.333061"
+            ],
+            [
+              1794735600110,
+              "166354.063146"
+            ],
+            [
+              1794752400023,
+              "166735.162008"
+            ],
+            [
+              1794782400076,
+              "168939.530622"
+            ],
+            [
+              1794806400073,
+              "172867.204605"
+            ],
+            [
+              1794838800054,
+              "179333.481425"
+            ],
+            [
+              1794868800055,
+              "165970.702214"
+            ],
+            [
+              1794900000036,
+              "176871.53729"
+            ],
+            [
+              1794931200004,
+              "184172.89314"
+            ],
+            [
+              1794962400051,
+              "173819.686445"
+            ],
+            [
+              1795002000080,
+              "183164.345733"
+            ],
+            [
+              1795033200045,
+              "205349.186548"
+            ],
+            [
+              1795041470462,
+              "207018.573146"
+            ],
+            [
+              1795056000027,
+              "208147.523146"
+            ],
+            [
+              1795088400045,
+              "183894.714302"
+            ],
+            [
+              1795120800028,
+              "223001.473146"
+            ],
+            [
+              1795129200017,
+              "228635.887125"
+            ],
+            [
+              1795136400037,
+              "225557.467848"
+            ],
+            [
+              1795143600039,
+              "217213.235895"
+            ],
+            [
+              1795150800045,
+              "227162.87247"
+            ],
+            [
+              1795182000025,
+              "229142.256272"
+            ],
+            [
+              1795189209869,
+              "247781.107705"
+            ]
+          ],
+          "vlm": "50085943.200000003"
+        }
+      ],
+      [
+        "perpAllTime",
+        {
+          "accountValueHistory": [
+            [
+              1788991200058,
+              "0.0"
+            ],
+            [
+              1788994800058,
+              "71294.734301"
+            ],
+            [
+              1789597200054,
+              "198692.809217"
+            ],
+            [
+              1790199600053,
+              "0.0"
+            ],
+            [
+              1790804400122,
+              "417860.458875"
+            ],
+            [
+              1791415200033,
+              "440924.574047"
+            ],
+            [
+              1792021200067,
+              "0.0"
+            ],
+            [
+              1792536000132,
+              "397596.786854"
+            ],
+            [
+              1792622400062,
+              "387686.034648"
+            ],
+            [
+              1792712400026,
+              "437301.633834"
+            ],
+            [
+              1792797255235,
+              "0.0"
+            ],
+            [
+              1792882800036,
+              "407760.037643"
+            ],
+            [
+              1792970400008,
+              "344205.235927"
+            ],
+            [
+              1793052000053,
+              "275056.666666"
+            ],
+            [
+              1793140800060,
+              "269265.0"
+            ],
+            [
+              1793229600007,
+              "411147.825674"
+            ],
+            [
+              1793314800047,
+              "404709.749291"
+            ],
+            [
+              1793397600013,
+              "0.0"
+            ],
+            [
+              1793488800038,
+              "0.0"
+            ],
+            [
+              1793574000088,
+              "0.0"
+            ],
+            [
+              1793662800004,
+              "274181.521126"
+            ],
+            [
+              1793749200061,
+              "264253.245385"
+            ],
+            [
+              1793835600061,
+              "447070.788725"
+            ],
+            [
+              1793914800049,
+              "0.0"
+            ],
+            [
+              1794002400059,
+              "255946.846852"
+            ],
+            [
+              1794094800056,
+              "257374.088299"
+            ],
+            [
+              1794175225842,
+              "0.0"
+            ],
+            [
+              1794267600059,
+              "255595.038996"
+            ],
+            [
+              1794348000067,
+              "511740.18794"
+            ],
+            [
+              1794436800036,
+              "368247.30363"
+            ],
+            [
+              1794525600123,
+              "440201.683677"
+            ],
+            [
+              1794588000010,
+              "361440.936262"
+            ],
+            [
+              1794620776009,
+              "0.0"
+            ],
+            [
+              1794628800004,
+              "330443.053709"
+            ],
+            [
+              1794676800038,
+              "506152.217143"
+            ],
+            [
+              1794735600110,
+              "0.0"
+            ],
+            [
+              1794752400023,
+              "327146.368862"
+            ],
+            [
+              1794806400073,
+              "489857.361459"
+            ],
+            [
+              1794868800055,
+              "482960.859068"
+            ],
+            [
+              1794931200004,
+              "501163.049994"
+            ],
+            [
+              1795002000080,
+              "500154.502587"
+            ],
+            [
+              1795041470462,
+              "0.0"
+            ],
+            [
+              1795056000027,
+              "460560.0"
+            ],
+            [
+              1795120800028,
+              "0.0"
+            ],
+            [
+              1795129200017,
+              "313691.513979"
+            ],
+            [
+              1795136400037,
+              "466412.564702"
+            ],
+            [
+              1795143600039,
+              "303457.782749"
+            ],
+            [
+              1795150800045,
+              "473078.189324"
+            ],
+            [
+              1795189209869,
+              "489116.624559"
+            ]
+          ],
+          "pnlHistory": [
+            [
+              1788991200058,
+              "0.0"
+            ],
+            [
+              1788994800058,
+              "-8359.605699"
+            ],
+            [
+              1789597200054,
+              "-25888.800783"
+            ],
+            [
+              1790199600053,
+              "32164.87"
+            ],
+            [
+              1790804400122,
+              "20743.978875"
+            ],
+            [
+              1791415200033,
+              "27665.574047"
+            ],
+            [
+              1792021200067,
+              "44431.76"
+            ],
+            [
+              1792536000132,
+              "26138.996854"
+            ],
+            [
+              1792622400062,
+              "3152.304648"
+            ],
+            [
+              1792712400026,
+              "52767.903834"
+            ],
+            [
+              1792797255235,
+              "63845.19"
+            ],
+            [
+              1792882800036,
+              "63258.007643"
+            ],
+            [
+              1792970400008,
+              "69470.355927"
+            ],
+            [
+              1793052000053,
+              "77004.526666"
+            ],
+            [
+              1793140800060,
+              "77066.54"
+            ],
+            [
+              1793229600007,
+              "76167.765674"
+            ],
+            [
+              1793314800047,
+              "117755.819291"
+            ],
+            [
+              1793397600013,
+              "145495.59"
+            ],
+            [
+              1793488800038,
+              "145495.59"
+            ],
+            [
+              1793574000088,
+              "145495.59"
+            ],
+            [
+              1793662800004,
+              "159109.361126"
+            ],
+            [
+              1793749200061,
+              "149181.085385"
+            ],
+            [
+              1793835600061,
+              "114551.098725"
+            ],
+            [
+              1793914800049,
+              "180914.47"
+            ],
+            [
+              1794002400059,
+              "182815.166852"
+            ],
+            [
+              1794094800056,
+              "184242.408299"
+            ],
+            [
+              1794175225842,
+              "200728.71"
+            ],
+            [
+              1794267600059,
+              "203847.988996"
+            ],
+            [
+              1794348000067,
+              "184623.15794"
+            ],
+            [
+              1794436800036,
+              "183088.56363"
+            ],
+            [
+              1794525600123,
+              "191015.123677"
+            ],
+            [
+              1794588000010,
+              "188195.246262"
+            ],
+            [
+              1794620776009,
+              "190914.99"
+            ],
+            [
+              1794628800004,
+              "185943.143709"
+            ],
+            [
+              1794676800038,
+              "176538.527143"
+            ],
+            [
+              1794735600110,
+              "192493.06"
+            ],
+            [
+              1794752400023,
+              "192874.158862"
+            ],
+            [
+              1794806400073,
+              "199006.201459"
+            ],
+            [
+              1794868800055,
+              "192109.699068"
+            ],
+            [
+              1794931200004,
+              "210311.889994"
+            ],
+            [
+              1795002000080,
+              "209303.342587"
+            ],
+            [
+              1795041470462,
+              "233157.57"
+            ],
+            [
+              1795056000027,
+              "234286.52"
+            ],
+            [
+              1795120800028,
+              "249140.47"
+            ],
+            [
+              1795129200017,
+              "254774.883979"
+            ],
+            [
+              1795136400037,
+              "251696.464702"
+            ],
+            [
+              1795143600039,
+              "243352.232749"
+            ],
+            [
+              1795150800045,
+              "253301.869324"
+            ],
+            [
+              1795189209869,
+              "273920.104559"
+            ]
+          ],
+          "vlm": "82736190.1200000048"
+        }
+      ]
+    ],
+    "summary": {
+      "address": "0x67d4efe87d546d1351952263aed60921cffc8eee",
+      "equity": 488726.624559,
+      "supported_fills7": 59,
+      "supported_opens7": 9,
+      "completed7": 8,
+      "hold_median_min": 291.55095833333337,
+      "min_scaled_open": 0.5548063608048152,
+      "median_scaled_open": 53.75064561676793,
+      "below10": 1,
+      "coins": [
+        [
+          "BTC",
+          59
+        ]
+      ],
+      "portfolio": {
+        "day": {
+          "pnl": 66487.847281,
+          "vol": "5575169.1799999997",
+          "points": 13
+        },
+        "week": {
+          "pnl": 91857.059106,
+          "vol": "17307802.5199999996",
+          "points": 62
+        },
+        "month": {
+          "pnl": 247816.119481,
+          "vol": "50489405.3900000006",
+          "points": 45
+        },
+        "allTime": {
+          "pnl": 271567.456039,
+          "vol": "84491899.6200000048",
+          "points": 42
+        },
+        "perpDay": {
+          "pnl": 66487.832717,
+          "vol": "5575169.1799999997",
+          "points": 13
+        },
+        "perpWeek": {
+          "pnl": 91822.099484,
+          "vol": "16904340.3299999982",
+          "points": 62
+        },
+        "perpMonth": {
+          "pnl": 247781.107705,
+          "vol": "50085943.200000003",
+          "points": 53
+        },
+        "perpAllTime": {
+          "pnl": 273920.104559,
+          "vol": "82736190.1200000048",
+          "points": 49
+        }
+      }
+    }
+  },
+  "bingx_btc_contract": {
+    "contractId": "100",
+    "symbol": "BTC-USDT",
+    "size": "0.0001",
+    "quantityPrecision": 4,
+    "pricePrecision": 1,
+    "feeRate": 0.0005,
+    "makerFeeRate": 0.0002,
+    "takerFeeRate": 0.0005,
+    "tradeMinLimit": 0,
+    "tradeMinQuantity": 0.0001,
+    "tradeMinUSDT": 2,
+    "currency": "USDT",
+    "asset": "BTC",
+    "status": 1,
+    "apiStateOpen": "true",
+    "apiStateClose": "true",
+    "ensureTrigger": true,
+    "triggerFeeRate": "0.00050000",
+    "brokerState": false,
+    "launchTime": 1586275200000,
+    "maintainTime": 0,
+    "offTime": 0,
+    "displayName": "BTC-USDT"
+  },
+  "fills_window_start_ms": 1794584622117
+}

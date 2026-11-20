@@ -8,7 +8,7 @@ import urllib.request
 from .finmonster_feed import canonical
 
 ADDRESS = re.compile(r'0x[0-9a-fA-F]{40}')
-READ_TYPES = frozenset(('userFillsByTime', 'clearinghouseState', 'portfolio', 'meta', 'metaAndAssetCtxs', 'userFunding'))
+READ_TYPES = frozenset(('userFillsByTime', 'clearinghouseState', 'frontendOpenOrders', 'portfolio', 'meta', 'metaAndAssetCtxs', 'userFunding'))
 
 class PublicInfo:
     def get(self, kind, **params):

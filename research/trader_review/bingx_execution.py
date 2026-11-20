@@ -3,10 +3,11 @@
 import hashlib
 import hmac
 import json
+import re
 import sqlite3
 import time
 from decimal import Decimal, ROUND_CEILING, ROUND_DOWN
-from urllib.parse import urlencode
+from urllib.parse import urlencode, quote
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
@@ -51,7 +52,9 @@ class BingXExecution:
                 "(client_id TEXT PRIMARY KEY, code INTEGER, message TEXT NOT NULL)"
             )
 
-    def _request(self, method, path, *, version=2, _deadline_ms=None, **parameters):
+    def _request(self, method, path, *, version=2, api_family='swap', _deadline_ms=None, **parameters):
+        if api_family not in ('swap', 'account'):
+            raise ValueError('Unsupported API family')
         require_entry_deadline(_deadline_ms)
         parameters["timestamp"] = time.time_ns() // 1_000_000
         if _deadline_ms is not None:
@@ -59,11 +62,28 @@ class BingXExecution:
             require_entry_deadline(_deadline_ms)
             # Bound acceptance at the exchange as well as local dispatch.
             parameters['recvWindow'] = min(5000, remaining)
-        query = urlencode(sorted(parameters.items()))
-        signature = hmac.digest(self.secret, query.encode(), "sha256").hex()
+        normalized = {}
+        for key, value in parameters.items():
+            if not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*', key):
+                raise ValueError('Invalid API parameter name')
+            if isinstance(value, (dict, list)):
+                value = json.dumps(value, separators=(',', ':'), allow_nan=False)
+            elif isinstance(value, bool):
+                value = 'true' if value else 'false'
+            else:
+                value = str(value)
+            if any(c in value for c in '&=?#\r\n'):
+                raise ValueError('Invalid API parameter value')
+            normalized[key] = value
+        # BingX signs RAW values, then URL-encodes the transmitted query.
+        # Signing percent-encoded JSON works for ordinary scalar calls but
+        # fails as soon as attached TP/SL objects are present.
+        canonical = '&'.join(f'{key}={value}' for key, value in sorted(normalized.items()))
+        query = urlencode(sorted(normalized.items()), quote_via=quote)
+        signature = hmac.digest(self.secret, canonical.encode(), "sha256").hex()
         request = Request(
-            f"https://open-api.bingx.com/openApi/swap/v{version}/{path}?{query}&signature={signature}",
-            headers={"X-BX-APIKEY": self.api_key},
+            f"https://open-api.bingx.com/openApi/{api_family}/v{version}/{path}?{query}&signature={signature}",
+            headers={"X-BX-APIKEY": self.api_key, "X-SOURCE-KEY": "BX-AI-SKILL"},
             method=method,
         )
         try:
@@ -79,7 +99,7 @@ class BingXExecution:
         if result["code"] != 0:
             message = str(result.get("msg", "No API error description"))
             # The exchange message is untrusted; never log request credentials.
-            for private in (self.api_key, self.secret.decode(), signature, query):
+            for private in (self.api_key, self.secret.decode(), signature, canonical, query):
                 if private:
                     message = message.replace(private, "[REDACTED]")
             raise BingXAPIError(result["code"], message[:1000])
@@ -146,6 +166,8 @@ class BingXExecution:
             "clientOrderId": client_id,
             "reduceOnly": "true" if reduce_only else "false",
         }
+        if not reduce_only:
+            parameters.update(self.opening_parameters(signal_id, symbol, side, quantity, deadline_ms))
         if self.hedge_mode():
             # In hedge mode LONG/SHORT selects the position being changed;
             # BUY/SELL selects increase vs reduction. reduceOnly is forbidden.
@@ -200,6 +222,10 @@ class BingXExecution:
                     "check exchange history and the saved request before any resubmission"
                 ) from None
             raise
+
+    def opening_parameters(self, signal_id, symbol, side, quantity, deadline_ms):
+        """Legacy adapter hook; real workers use StrictBingXExecution."""
+        return {}
 
 
 def opening_quantity(source_quantity, copy_ratio, price, quantity_step, minimum_quantity,
@@ -342,16 +368,35 @@ class HyperliquidBingXCopy:
                 if not row:
                     return None
                 ratio, actual = map(Decimal, row)
-                quantity = reduction_quantity(min(source_quantity, source_before), source_before, actual, step)
+                if getattr(self.execution, 'strict_sizing', False):
+                    source_after = max(Decimal(0), source_before - source_quantity)
+                    desired = increase_quantity(source_after, ratio, step) if source_after else Decimal(0)
+                    quantity = max(Decimal(0), actual - min(actual, desired))
+                    if not quantity:
+                        # A confirmed local protective fill may already have
+                        # reduced this amount. Do not close the same risk twice.
+                        with self.db:
+                            self.db.execute('INSERT INTO copied_signals VALUES (?)', (signal_id,))
+                        return actual
+                else:
+                    quantity = reduction_quantity(min(source_quantity, source_before), source_before, actual, step)
             elif action == "OPEN":
                 if row:
                     ratio, actual = map(Decimal, row)
-                    quantity = increase_quantity(source_quantity, ratio, step)
+                    if getattr(self.execution, 'strict_sizing', False):
+                        from .full_copy_contract import scaled_quantity
+                        quantity = scaled_quantity(source_quantity, ratio, step, min_qty, min_notional, price)
+                    else:
+                        quantity = increase_quantity(source_quantity, ratio, step)
                 else:
                     if source_before and not seed:
                         return None
                     ratio, actual = copy_ratio, Decimal(0)
-                    quantity = opening_quantity(source_quantity, ratio, price, step, min_qty, min_notional)
+                    if getattr(self.execution, 'strict_sizing', False):
+                        from .full_copy_contract import scaled_quantity
+                        quantity = scaled_quantity(source_quantity, ratio, step, min_qty, min_notional, price)
+                    else:
+                        quantity = opening_quantity(source_quantity, ratio, price, step, min_qty, min_notional)
             else:
                 raise ValueError("Unknown Hyperliquid observation action")
 
