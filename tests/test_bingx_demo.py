@@ -13,7 +13,7 @@ from research.trader_review.bingx_demo_worker import BingXDemoExecution
 from research.trader_review.full_copy_contract import compile_contract, CopyBlocked
 from tests.test_full_copy_contract import fixture
 from tests.test_bingx_freshness import FakeExecution
-from research.trader_review.bingx_execution import HyperliquidBingXCopy
+from research.trader_review.bingx_execution import HyperliquidBingXCopy, ReconciliationRequired
 from research.trader_review.bingx_copy_worker import batch_executed_entries
 
 
@@ -67,6 +67,42 @@ class DemoTests(unittest.TestCase):
         x._request=lambda *a,**kw:{'uid':'456'}
         with self.assertRaisesRegex(CopyBlocked,'account_uid_mismatch'):
             x.submit('x','BTC-USDT','BUY',D('.01'))
+
+    def test_vst_replacement_requires_both_success_and_matching_open_orders(self):
+        a, o, r = fixture()
+        contract = compile_contract(a, o, 'BTC', 300, r, observed_ms=1000, now_ms=1000)
+        params = contract.exits[0].bingx('BTC-USDT', hedge=True)
+        old_id, new_id = '2123992837242052608', '2123992888198651904'
+        order = {**params, 'orderId': int(new_id), 'origQty': params['quantity']}
+        reply = dict(cancelResult='true', replaceResult='true',
+                     cancelResponse={'cancelOrderId': int(old_id)},
+                     newOrderResponse={'orderId': int(new_id)})
+        cases = [
+            ('verified', reply, [order], None),
+            ('rejected', {**reply, 'replaceResult': 'false'}, [order], 'cancel/replace failed'),
+            ('wrong old ID', {**reply, 'cancelResponse': {'cancelOrderId': 1}}, [order], 'unverified order identities'),
+            ('old still open', reply, [order, {'orderId': old_id}], 'Old protection still open'),
+            ('wrong size', reply, [{**order, 'origQty': '.5'}], 'replacement unconfirmed'),
+        ]
+        for label, result, orders, error in cases:
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as root:
+                path = root + '/vst.sqlite'
+                x = BingXDemoExecution('key', 'secret', path, allocation=300, trading_enabled=True,
+                                       source_client=None, source_address='test')
+                x._request = lambda *a, **kw: result
+                x._orders = lambda _: orders
+                change = dict(action='replace', source_id='100', order_id=old_id, parameters=params)
+                with sqlite3.connect(path) as db:
+                    db.execute('INSERT INTO copy_exit_orders VALUES (?,?,?,?)',
+                               ('epoch', '100', old_id, json.dumps(params)))
+                    if error:
+                        with self.assertRaisesRegex(ReconciliationRequired, error):
+                            x._dispatch_exit(db, 'epoch', change, 'BTC-USDT')
+                    else:
+                        x._dispatch_exit(db, 'epoch', change, 'BTC-USDT')
+                    saved_id = db.execute('SELECT order_id FROM copy_exit_orders').fetchone()[0]
+                    pending = db.execute('SELECT count(*) FROM copy_exit_dispatch WHERE result IS NULL').fetchone()[0]
+                    self.assertEqual((saved_id, pending), (old_id, 1) if error else (new_id, 0))
 
     def test_partial_limit_entry_copies_only_executed_quantity_with_exits(self):
         a,o,r=fixture()

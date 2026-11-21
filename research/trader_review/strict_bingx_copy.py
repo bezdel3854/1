@@ -411,16 +411,34 @@ class StrictBingXExecution(BingXExecution):
             if action == 'replace':
                 result = self._request('POST', 'trade/cancelReplace', version=1,
                     cancelOrderId=change['order_id'], cancelReplaceMode='STOP_ON_FAILURE', **params)
-                if result.get('cancelResult') != 'SUCCESS' or result.get('newOrderResult') != 'SUCCESS':
-                    raise ReconciliationRequired('Protection cancel/replace failed; inspect remaining protection immediately')
-                oid = str(result.get('newOrderId', ''))
+                oid = self._replacement_id(result, change['order_id'])
             else:
                 result = self._request('POST', 'trade/order', **params)
                 result_order = result.get('order', result)
                 oid = str(result_order.get('orderID', result_order.get('orderId', '')))
-            match = next((o for o in self._orders(symbol) if str(o.get('orderID', o.get('orderId'))) == oid), None)
+            active = {str(o.get('orderID', o.get('orderId'))): o for o in self._orders(symbol)}
+            if action == 'replace' and change['order_id'] in active:
+                raise ReconciliationRequired('Old protection still open after replacement; inspect orders')
+            match = active.get(oid)
             if not match or not self._matches(match, params):
                 raise ReconciliationRequired('Protection creation/replacement unconfirmed; never resubmit blindly')
             db.execute('INSERT OR REPLACE INTO copy_exit_orders VALUES (?,?,?,?)',
                        (epoch, change['source_id'], oid, json.dumps(params, sort_keys=True)))
         db.execute('UPDATE copy_exit_dispatch SET result=? WHERE id=?', (json.dumps(result), dispatch_id)); db.commit()
+
+    def _replacement_id(self, result, old_id):
+        if result.get('cancelResult') == 'SUCCESS' and result.get('newOrderResult') == 'SUCCESS':
+            new_id = result.get('newOrderId')
+        elif (self.environment == 'demo' and result.get('cancelResult') in ('true', True)
+              and result.get('replaceResult') in ('true', True)):
+            cancelled = result.get('cancelResponse')
+            created = result.get('newOrderResponse')
+            if (not isinstance(cancelled, dict) or str(cancelled.get('cancelOrderId')) != old_id
+                    or not isinstance(created, dict)):
+                raise ReconciliationRequired('Protection replacement response has unverified order identities')
+            new_id = created.get('orderId')
+        else:
+            raise ReconciliationRequired('Protection cancel/replace failed; inspect remaining protection immediately')
+        if new_id is None or str(new_id) in ('', old_id):
+            raise ReconciliationRequired('Protection replacement has no distinct new order ID')
+        return str(new_id)
