@@ -131,7 +131,8 @@ class CopyContract:
 
 
 def compile_contract(account, orders, coin, target_equity, rules, *, observed_ms,
-                     now_ms=None, ratio=None, target_quantity=None, require_protection=True):
+                     now_ms=None, ratio=None, target_quantity=None, require_protection=True,
+                     copy_executed_entries_only=False):
     now_ms = time.time_ns() // 1_000_000 if now_ms is None else now_ms
     if not isinstance(observed_ms, int) or not 0 <= now_ms - observed_ms <= 5000:
         raise CopyBlocked('stale_or_future_source_snapshot')
@@ -173,6 +174,17 @@ def compile_contract(account, orders, coin, target_equity, rules, *, observed_ms
         if o.get('coin') != coin:
             continue
         if o.get('reduceOnly') is not True:
+            # A limit entry may already be partially filled. In execution-follow
+            # mode, copy only its confirmed fills from the ordered feed. Do not
+            # submit its remaining quantity as well: that would double-copy it.
+            if (copy_executed_entries_only and o.get('reduceOnly') is False
+                    and o.get('side') == ('B' if long else 'A')
+                    and o.get('orderType') == 'Limit'
+                    and o.get('isTrigger') is False
+                    and o.get('tif') in ('Gtc', 'Ioc', 'Alo')):
+                number(o.get('sz'), positive=True)
+                number(o.get('limitPx'), positive=True)
+                continue
             raise CopyBlocked('pending_source_entry_requires_order_mirroring')
         if o.get('side') != ('A' if long else 'B'):
             raise CopyBlocked('source_exit_wrong_side')

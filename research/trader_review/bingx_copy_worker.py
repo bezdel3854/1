@@ -1,5 +1,6 @@
 """Run an isolated Hyperliquid-to-BingX copy worker."""
 import argparse
+import hashlib
 import fcntl
 import json
 import os
@@ -14,6 +15,56 @@ from .hyperliquid_feed import FillObserver
 from .full_copy_contract import CopyBlocked
 from .strict_bingx_copy import StrictBingXExecution
 from .hyperliquid_feed import PublicInfo
+
+
+def batch_executed_entries(db, rows):
+    """Persist contiguous fills of one source order before any exchange write.
+
+    A saved batch is immutable across restart, even when more fills arrive.
+    This avoids spending an entire entry deadline on many small executions.
+    """
+    db.execute('CREATE TABLE IF NOT EXISTS copy_fill_batches '
+               '(first_row INTEGER PRIMARY KEY,last_row INTEGER,payload TEXT,raw TEXT)')
+    saved = {r[0]: r for r in db.execute('SELECT * FROM copy_fill_batches')}
+    plans = {r[0] for r in db.execute('SELECT id FROM copy_plans')}
+    result=[]; i=0
+    while i<len(rows):
+        rowid,payload,raw=rows[i]
+        if rowid in saved:
+            _,end,body,source=saved[rowid]
+            result.append((end,body,source))
+            while i<len(rows) and rows[i][0]<=end:i+=1
+            continue
+        event=json.loads(payload); fill=json.loads(raw) if raw else {}
+        group=[rows[i]]; quantity=Decimal(str(event['quantity']))
+        value=quantity*Decimal(str(event['price']))
+        side=Decimal(1) if event['side']=='BUY' else Decimal(-1)
+        before=Decimal(str(fill.get('startPosition','0')))
+        if before*side<0:before=Decimal(0)
+        expected=before+side*quantity
+        if event['action']=='OPEN' and fill.get('oid') is not None and event['orderId'] not in plans:
+            j=i+1
+            while j<len(rows):
+                rid,body,source=rows[j]
+                nxt=json.loads(body); nf=json.loads(source) if source else {}
+                if (rid in saved or nxt['action']!='OPEN' or nxt['positionId']!=event['positionId']
+                        or nxt['side']!=event['side'] or nf.get('oid')!=fill['oid']
+                        or nxt['orderId'] in plans
+                        or Decimal(str(nf.get('startPosition','NaN')))!=expected):break
+                q=Decimal(str(nxt['quantity']));quantity+=q
+                value+=q*Decimal(str(nxt['price']));expected+=side*q
+                group.append(rows[j]);j+=1
+        if len(group)>1:
+            ids=[json.loads(r[1])['orderId'] for r in group]
+            merged={**event,'orderId':'hl-batch:'+hashlib.sha256(json.dumps(ids).encode()).hexdigest(),
+                    'quantity':str(quantity),'price':str(value/quantity),
+                    'sourcePositionAfter':str(abs(expected)),'sourceFillIds':ids}
+            end=group[-1][0];body=json.dumps(merged,sort_keys=True)
+            with db:db.execute('INSERT INTO copy_fill_batches VALUES (?,?,?,?)',(rowid,end,body,raw))
+            result.append((end,body,raw));i+=len(group)
+        else:
+            result.append(rows[i]);i+=1
+    return result
 
 
 def cycle(source, copier, execution, *, min_equity=Decimal('100'), allowed_symbols=None, copy_allocation=None):
@@ -34,6 +85,8 @@ def cycle(source, copier, execution, *, min_equity=Decimal('100'), allowed_symbo
                (SELECT cast(value AS INTEGER) FROM meta WHERE key='bingx_copy_row'), 0)
            ORDER BY o.rowid"""
     ).fetchall()
+    if getattr(execution, 'copy_executed_entries_only', False):
+        rows = batch_executed_entries(db, rows)
     for rowid, payload, raw in rows:
         event = json.loads(payload)
         if copier.skip_stale_entry(event):

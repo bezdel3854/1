@@ -3,6 +3,8 @@ import json
 import sqlite3
 import tempfile
 import unittest
+import time
+from dataclasses import asdict
 from decimal import Decimal as D
 from unittest.mock import patch
 from urllib.parse import urlsplit
@@ -10,6 +12,9 @@ from urllib.parse import urlsplit
 from research.trader_review.bingx_demo_worker import BingXDemoExecution
 from research.trader_review.full_copy_contract import compile_contract, CopyBlocked
 from tests.test_full_copy_contract import fixture
+from tests.test_bingx_freshness import FakeExecution
+from research.trader_review.bingx_execution import HyperliquidBingXCopy
+from research.trader_review.bingx_copy_worker import batch_executed_entries
 
 
 class DemoTests(unittest.TestCase):
@@ -62,6 +67,104 @@ class DemoTests(unittest.TestCase):
         x._request=lambda *a,**kw:{'uid':'456'}
         with self.assertRaisesRegex(CopyBlocked,'account_uid_mismatch'):
             x.submit('x','BTC-USDT','BUY',D('.01'))
+
+    def test_partial_limit_entry_copies_only_executed_quantity_with_exits(self):
+        a,o,r=fixture()
+        pending=dict(coin='BTC',oid=500,side='B',sz='20',limitPx='100',
+                     reduceOnly=False,isTrigger=False,orderType='Limit',tif='Gtc')
+        contract=compile_contract(a,o+[pending],'BTC',300,r,observed_ms=1000,now_ms=1000,
+            ratio=D('.3'),target_quantity=D('.105'),copy_executed_entries_only=True)
+        self.assertEqual(D(contract.target_quantity),D('.105'))
+        self.assertEqual([e.source_id for e in contract.exits],['100','101'])
+        # Remaining entry changes do not replace exits or trigger extra entry.
+        changed=compile_contract(a,o+[{**pending,'sz':'19'}],'BTC',300,r,
+            observed_ms=1000,now_ms=1000,ratio=D('.3'),target_quantity=D('.105'),
+            copy_executed_entries_only=True)
+        self.assertEqual(contract.fingerprint(),changed.fingerprint())
+        with self.assertRaisesRegex(CopyBlocked,'pending_source_entry'):
+            compile_contract(a,o+[pending],'BTC',300,r,observed_ms=1000,now_ms=1000)
+
+    def test_opposite_or_unknown_pending_order_remains_blocked(self):
+        a,o,r=fixture()
+        pending=dict(coin='BTC',oid=500,side='B',sz='20',limitPx='100',
+                     reduceOnly=False,isTrigger=False,orderType='Limit',tif='Gtc')
+        for change in (dict(side='A'),dict(orderType='Stop Market'),dict(isTrigger=True)):
+            with self.subTest(change=change),self.assertRaisesRegex(CopyBlocked,'pending_source_entry'):
+                compile_contract(a,o+[{**pending,**change}],'BTC',300,r,
+                    observed_ms=1000,now_ms=1000,copy_executed_entries_only=True)
+
+    def test_replay_two_partial_fills_never_copies_unfilled_remainder(self):
+        a,o,r=fixture(); seen=[]
+        pending=dict(coin='BTC',oid=500,side='B',sz='20',limitPx='100',
+                     reduceOnly=False,isTrigger=False,orderType='Limit',tif='Gtc')
+        class Execution(FakeExecution):
+            strict_sizing=True
+            def submit(self,signal,symbol,side,quantity,**kw):
+                c=compile_contract(a,o+[pending],'BTC',300,r,observed_ms=1000,now_ms=1000,
+                    ratio=D('.3'),target_quantity=quantity,copy_executed_entries_only=True)
+                seen.append(c)
+                return super().submit(signal,symbol,side,quantity,**kw)
+        db=sqlite3.connect(':memory:');db.execute('create table meta(key text primary key,value text)')
+        x=Execution(); copier=HyperliquidBingXCopy(db,x,1)
+        event=dict(positionId='new-epoch',symbol='BTCUSDT',action='OPEN',side='BUY',
+                   updatedAt=time.time_ns()//1000000,price=100)
+        market=tuple(map(D,('100','.001','.001','2')))
+        copier.apply(dict(event,orderId='first',quantity='.35'),D('0'),D('.3'),market)
+        copier.apply(dict(event,orderId='second',quantity='.25'),D('.35'),D('.3'),market)
+        self.assertEqual([r[2] for r in x.orders],[D('.105'),D('.075')])
+        self.assertEqual(D(db.execute('select quantity from copied_positions').fetchone()[0]),D('.180'))
+        self.assertEqual(len(seen),2)
+        db.close()
+
+    def test_demo_add_resizes_owned_exit_instead_of_creating_duplicate(self):
+        with tempfile.TemporaryDirectory() as root:
+            path=root+'/demo.sqlite'
+            x=BingXDemoExecution('key','secret',path,allocation=D('300'),trading_enabled=True,
+                source_client=None,source_address='test',expected_uid='123')
+            a,o,r=fixture();o=[{**o[1],'orderType':'Limit','isTrigger':False,
+                'isPositionTpsl':False,'sz':'5','tif':'Gtc'}]
+            c=compile_contract(a,o,'BTC',300,r,observed_ms=1000,now_ms=1000,require_protection=False)
+            prior={**c.exits[0].bingx(c.symbol),'quantity':'1.2'}
+            with sqlite3.connect(path) as db:
+                db.execute('insert into copy_exit_orders values (?,?,?,?)',('epoch','101','old',json.dumps(prior)))
+                payload={**asdict(c),'entry_brackets_attached':False}
+                db.execute('insert into copy_entry_children values (?,?,?,?,?,?,0)',
+                    ('add','epoch',c.symbol,'.3',json.dumps(['old']),json.dumps(payload)))
+            x.order=lambda *a:{'status':'FILLED','executedQty':'.3'}
+            x._orders=lambda *a:[{'orderId':'old'}]
+            x.hedge_mode=lambda:False
+            changes=[];x._dispatch_exit=lambda db,epoch,change,symbol:changes.append(change)
+            x.adopt_entry_children('add')
+            self.assertEqual(len(changes),1)
+            self.assertEqual(changes[0]['action'],'replace')
+            self.assertEqual(changes[0]['order_id'],'old')
+            self.assertEqual(D(changes[0]['parameters']['quantity']),D('1.5'))
+
+    def test_fill_batch_is_immutable_after_restart_and_never_crosses_source_orders(self):
+        db=sqlite3.connect(':memory:');db.execute('create table copy_plans(id text)')
+        def row(i,before,qty,oid=42):
+            e=dict(orderId='fill'+str(i),positionId='epoch',symbol='ZECUSDT',side='BUY',
+                   action='OPEN',quantity=str(qty),price='748.5',updatedAt=1000)
+            return (i,json.dumps(e),json.dumps(dict(oid=oid,startPosition=str(before))))
+        rows=[row(1,0,'.35'),row(2,'.35','.05')]
+        first=batch_executed_entries(db,rows)
+        self.assertEqual(len(first),1)
+        self.assertEqual(D(json.loads(first[0][1])['quantity']),D('.40'))
+        extended=batch_executed_entries(db,rows+[row(3,'.4','3.27')])
+        self.assertEqual(extended[0],first[0])
+        self.assertEqual(len(extended),2)
+        other=sqlite3.connect(':memory:');other.execute('create table copy_plans(id text)')
+        self.assertEqual(len(batch_executed_entries(other,[row(1,0,'.35'),row(2,'.35','.05',43)])),2)
+        db.close();other.close()
+
+    def test_already_planned_partial_fill_is_not_rebatched(self):
+        db=sqlite3.connect(':memory:');db.execute('create table copy_plans(id text)')
+        db.execute('insert into copy_plans values (?)',('first',));db.commit()
+        base=dict(positionId='epoch',side='BUY',action='OPEN',quantity='.35',price='748.5',updatedAt=1000)
+        rows=[(1,json.dumps(dict(base,orderId='first')),json.dumps(dict(oid=42,startPosition='0'))),
+              (2,json.dumps(dict(base,orderId='second')),json.dumps(dict(oid=42,startPosition='.35')))]
+        self.assertEqual(batch_executed_entries(db,rows),rows)
+        db.close()
 
 
 if __name__=='__main__':unittest.main()

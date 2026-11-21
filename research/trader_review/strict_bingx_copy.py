@@ -43,6 +43,7 @@ def source_snapshot(client, address):
 class StrictBingXExecution(BingXExecution):
     strict_sizing = True
     required_source_protection = True
+    copy_executed_entries_only = False
     def __init__(self, *args, source_client, source_address, expected_uid=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.source_client, self.source_address = source_client, source_address
@@ -109,7 +110,8 @@ class StrictBingXExecution(BingXExecution):
         return compile_contract(account, orders, symbol.removesuffix('-USDT'),
                                 equity, rules, observed_ms=stamp,
                                 ratio=ratio, target_quantity=quantity,
-                                require_protection=self.required_source_protection)
+                                require_protection=self.required_source_protection,
+                                copy_executed_entries_only=self.copy_executed_entries_only)
 
     def contract_capital(self):
         return self.equity()
@@ -223,10 +225,12 @@ class StrictBingXExecution(BingXExecution):
                 if new_orders:
                     raise ReconciliationRequired('Unexpected demo orders during initial protection setup')
                 hedge = self.hedge_mode()
-                for raw in contract['exits']:
-                    spec = ExitOrder(**raw)
-                    self._dispatch_exit(db, epoch, dict(action='create',source_id=spec.source_id,
-                                                        parameters=spec.bingx(symbol,hedge=hedge)), symbol)
+                specs = tuple(ExitOrder(**raw) for raw in contract['exits'])
+                from .full_copy_contract import CopyContract
+                current = CopyContract(**{**{k:v for k,v in contract.items()
+                                            if k != 'entry_brackets_attached'}, 'exits': specs})
+                for change in exit_sync_plan(current, self._owned(db, epoch), hedge=hedge):
+                    self._dispatch_exit(db, epoch, change, symbol)
                 db.execute('UPDATE copy_entry_children SET adopted=1 WHERE signal_id=?', (signal_id,))
                 print(json.dumps({'copy_mode':'demo','source_exit_orders':len(contract['exits']),
                                   'invented_protection':False}), flush=True)

@@ -21,6 +21,7 @@ from .strict_bingx_copy import StrictBingXExecution, source_snapshot
 
 class BingXDemoExecution(StrictBingXExecution):
     required_source_protection = False
+    copy_executed_entries_only = True
 
     def __init__(self, *args, allocation, **kwargs):
         if kwargs.pop('environment', 'demo') != 'demo':
@@ -169,6 +170,8 @@ def main():
         copier=HyperliquidBingXCopy(observer.db,execution,time.time_ns()//1_000_000)
         print(json.dumps({'mode':'BINGX_VST','api_origin':execution.api_origin,
                           'actual_exchange_equity':str(equity),'allocation_from_vst':str(args.allocation),
+                          'entry_policy':'confirmed_fills_only',
+                          'pending_limit_remainder':'wait_for_source_fill',
                           'source':args.address}),flush=True)
         funding = observer.db.execute("SELECT value FROM meta WHERE key='demo_funding_verified'").fetchone()
         if not funding:
