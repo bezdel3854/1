@@ -31,6 +31,10 @@ class EntryExpired(RuntimeError):
     """The entry has not been sent and must never be opened later."""
 
 
+class EntryUnfilled(RuntimeError):
+    """The exchange confirmed an immediate entry ended with zero execution."""
+
+
 def require_entry_deadline(deadline_ms):
     if deadline_ms is not None and time.time_ns() // 1_000_000 >= deadline_ms:
         raise EntryExpired('source entry exceeded 30 second deadline')
@@ -433,6 +437,9 @@ class HyperliquidBingXCopy:
             result = self.execution.submit(signal_id, symbol, observation['side'], quantity, **options)
         except EntryExpired:
             self.record_expired_entry(observation, 'expired_before_dispatch')
+            return None
+        except EntryUnfilled:
+            self.record_expired_entry(observation, 'entry_price_limit_not_filled')
             return None
         order = result.get("order", result)
         if order["status"] != "FILLED" or Decimal(str(order["executedQty"])) != quantity:

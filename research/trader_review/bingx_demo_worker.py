@@ -4,17 +4,18 @@ No local/synthetic balance or PnL. This executable has no live-host option.
 """
 import argparse
 import fcntl
+import hashlib
 import json
 import os
 from pathlib import Path
 import sqlite3
 import time
-from decimal import Decimal
+from decimal import Decimal, ROUND_CEILING, ROUND_FLOOR
 
-from .bingx_execution import HyperliquidBingXCopy
+from .bingx_execution import EntryUnfilled, HyperliquidBingXCopy, ReconciliationRequired
 from .bingx_copy_worker import cycle
 from .finmonster_feed import Observer
-from .full_copy_contract import CopyBlocked
+from .full_copy_contract import CopyBlocked, number
 from .hyperliquid_feed import FillObserver, PublicInfo, ADDRESS
 from .strict_bingx_copy import StrictBingXExecution, source_snapshot
 
@@ -22,6 +23,7 @@ from .strict_bingx_copy import StrictBingXExecution, source_snapshot
 class BingXDemoExecution(StrictBingXExecution):
     required_source_protection = False
     copy_executed_entries_only = True
+    adverse_entry_limit = Decimal('.002')
 
     def __init__(self, *args, allocation, **kwargs):
         if kwargs.pop('environment', 'demo') != 'demo':
@@ -54,6 +56,8 @@ class BingXDemoExecution(StrictBingXExecution):
         return min(capital, self.contract_capital()) * Decimal('.99') / denominator
 
     def opening_parameters(self, signal_id, symbol, side, quantity, deadline_ms):
+        if self.has_submission(signal_id):
+            return super().opening_parameters(signal_id, symbol, side, quantity, deadline_ms)
         # Cross mode uses the exchange wallet as collateral. Bound the total
         # position sizing to this allocation rather than its 100,000 VST balance.
         positions = self._request('GET', 'user/positions')
@@ -67,6 +71,40 @@ class BingXDemoExecution(StrictBingXExecution):
         if used + additional > self.contract_capital():
             raise CopyBlocked('aggregate_demo_margin_exceeds_300_allocation')
         return super().opening_parameters(signal_id, symbol, side, quantity, deadline_ms)
+
+    def entry_price_parameters(self, side, source_price, rules):
+        tick = number(rules['price_tick'], positive=True)
+        if side == 'BUY':
+            boundary = source_price * (1 + self.adverse_entry_limit)
+            price = (boundary / tick).to_integral_value(rounding=ROUND_FLOOR) * tick
+        else:
+            boundary = source_price * (1 - self.adverse_entry_limit)
+            price = (boundary / tick).to_integral_value(rounding=ROUND_CEILING) * tick
+        if price <= 0:
+            raise CopyBlocked('entry_price_limit_below_exchange_tick')
+        return dict(type='LIMIT', timeInForce='FOK', price=format(price, 'f'))
+
+    def check_entry_result(self, signal_id, symbol, order):
+        client_id = hashlib.sha256(signal_id.encode()).hexdigest()[:40]
+        with sqlite3.connect(self.journal_path) as db:
+            params = json.loads(db.execute('SELECT parameters FROM bingx_submissions WHERE client_id=?',
+                                           (client_id,)).fetchone()[0])
+            if params.get('timeInForce') != 'FOK':
+                return  # Older market orders remain recoverable.
+            if order.get('status') in ('CANCELLED', 'CANCELED', 'EXPIRED') and number(order['executedQty']) == 0:
+                saved = db.execute('SELECT before_ids FROM copy_entry_children WHERE signal_id=?',
+                                   (signal_id,)).fetchone()
+                existing = set(json.loads(saved[0])) if saved else set()
+                active = {str(o.get('orderID', o.get('orderId'))) for o in self._orders(symbol)}
+                if active - existing:
+                    raise ReconciliationRequired('Unfilled demo entry left unexpected open orders')
+                db.execute('UPDATE copy_entry_children SET adopted=1 WHERE signal_id=?', (signal_id,))
+                db.commit()
+                raise EntryUnfilled('BingX confirmed zero fill at the entry price limit')
+            if order.get('status') == 'FILLED':
+                price, limit = number(order['avgPrice'], positive=True), number(params['price'], positive=True)
+                if (price > limit if params['side'] == 'BUY' else price < limit):
+                    raise ReconciliationRequired('BingX entry fill outside the submitted price limit')
 
     def entry_brackets(self, contract):
         try:
@@ -171,6 +209,7 @@ def main():
         print(json.dumps({'mode':'BINGX_VST','api_origin':execution.api_origin,
                           'actual_exchange_equity':str(equity),'allocation_from_vst':str(args.allocation),
                           'entry_policy':'confirmed_fills_only',
+                          'entry_order':'LIMIT_FOK', 'max_adverse_entry_pct':'0.2',
                           'pending_limit_remainder':'wait_for_source_fill',
                           'source':args.address}),flush=True)
         funding = observer.db.execute("SELECT value FROM meta WHERE key='demo_funding_verified'").fetchone()

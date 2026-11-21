@@ -119,6 +119,11 @@ class StrictBingXExecution(BingXExecution):
     def entry_brackets(self, contract):
         return contract.entry_brackets()
 
+    def entry_price_parameters(self, side, source_price, rules):
+        if abs(number(rules['price'], positive=True) / source_price - 1) > Decimal('.001'):
+            raise CopyBlocked('cross_exchange_entry_price_deviation_exceeds_0.1_percent')
+        return {}
+
     def opening_parameters(self, signal_id, symbol, side, quantity, deadline_ms):
         with sqlite3.connect(self.journal_path) as db:
             saved = db.execute('SELECT parameters FROM bingx_submissions WHERE client_id=?',
@@ -127,7 +132,8 @@ class StrictBingXExecution(BingXExecution):
             # An ambiguous/successful old submission is reconciled, never
             # rewritten using newer source stops and never sent twice.
             params = json.loads(saved[0])
-            return {key: params[key] for key in ('stopLoss', 'takeProfit') if key in params}
+            return {key: params[key] for key in ('stopLoss', 'takeProfit', 'type', 'price', 'timeInForce')
+                    if key in params}
         if self.open_blocker:
             raise CopyBlocked(self.open_blocker)
         if self.context is None or self.context[0]['orderId'] != signal_id:
@@ -160,8 +166,7 @@ class StrictBingXExecution(BingXExecution):
         contract = self._contract(symbol, ratio, actual + quantity)
         rules = self._rules(symbol)
         source_price = number(event.get('price'), positive=True)
-        if abs(number(rules['price'], positive=True) / source_price - 1) > Decimal('.001'):
-            raise CopyBlocked('cross_exchange_entry_price_deviation_exceeds_0.1_percent')
+        price_params = self.entry_price_parameters(side, source_price, rules)
         if (side == 'BUY') != (contract.position_side == 'LONG'):
             raise CopyBlocked('source_reversed_before_dispatch')
         brackets = self.entry_brackets(contract)
@@ -193,14 +198,19 @@ class StrictBingXExecution(BingXExecution):
                        (signal_id, epoch, symbol, str(quantity),
                         json.dumps([str(o.get('orderID', o.get('orderId'))) for o in orders]),
                         json.dumps(recorded_contract, sort_keys=True)))
-        return brackets
+        return {**brackets, **price_params}
 
-    def submit(self, *args, **kwargs):
+    def submit(self, signal_id, symbol, side, quantity, *, reduce_only=False, deadline_ms=None):
         self.verify_account_identity()
-        result = super().submit(*args, **kwargs)
-        if not kwargs.get('reduce_only', False):
-            self.adopt_entry_children(args[0])
+        result = super().submit(signal_id, symbol, side, quantity,
+                                reduce_only=reduce_only, deadline_ms=deadline_ms)
+        if not reduce_only:
+            self.check_entry_result(signal_id, symbol, result.get('order', result))
+            self.adopt_entry_children(signal_id)
         return result
+
+    def check_entry_result(self, signal_id, symbol, order):
+        """Check venue-specific immediate order outcomes before adopting protection."""
 
     def adopt_entry_children(self, signal_id):
         from .full_copy_contract import ExitOrder

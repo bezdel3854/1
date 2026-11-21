@@ -1,3 +1,4 @@
+import hashlib
 import io
 import json
 import sqlite3
@@ -13,7 +14,7 @@ from research.trader_review.bingx_demo_worker import BingXDemoExecution
 from research.trader_review.full_copy_contract import compile_contract, CopyBlocked
 from tests.test_full_copy_contract import fixture
 from tests.test_bingx_freshness import FakeExecution
-from research.trader_review.bingx_execution import HyperliquidBingXCopy, ReconciliationRequired
+from research.trader_review.bingx_execution import EntryUnfilled, HyperliquidBingXCopy, ReconciliationRequired
 from research.trader_review.bingx_copy_worker import batch_executed_entries
 
 
@@ -21,6 +22,35 @@ class DemoTests(unittest.TestCase):
     def make(self,**kwargs):
         return BingXDemoExecution('key','secret',':memory:',allocation=D('300'),
             source_client=None,source_address='test',expected_uid='123',**kwargs)
+
+    def test_entry_cap_rounds_toward_the_trader_on_both_sides(self):
+        execution = self.make()
+        for side, price in [('BUY', '100.20'), ('SELL', '99.81')]:
+            with self.subTest(side=side):
+                self.assertEqual(execution.entry_price_parameters(side, D('100.003'), {'price_tick': '.01'}),
+                                 dict(type='LIMIT', timeInForce='FOK', price=price))
+
+    def test_fok_zero_execution_clears_pending_protection_but_partial_fill_does_not(self):
+        with tempfile.TemporaryDirectory() as root:
+            path = root + '/vst.sqlite'
+            x = BingXDemoExecution('key', 'secret', path, allocation=300, source_client=None, source_address='test')
+            cid = hashlib.sha256(b'replay').hexdigest()[:40]
+            with sqlite3.connect(path) as db:
+                db.execute('insert into bingx_submissions values (?,?)',
+                           (cid, json.dumps(dict(timeInForce='FOK', side='BUY', price='100.2'))))
+                db.execute('insert into copy_entry_children values (?,?,?,?,?,?,?)',
+                           ('replay', 'epoch', 'SOL-USDT', '1', '["existing"]', '{}', 0))
+            x._orders = lambda _: [{'orderId': 'existing'}]
+            x.check_entry_result('replay', 'SOL-USDT', dict(status='CANCELLED', executedQty='.1'))
+            with sqlite3.connect(path) as db:
+                self.assertEqual(db.execute('select adopted from copy_entry_children').fetchone()[0], 0)
+            with self.assertRaises(ReconciliationRequired):
+                x.check_entry_result('replay', 'SOL-USDT', dict(status='FILLED', avgPrice='100.21'))
+            for _ in range(2):
+                with self.assertRaises(EntryUnfilled):
+                    x.check_entry_result('replay', 'SOL-USDT', dict(status='CANCELLED', executedQty='0'))
+            with sqlite3.connect(path) as db:
+                self.assertEqual(db.execute('select adopted from copy_entry_children').fetchone()[0], 1)
 
     def test_demo_orders_settings_and_reads_never_use_real_exchange_host(self):
         x=self.make(trading_enabled=True)
