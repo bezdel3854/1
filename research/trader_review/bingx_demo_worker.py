@@ -12,7 +12,7 @@ import sqlite3
 import time
 from decimal import Decimal, ROUND_CEILING, ROUND_FLOOR
 
-from .bingx_execution import EntryUnfilled, HyperliquidBingXCopy, ReconciliationRequired
+from .bingx_execution import EntryUnfilled, HyperliquidBingXCopy, ReconciliationRequired, require_entry_deadline
 from .bingx_copy_worker import cycle
 from .finmonster_feed import Observer
 from .full_copy_contract import CopyBlocked, number
@@ -31,11 +31,21 @@ class BingXDemoExecution(StrictBingXExecution):
         self.allocation = Decimal(allocation)
         if not self.allocation.is_finite() or self.allocation < 10:
             raise ValueError('Invalid allocation')
+        self._next_margin_check = 0.0
         super().__init__(*args, environment='demo', **kwargs)
 
     @property
     def api_origin(self):
         return 'https://open-api-vst.bingx.com'
+
+    def _request(self, method, path, *, _deadline_ms=None, **parameters):
+        if path == 'trade/marginType' and method == 'GET':
+            delay = self._next_margin_check - time.monotonic()
+            if delay > 0:
+                require_entry_deadline(None if _deadline_ms is None else _deadline_ms - int(delay * 1000))
+                time.sleep(delay)
+            self._next_margin_check = time.monotonic() + 1.1
+        return super()._request(method, path, _deadline_ms=_deadline_ms, **parameters)
 
     def equity(self):
         rows = self._request('GET', 'user/balance', version=3)
