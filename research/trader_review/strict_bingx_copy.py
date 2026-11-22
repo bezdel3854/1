@@ -59,6 +59,8 @@ class StrictBingXExecution(BingXExecution):
             db.execute('CREATE TABLE IF NOT EXISTS copy_exit_dispatch '
                        '(id INTEGER PRIMARY KEY, epoch TEXT, source_id TEXT, action TEXT, '
                        'payload TEXT, result TEXT)')
+            db.execute('CREATE TABLE IF NOT EXISTS copy_exit_receipts '
+                       '(dispatch_id INTEGER PRIMARY KEY, order_id TEXT NOT NULL, response TEXT NOT NULL)')
             db.execute('CREATE TABLE IF NOT EXISTS copy_entry_children '
                        '(signal_id TEXT PRIMARY KEY, epoch TEXT, symbol TEXT, quantity TEXT, '
                        'before_ids TEXT, contract TEXT, adopted INTEGER DEFAULT 0)')
@@ -240,7 +242,8 @@ class StrictBingXExecution(BingXExecution):
                 current = CopyContract(**{**{k:v for k,v in contract.items()
                                             if k != 'entry_brackets_attached'}, 'exits': specs})
                 for change in exit_sync_plan(current, self._owned(db, epoch), hedge=hedge):
-                    self._dispatch_exit(db, epoch, change, symbol)
+                    if self._dispatch_exit(db, epoch, change, symbol):
+                        break  # Reconcile the fill against the copied position next cycle.
                 db.execute('UPDATE copy_entry_children SET adopted=1 WHERE signal_id=?', (signal_id,))
                 print(json.dumps({'copy_mode':'demo','source_exit_orders':len(contract['exits']),
                                   'invented_protection':False}), flush=True)
@@ -281,8 +284,12 @@ class StrictBingXExecution(BingXExecution):
             for (epoch,) in copy_db.execute('SELECT epoch FROM copied_positions'):
                 if not db.execute('SELECT 1 FROM copy_contracts WHERE epoch=?', (epoch,)).fetchone():
                     raise ReconciliationRequired('Legacy copied position lacks verified protection contract')
-            if db.execute('SELECT 1 FROM copy_exit_dispatch WHERE result IS NULL LIMIT 1').fetchone():
-                raise ReconciliationRequired('Ambiguous protection operation; inspect exchange before resuming')
+            for dispatch_id, epoch, payload, oid, result in db.execute(
+                    'SELECT d.id,d.epoch,d.payload,r.order_id,r.response FROM copy_exit_dispatch d '
+                    'LEFT JOIN copy_exit_receipts r ON r.dispatch_id=d.id WHERE d.result IS NULL').fetchall():
+                if not oid or self.environment != 'demo':
+                    raise ReconciliationRequired('Ambiguous protection operation; inspect exchange before resuming')
+                self._confirm_exit(db, dispatch_id, epoch, json.loads(payload), oid, json.loads(result))
             if db.execute('SELECT 1 FROM copy_entry_children WHERE adopted=0 LIMIT 1').fetchone():
                 raise ReconciliationRequired('Unadopted entry protection; reconcile parent and children before resuming')
             for epoch, symbol, ratio, payload in db.execute('SELECT * FROM copy_contracts').fetchall():
@@ -348,7 +355,10 @@ class StrictBingXExecution(BingXExecution):
                     actual_lev = self._request('GET', 'trade/leverage', symbol=symbol)
                 verify_target_settings(contract, actual_lev, actual_margin)
                 for change in exit_sync_plan(contract, owned, hedge=hedge):
-                    self._dispatch_exit(db, epoch, change, symbol)
+                    if self._dispatch_exit(db, epoch, change, symbol):
+                        remaining = sum(abs(number(p['positionAmt'])) for p in self._positions(symbol))
+                        self._reconcile_protective_fills(db, copy_db, epoch, symbol, qty, remaining)
+                        break
                 db.execute('UPDATE copy_contracts SET payload=? WHERE epoch=?',
                            (json.dumps(asdict(contract), sort_keys=True), epoch)); db.commit()
 
@@ -369,18 +379,20 @@ class StrictBingXExecution(BingXExecution):
             updates.append((oid, str(filled)))
         if newly_filled != expected - actual:
             raise ReconciliationRequired('Position change not explained by confirmed bot-owned protective fills')
-        # Two SQLite connections can point at the same DB. Avoid overlapping
-        # write transactions; record proof first. Any interruption is fenced by
-        # the quantity mismatch on restart, rather than reopening exposure.
+        # Keep the verified fill and position update atomic on the worker's DB.
+        same_file = db.execute('PRAGMA database_list').fetchone()[2]
+        same_file = same_file and same_file == copy_db.execute('PRAGMA database_list').fetchone()[2]
         db.executemany('INSERT OR REPLACE INTO copy_exit_fills VALUES (?,?)', updates)
         db.execute('INSERT OR REPLACE INTO locally_exited_epochs VALUES (?,?)',
                    (epoch, 'confirmed_bot_protection_fill'))
-        db.commit()
-        with copy_db:
+        if not same_file:
+            db.commit()
+        target_db = db if same_file else copy_db
+        with target_db:
             if actual:
-                copy_db.execute('UPDATE copied_positions SET quantity=? WHERE epoch=?', (str(actual), epoch))
+                target_db.execute('UPDATE copied_positions SET quantity=? WHERE epoch=?', (str(actual), epoch))
             else:
-                copy_db.execute('DELETE FROM copied_positions WHERE epoch=?', (epoch,))
+                target_db.execute('DELETE FROM copied_positions WHERE epoch=?', (epoch,))
 
     @staticmethod
     def _matches(order, parameters):
@@ -426,15 +438,37 @@ class StrictBingXExecution(BingXExecution):
                 result = self._request('POST', 'trade/order', **params)
                 result_order = result.get('order', result)
                 oid = str(result_order.get('orderID', result_order.get('orderId', '')))
-            active = {str(o.get('orderID', o.get('orderId'))): o for o in self._orders(symbol)}
-            if action == 'replace' and change['order_id'] in active:
-                raise ReconciliationRequired('Old protection still open after replacement; inspect orders')
-            match = active.get(oid)
-            if not match or not self._matches(match, params):
-                raise ReconciliationRequired('Protection creation/replacement unconfirmed; never resubmit blindly')
+            if not oid.isdigit() or oid == '0':
+                raise ReconciliationRequired('Protection response missing valid order ID')
+            db.execute('INSERT INTO copy_exit_receipts VALUES (?,?,?)', (dispatch_id, oid, json.dumps(result)))
+            db.commit()
+            return self._confirm_exit(db, dispatch_id, epoch, change, oid, result)
+        db.execute('UPDATE copy_exit_dispatch SET result=? WHERE id=?', (json.dumps(result), dispatch_id)); db.commit()
+        return False
+
+    def _confirm_exit(self, db, dispatch_id, epoch, change, oid, result):
+        params = change['parameters']
+        symbol = params['symbol']
+        active = {str(o.get('orderID', o.get('orderId'))): o for o in self._orders(symbol)}
+        if change['action'] == 'replace' and change['order_id'] in active:
+            raise ReconciliationRequired('Old protection still open after replacement; inspect orders')
+        match = active.get(oid)
+        filled = False
+        if not match and self.environment == 'demo':
+            response = self._request('GET', 'trade/order', symbol=symbol, orderId=oid)
+            terminal = response.get('order', response)
+            if (str(terminal.get('orderId', terminal.get('orderID'))) == oid
+                    and terminal.get('status') == 'FILLED'
+                    and self._matches(terminal, params)
+                    and number(terminal['executedQty']) == number(params['quantity'], positive=True)):
+                match, filled = terminal, True
+        if not match or not self._matches(match, params):
+            raise ReconciliationRequired('Protection creation/replacement unconfirmed; never resubmit blindly')
+        with db:
             db.execute('INSERT OR REPLACE INTO copy_exit_orders VALUES (?,?,?,?)',
                        (epoch, change['source_id'], oid, json.dumps(params, sort_keys=True)))
-        db.execute('UPDATE copy_exit_dispatch SET result=? WHERE id=?', (json.dumps(result), dispatch_id)); db.commit()
+            db.execute('UPDATE copy_exit_dispatch SET result=? WHERE id=?', (json.dumps(result), dispatch_id))
+        return filled
 
     def _replacement_id(self, result, old_id):
         if result.get('cancelResult') == 'SUCCESS' and result.get('newOrderResult') == 'SUCCESS':

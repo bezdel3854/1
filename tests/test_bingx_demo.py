@@ -84,6 +84,45 @@ class DemoTests(unittest.TestCase):
         with self.assertRaisesRegex(CopyBlocked,'no_stop_loss'):
             compile_contract(a,o,'BTC',300,r,observed_ms=1000,now_ms=1000)
 
+    def test_exit_size_never_exceeds_position_after_entry_rounding(self):
+        account, orders, rules = fixture()
+        take = {**orders[1], 'orderType': 'Limit', 'isTrigger': False, 'isPositionTpsl': False,
+                'sz': '10', 'tif': 'Gtc'}
+        contract = compile_contract(account, [take], 'BTC', 300, rules, observed_ms=1000, now_ms=1000,
+                                    ratio=D('.3'), target_quantity=D('2.999'),
+                                    require_protection=False, copy_executed_entries_only=True)
+        self.assertEqual(D(contract.exits[0].quantity), D('2.999'))
+
+    def test_immediate_exit_recovers_by_receipt_without_second_post(self):
+        with tempfile.TemporaryDirectory() as root:
+            path = root + '/vst.sqlite'
+            x = BingXDemoExecution('key', 'secret', path, allocation=300, trading_enabled=True,
+                                   source_client=None, source_address='test')
+            symbol, epoch, oid = 'BTC-USDT', 'test-epoch', '2124038979964637184'
+            params = dict(symbol=symbol, positionSide='SHORT', side='BUY', type='LIMIT',
+                          quantity='0.2027', price='57920.0', timeInForce='GTC')
+            order = dict(symbol=symbol, positionSide='SHORT', side='BUY', type='LIMIT',
+                         origQty='0.2027', executedQty='0.2027', price='57920.0', orderId=int(oid), status='FILLED')
+            copy_db = sqlite3.connect(path)
+            copier = HyperliquidBingXCopy(copy_db, x, 1)
+            with copy_db:
+                copy_db.execute('INSERT INTO copied_positions VALUES (?,?,?)', (epoch, '.1', '.2027'))
+                copy_db.execute('INSERT INTO copy_contracts VALUES (?,?,?,?)', (epoch, symbol, '.1', '{}'))
+            x.verify_account_identity = lambda: None
+            x._positions = lambda _: []
+            with sqlite3.connect(path) as db, patch.object(x, '_request', return_value={'order': order}) as req:
+                x._orders = lambda _: (_ for _ in ()).throw(TimeoutError())
+                with self.assertRaises(TimeoutError):
+                    x._dispatch_exit(db, epoch, dict(action='create', source_id='1', parameters=params), symbol)
+                self.assertEqual(db.execute('SELECT order_id FROM copy_exit_receipts').fetchone(), (oid,))
+                x._orders = lambda _: []
+                x.synchronize_exits(copier.db)
+                self.assertEqual(db.execute('SELECT count(*) FROM copied_positions').fetchone(), (0,))
+                self.assertEqual(db.execute('SELECT executed_qty FROM copy_exit_fills').fetchone(), ('0.2027',))
+                self.assertEqual(db.execute('SELECT count(*) FROM copy_exit_dispatch WHERE result IS NULL').fetchone(), (0,))
+                self.assertEqual([call.args[0] for call in req.call_args_list], ['POST', 'GET', 'GET'])
+            copy_db.close()
+
     def test_partial_limit_exit_is_preserved_in_demo(self):
         a,o,r=fixture();o=[{**o[1],'orderType':'Limit','isTrigger':False,
                            'isPositionTpsl':False,'sz':'5','tif':'Gtc'}]

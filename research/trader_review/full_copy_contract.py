@@ -193,6 +193,9 @@ def compile_contract(account, orders, coin, target_equity, rules, *, observed_ms
         if source_exit_qty > abs(source_qty):
             raise CopyBlocked('source_exit_exceeds_position')
         q = qty if whole else scaled_quantity(source_exit_qty, ratio, rules['quantity_step'], rules['minimum_quantity'], rules['minimum_notional'], price)
+        if copy_executed_entries_only:
+            # Separately rounded entry fills can leave less size on BingX.
+            q = min(q, qty)
         name = o.get('orderType')
         mapping = {'Stop Market': 'STOP_MARKET', 'Take Profit Market': 'TAKE_PROFIT_MARKET',
                    'Stop Limit': 'STOP', 'Take Profit Limit': 'TAKE_PROFIT', 'Limit': 'LIMIT'}
