@@ -68,11 +68,18 @@ class BingXDemoExecution(StrictBingXExecution):
     def opening_parameters(self, signal_id, symbol, side, quantity, deadline_ms):
         if self.has_submission(signal_id):
             return super().opening_parameters(signal_id, symbol, side, quantity, deadline_ms)
-        # Cross mode uses the exchange wallet as collateral. Bound the total
-        # position sizing to this allocation rather than its 100,000 VST balance.
+        # Bound all positions to the demo allocation. An isolated position
+        # can retain more collateral than its current mark notional / leverage.
         positions = self._request('GET', 'user/positions')
-        used = sum((abs(Decimal(str(p['positionAmt']))) * Decimal(str(p['markPrice'])) /
-                    Decimal(str(p['leverage'])) for p in positions), Decimal(0))
+        used = Decimal(0)
+        for position in positions:
+            size = abs(number(position['positionAmt']))
+            if not size:
+                continue
+            margin = size * number(position['markPrice'], positive=True) / number(position['leverage'], positive=True)
+            if position.get('isolated') is True:
+                margin = max(margin, number(position.get('initialMargin'), positive=True))
+            used += margin
         rules = self._rules(symbol)
         account = self.source_client.get('clearinghouseState', user=self.source_address)
         source = next(p['position'] for p in account['assetPositions']

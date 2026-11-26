@@ -111,11 +111,11 @@ class CopyContract:
     source_margin: str
     target_margin: str
     exits: tuple[ExitOrder, ...]
+    isolated_collateral_adjusted: bool = False
 
     def fingerprint(self):
         payload = asdict(self)
-        # Cross marginUsed moves with mark price; it is not a source order
-        # amendment. Isolated collateral is rejected separately.
+        # Mark price changes the margin amount without amending any order.
         payload.pop('source_margin'); payload.pop('target_margin')
         return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
 
@@ -132,7 +132,7 @@ class CopyContract:
 
 def compile_contract(account, orders, coin, target_equity, rules, *, observed_ms,
                      now_ms=None, ratio=None, target_quantity=None, require_protection=True,
-                     copy_executed_entries_only=False):
+                     copy_executed_entries_only=False, for_exit_sync=False):
     now_ms = time.time_ns() // 1_000_000 if now_ms is None else now_ms
     if not isinstance(observed_ms, int) or not 0 <= now_ms - observed_ms <= 5000:
         raise CopyBlocked('stale_or_future_source_snapshot')
@@ -162,11 +162,28 @@ def compile_contract(account, orders, coin, target_equity, rules, *, observed_ms
             raise CopyBlocked('target_quantity_not_representable')
     source_margin = number(p['marginUsed'], positive=True)
     target_margin = source_margin * ratio
+    adjusted = False
     if margin_type == 'ISOLATED':
-        # Added isolated collateral cannot be atomically reproduced with the
-        # entry and leverage call. Do not silently copy the leverage alone.
-        raise CopyBlocked('isolated_collateral_requires_separate_verified_transfer')
-    if target_margin > target_equity:
+        # Compare collateral before unrealized PnL to the ordinary entry
+        # margin. The entry price published by the source may be rounded.
+        try:
+            entry_price = number(p.get('entryPx'), positive=True)
+            collateral = number(lev.get('rawUsd')) + source_qty * entry_price
+            reported_collateral = source_margin - number(p.get('unrealizedPnl'))
+            initial_margin = abs(source_qty) * entry_price / leverage
+            price_resolution = Decimal(1).scaleb(entry_price.as_tuple().exponent)
+            rounding = abs(source_qty) * price_resolution / 2
+            tolerance = Decimal('.01') + min(rounding, initial_margin * Decimal('.0001'))
+            adjusted = (collateral <= 0
+                        or abs(collateral - reported_collateral) > tolerance
+                        or abs(collateral - initial_margin) > tolerance)
+        except CopyBlocked:
+            adjusted = True
+        if adjusted and not for_exit_sync:
+            raise CopyBlocked('isolated_collateral_requires_separate_verified_transfer')
+        # BingX establishes initial margin from its own execution price.
+        target_margin = qty * price / leverage
+    if target_margin > target_equity and not (for_exit_sync and margin_type == 'ISOLATED'):
         raise CopyBlocked('insufficient_proportional_margin')
     tick = number(rules['price_tick'], positive=True)
     exits = []
@@ -229,7 +246,7 @@ def compile_contract(account, orders, coin, target_equity, rules, *, observed_ms
         raise CopyBlocked('source_has_no_take_profit')
     return CopyContract(coin+'-USDT', 'LONG' if long else 'SHORT', int(leverage), margin_type,
                         str(abs(source_qty)), str(qty), str(source_margin), str(target_margin),
-                        tuple(sorted(exits, key=lambda x: x.source_id)))
+                        tuple(sorted(exits, key=lambda x: x.source_id)), adjusted)
 
 
 def verify_target_settings(contract, leverage, margin):

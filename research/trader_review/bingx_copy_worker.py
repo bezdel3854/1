@@ -151,6 +151,9 @@ def cycle(source, copier, execution, *, min_equity=Decimal('100'), allowed_symbo
                     with db:
                         db.execute("INSERT OR REPLACE INTO meta VALUES ('bingx_copy_row',?)", (str(rowid),))
                     continue
+                live_allocation = getattr(execution, 'live_allocation', None)
+                if live_allocation is not None:
+                    equity = min(equity, live_allocation)
                 ratio = equity / source_equity
                 if copy_allocation is not None and hasattr(execution, 'copy_ratio'):
                     ratio = execution.copy_ratio(account, equity)
@@ -186,10 +189,14 @@ def main():
     parser.add_argument("--copy-add-once", action="store_true")
     parser.add_argument("--min-equity", type=Decimal, default=Decimal('100'),
                         help="Minimum actual account equity for a new entry; default 100 USDT")
+    parser.add_argument("--allocation", type=Decimal,
+                        help="Maximum capital used to size live copies and estimate initial margin (USDT)")
     parser.add_argument("--symbols", nargs='+', help="Optional BingX symbols allowed for new positions")
     args = parser.parse_args()
     if not args.min_equity.is_finite() or args.min_equity < Decimal('10'):
         parser.error('--min-equity must be finite and at least 10 USDT')
+    if args.allocation is not None and (not args.allocation.is_finite() or args.allocation < Decimal('10')):
+        parser.error('--allocation must be finite and at least 10 USDT')
     if args.symbols and any(not re.fullmatch(r'[A-Z0-9]+-USDT', s) for s in args.symbols):
         parser.error('--symbols must use the form BTC-USDT')
     if args.db.name != "hyperliquid-bingx-live.sqlite":
@@ -200,7 +207,7 @@ def main():
         execution = StrictBingXExecution(
             os.environ['BINGX_API_KEY'], os.environ['BINGX_API_SECRET'], args.db,
             trading_enabled=True, source_client=PublicInfo(), source_address=args.address,
-            expected_uid=os.environ['BINGX_ACCOUNT_UID'])
+            expected_uid=os.environ['BINGX_ACCOUNT_UID'], live_allocation=args.allocation)
     else:
         execution = BingXExecution(os.environ['BINGX_API_KEY'], os.environ['BINGX_API_SECRET'],
                                    ':memory:', trading_enabled=False)

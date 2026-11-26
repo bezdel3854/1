@@ -11,7 +11,7 @@ import json
 import sqlite3
 import time
 
-from .bingx_execution import BingXExecution, ReconciliationRequired, require_entry_deadline
+from .bingx_execution import BingXAPIError, BingXExecution, ReconciliationRequired, require_entry_deadline
 from .full_copy_contract import (CopyBlocked, compile_contract, number,
                                  settings_plan, verify_target_settings, exit_sync_plan)
 
@@ -44,7 +44,11 @@ class StrictBingXExecution(BingXExecution):
     strict_sizing = True
     required_source_protection = True
     copy_executed_entries_only = False
-    def __init__(self, *args, source_client, source_address, expected_uid=None, **kwargs):
+    def __init__(self, *args, source_client, source_address, expected_uid=None,
+                 live_allocation=None, **kwargs):
+        self.live_allocation = None if live_allocation is None else number(live_allocation, positive=True)
+        if self.live_allocation is not None and kwargs.get('environment', 'live') != 'live':
+            raise ValueError('Live allocation requires the live exchange')
         super().__init__(*args, **kwargs)
         self.source_client, self.source_address = source_client, source_address
         self.expected_uid = str(expected_uid) if expected_uid is not None else None
@@ -75,8 +79,17 @@ class StrictBingXExecution(BingXExecution):
     def verify_account_identity(self):
         if not self.expected_uid or not self.expected_uid.isdigit():
             raise CopyBlocked('account_uid_not_pinned')
-        actual = self._request('GET', 'uid', api_family='account', version=1)
-        if str(actual.get('uid')) != self.expected_uid:
+        try:
+            actual = self._request('GET', 'uid', api_family='account', version=1).get('uid')
+        except BingXAPIError as error:
+            if self.environment != 'live' or str(error.code) != '100400':
+                raise
+            # The live account endpoint may be unavailable. The signed USDT
+            # balance also carries the account identity when BingX sends it in full.
+            balances = self._request('GET', 'user/balance', version=3)
+            ids = [row.get('userId') for row in balances if row.get('asset') == 'USDT']
+            actual = ids[0] if len(ids) == 1 else None
+        if str(actual) != self.expected_uid:
             raise CopyBlocked('account_uid_mismatch_no_mutations_allowed')
 
     def _positions(self, symbol):
@@ -104,7 +117,7 @@ class StrictBingXExecution(BingXExecution):
                     minimum_quantity=contract['tradeMinQuantity'],
                     minimum_notional=contract['tradeMinUSDT'])
 
-    def _contract(self, symbol, ratio, quantity):
+    def _contract(self, symbol, ratio, quantity, *, for_exit_sync=False):
         # Fetch target rules first so the source snapshot is fresh at compile.
         rules = self._rules(symbol)
         equity = self.contract_capital()
@@ -113,10 +126,20 @@ class StrictBingXExecution(BingXExecution):
                                 equity, rules, observed_ms=stamp,
                                 ratio=ratio, target_quantity=quantity,
                                 require_protection=self.required_source_protection,
-                                copy_executed_entries_only=self.copy_executed_entries_only)
+                                copy_executed_entries_only=self.copy_executed_entries_only,
+                                for_exit_sync=for_exit_sync)
 
     def contract_capital(self):
-        return self.equity()
+        equity = self.equity()
+        return min(equity, self.live_allocation) if self.live_allocation is not None else equity
+
+    def verify_live_margin_budget(self, positions, quantity, leverage, price):
+        if self.live_allocation is None:
+            return
+        committed = sum((number(p['initialMargin'], positive=True) for p in positions), Decimal(0))
+        order_margin = quantity * price / leverage
+        if committed + order_margin > self.contract_capital():
+            raise CopyBlocked('entry_exceeds_live_margin_allocation')
 
     def entry_brackets(self, contract):
         return contract.entry_brackets()
@@ -169,6 +192,8 @@ class StrictBingXExecution(BingXExecution):
         rules = self._rules(symbol)
         source_price = number(event.get('price'), positive=True)
         price_params = self.entry_price_parameters(side, source_price, rules)
+        self.verify_live_margin_budget(all_positions, quantity, contract.leverage,
+                                       max(source_price, number(rules['price'], positive=True)))
         if (side == 'BUY') != (contract.position_side == 'LONG'):
             raise CopyBlocked('source_reversed_before_dispatch')
         brackets = self.entry_brackets(contract)
@@ -319,7 +344,8 @@ class StrictBingXExecution(BingXExecution):
                 # Source position can be flat while the pending close fill is
                 # waiting in the ordered feed; keep current protection then.
                 try:
-                    contract = self._contract(symbol, number(ratio, positive=True), qty)
+                    contract = self._contract(symbol, number(ratio, positive=True), qty,
+                                              for_exit_sync=True)
                 except CopyBlocked as error:
                     # Existing protection is retained; worker may still process
                     # risk-reducing source fills, but cannot add new exposure.
@@ -344,7 +370,11 @@ class StrictBingXExecution(BingXExecution):
                     raise CopyBlocked('margin_mode_changed_with_live_position_requires_reconciliation')
                 side_key = 'longLeverage' if contract.position_side == 'LONG' else 'shortLeverage'
                 max_key = 'maxLongLeverage' if contract.position_side == 'LONG' else 'maxShortLeverage'
-                if number(actual_lev.get(side_key)) != contract.leverage:
+                if contract.isolated_collateral_adjusted:
+                    self.open_blocker = 'isolated_collateral_requires_separate_verified_transfer'
+                    print(json.dumps({'copy_status': 'isolated_collateral_changed',
+                                      'symbol': symbol, 'reason': self.open_blocker}), flush=True)
+                elif number(actual_lev.get(side_key)) != contract.leverage:
                     if not self.trading_enabled or contract.leverage > number(actual_lev.get(max_key), positive=True):
                         raise CopyBlocked('live_leverage_change_not_available')
                     # Idempotent setting update only after ownership and
@@ -353,7 +383,8 @@ class StrictBingXExecution(BingXExecution):
                                   side=contract.position_side if hedge else 'BOTH',
                                   leverage=contract.leverage)
                     actual_lev = self._request('GET', 'trade/leverage', symbol=symbol)
-                verify_target_settings(contract, actual_lev, actual_margin)
+                if not contract.isolated_collateral_adjusted:
+                    verify_target_settings(contract, actual_lev, actual_margin)
                 for change in exit_sync_plan(contract, owned, hedge=hedge):
                     if self._dispatch_exit(db, epoch, change, symbol):
                         remaining = sum(abs(number(p['positionAmt'])) for p in self._positions(symbol))

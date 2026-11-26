@@ -16,7 +16,7 @@ from research.trader_review.full_copy_contract import (
     CopyBlocked, compile_contract, exit_sync_plan, scaled_quantity,
     settings_plan, verify_target_settings, json_number)
 from research.trader_review.strict_bingx_copy import StrictBingXExecution, source_snapshot
-from research.trader_review.bingx_execution import ReconciliationRequired, HyperliquidBingXCopy, BingXExecution
+from research.trader_review.bingx_execution import BingXAPIError, ReconciliationRequired, HyperliquidBingXCopy, BingXExecution
 from tests.test_bingx_freshness import FakeExecution
 
 
@@ -72,8 +72,34 @@ class ContractTests(unittest.TestCase):
         with self.assertRaisesRegex(CopyBlocked, 'single_full_position'): c.entry_brackets()
 
     def test_isolated_added_margin_is_not_replaced_by_leverage_alone(self):
+        p = self.account['assetPositions'][0]['position']
+        p.update(entryPx='100', marginUsed='565', unrealizedPnl='15',
+                 leverage={'type': 'isolated', 'value': 2, 'rawUsd': '-450'})
+        with self.assertRaisesRegex(CopyBlocked, 'isolated_collateral'):
+            self.compile()
+        self.assertTrue(self.compile(for_exit_sync=True).isolated_collateral_adjusted)
+
+    def test_standard_isolated_margin_ignores_unrealized_pnl_on_either_side(self):
+        for side, qty, raw_usd, unrealized_pnl, stops in (
+            ('A', '10', '-500', '15', ('90', '110')),
+            ('B', '-10', '1500', '-15', ('110', '90')),
+        ):
+            with self.subTest(side=side):
+                p = self.account['assetPositions'][0]['position']
+                p.update(szi=qty, entryPx='100', marginUsed=str(500 + D(unrealized_pnl)),
+                         unrealizedPnl=unrealized_pnl,
+                         leverage={'type': 'isolated', 'value': 2, 'rawUsd': raw_usd})
+                for order, stop in zip(self.orders, stops):
+                    order.update(side=side, triggerPx=stop)
+                contract = self.compile(target_quantity='.8')
+                self.assertEqual(contract.margin_type, 'ISOLATED')
+                self.assertEqual(D(contract.target_margin), D('40'))
+                self.assertFalse(contract.isolated_collateral_adjusted)
+
+    def test_unknown_isolated_collateral_prevents_entry(self):
         self.account['assetPositions'][0]['position']['leverage']['type'] = 'isolated'
-        with self.assertRaisesRegex(CopyBlocked, 'isolated_collateral'): self.compile()
+        with self.assertRaisesRegex(CopyBlocked, 'isolated_collateral'):
+            self.compile()
 
     def test_already_crossed_stop_and_profit_block_entry(self):
         for index, price, reason in [(0, '101', 'stop_already'), (1, '99', 'take_profit_already')]:
@@ -162,7 +188,7 @@ class StrictExecutionTests(unittest.TestCase):
         self.x=StrictBingXExecution('test-key','test-secret',self.path,trading_enabled=True,
                                   source_client=None,source_address='public-test-address',expected_uid='123')
         a,o,r=fixture();self.contract=compile_contract(a,o,'BTC',85,r,observed_ms=1000,now_ms=1000)
-        self.x._contract=lambda *a:self.contract
+        self.x._contract=lambda *a,**kw:self.contract
         self.x.equity=lambda:D('85')
         self.x.hedge_mode=lambda:False
         self.orders=[];self.requests=[];self.leverage=20;self.margin='ISOLATED'
@@ -211,8 +237,66 @@ class StrictExecutionTests(unittest.TestCase):
         self.x.submit('entry','BTC-USDT','BUY',D('.850'),deadline_ms=self.deadline)
         self.assertEqual(sum(m=='POST' and p=='trade/order' for m,p,_ in self.requests),1)
 
+    def test_isolated_entry_sets_and_reads_back_margin_before_sending_brackets(self):
+        self.margin = 'CROSSED'
+        self.contract = replace(self.contract, margin_type='ISOLATED')
+        self.x.submit('entry', 'BTC-USDT', 'BUY', D('.850'), deadline_ms=self.deadline)
+        settings = [(method, params) for method, path, params in self.requests if path == 'trade/marginType']
+        self.assertEqual([method for method, _ in settings], ['GET', 'POST', 'GET'])
+        self.assertEqual(settings[1][1]['marginType'], 'ISOLATED')
+        entry = next(params for method, path, params in self.requests if (method, path) == ('POST', 'trade/order'))
+        self.assertIn('stopLoss', entry)
+        self.assertIn('takeProfit', entry)
+
+    def test_live_allocation_blocks_entry_before_settings_changes(self):
+        self.x.live_allocation = D('100')
+        self.x.equity = lambda: D('185')
+        original = self.x._request
+        other_position = dict(symbol='ETH-USDT', positionAmt='1', initialMargin='60')
+        with sqlite3.connect(self.path) as db:
+            db.execute('CREATE TABLE copied_positions(epoch TEXT, quantity TEXT)')
+            db.execute('INSERT INTO copied_positions VALUES (?,?)', ('existing', '1'))
+            db.execute('INSERT INTO copy_contracts VALUES (?,?,?,?)',
+                       ('existing', 'ETH-USDT', '.1', '{}'))
+        def request(method, path, **kwargs):
+            if path == 'user/positions' and 'symbol' not in kwargs:
+                return [other_position]
+            return original(method, path, **kwargs)
+        self.x._request = request
+
+        self.assertEqual(self.x.contract_capital(), D('100'))
+        with self.assertRaisesRegex(CopyBlocked, 'entry_exceeds_live_margin_allocation'):
+            self.x.submit('entry', 'BTC-USDT', 'BUY', D('.850'), deadline_ms=self.deadline)
+        self.assertFalse(any(method == 'POST' for method, _, _ in self.requests))
+
+    def test_live_identity_fallback_requires_full_matching_uid(self):
+        for uid in ('123', '1**3', '456'):
+            with self.subTest(uid=uid), patch.object(self.x, '_request', side_effect=[
+                BingXAPIError(100400, 'Endpoint unavailable'),
+                [{'asset': 'USDT', 'userId': uid}],
+            ]) as api:
+                if uid == '123':
+                    self.x.verify_account_identity()
+                else:
+                    with self.assertRaisesRegex(CopyBlocked, 'account_uid_mismatch'):
+                        self.x.verify_account_identity()
+                api.assert_called_with('GET', 'user/balance', version=3)
+
+    def test_isolated_collateral_change_blocks_adds_but_keeps_stop_sync(self):
+        self.contract = replace(self.contract, margin_type='ISOLATED')
+        self.x.submit('entry', 'BTC-USDT', 'BUY', D('.850'), deadline_ms=self.deadline)
+        self.x._positions = lambda _: [{'positionAmt': '.850'}]
+        self.contract = replace(
+            self.contract, isolated_collateral_adjusted=True,
+            exits=(replace(self.contract.exits[0], stop_price='91'), self.contract.exits[1]))
+
+        with self.position_state() as state:
+            self.x.synchronize_exits(state)
+        self.assertEqual(self.x.open_blocker, 'isolated_collateral_requires_separate_verified_transfer')
+        self.assertTrue(any(str(o.get('stopPrice')) == '91' for o in self.orders))
+
     def test_missing_source_protection_or_inflated_minimum_prevents_order(self):
-        self.x._contract=lambda *a:(_ for _ in ()).throw(CopyBlocked('source_has_no_stop_loss'))
+        self.x._contract=lambda *a,**kw:(_ for _ in ()).throw(CopyBlocked('source_has_no_stop_loss'))
         with self.assertRaises(CopyBlocked):self.x.submit('entry','BTC-USDT','BUY',D('.850'),deadline_ms=self.deadline)
         self.assertFalse(any(m=='POST' for m,_,_ in self.requests))
         self.requests.clear()
@@ -278,7 +362,7 @@ class StrictExecutionTests(unittest.TestCase):
     def test_removed_source_stop_keeps_existing_protection_and_blocks_increases(self):
         self.x.submit('entry','BTC-USDT','BUY',D('.850'),deadline_ms=self.deadline)
         self.x._positions=lambda *a:[{'positionAmt':'.850'}]
-        self.x._contract=lambda *a:(_ for _ in ()).throw(CopyBlocked('source_has_no_stop_loss'))
+        self.x._contract=lambda *a,**kw:(_ for _ in ()).throw(CopyBlocked('source_has_no_stop_loss'))
         self.requests.clear();state=self.position_state();self.x.synchronize_exits(state)
         self.assertEqual(self.x.open_blocker,'source_has_no_stop_loss')
         self.assertFalse(any(m in ('POST','DELETE') for m,_,_ in self.requests));state.close()
