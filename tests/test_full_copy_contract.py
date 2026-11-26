@@ -2,6 +2,7 @@ import copy
 import hashlib
 import hmac
 import io
+from pathlib import Path
 from dataclasses import replace
 from decimal import Decimal as D
 import json
@@ -268,6 +269,22 @@ class StrictExecutionTests(unittest.TestCase):
         with self.assertRaisesRegex(CopyBlocked, 'entry_exceeds_live_margin_allocation'):
             self.x.submit('entry', 'BTC-USDT', 'BUY', D('.850'), deadline_ms=self.deadline)
         self.assertFalse(any(method == 'POST' for method, _, _ in self.requests))
+
+    def test_other_trader_reserves_symbol_until_protection_cleanup(self):
+        peer = Path(self.tmp.name) / 'peer.sqlite'
+        StrictBingXExecution('key', 'secret', peer, source_client=None, source_address='peer')
+        self.x.peer_journals = (peer,)
+        with sqlite3.connect(peer) as db:
+            db.execute('INSERT INTO copy_contracts VALUES (?,?,?,?)', ('peer', 'BTC-USDT', '.1', '{}'))
+        with self.assertRaisesRegex(CopyBlocked, 'symbol_reserved_by_another_trader'):
+            self.x.submit('entry', 'BTC-USDT', 'BUY', D('.850'), deadline_ms=self.deadline)
+        self.assertFalse(any(method == 'POST' for method, _, _ in self.requests))
+
+        with sqlite3.connect(peer) as db:
+            db.execute('DELETE FROM copy_contracts WHERE epoch=?', ('peer',))
+        self.x.submit('entry', 'BTC-USDT', 'BUY', D('.850'), deadline_ms=self.deadline)
+        self.assertEqual(sum(method == 'POST' and path == 'trade/order'
+                             for method, path, _ in self.requests), 1)
 
     def test_live_identity_fallback_requires_full_matching_uid(self):
         for uid in ('123', '1**3', '456'):

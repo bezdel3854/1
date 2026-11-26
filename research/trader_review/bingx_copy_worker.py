@@ -11,10 +11,9 @@ from pathlib import Path
 
 from .bingx_execution import BingXAPIError, BingXExecution, HyperliquidBingXCopy, ReconciliationRequired
 from .finmonster_feed import Observer
-from .hyperliquid_feed import FillObserver
+from .hyperliquid_feed import ADDRESS, FillObserver, PublicInfo
 from .full_copy_contract import CopyBlocked
 from .strict_bingx_copy import StrictBingXExecution
-from .hyperliquid_feed import PublicInfo
 
 
 def batch_executed_entries(db, rows):
@@ -67,17 +66,19 @@ def batch_executed_entries(db, rows):
     return result
 
 
-def cycle(source, copier, execution, *, min_equity=Decimal('100'), allowed_symbols=None, copy_allocation=None):
+def synchronize(source, copier, execution):
     source.poll()
-    db = copier.db
     if hasattr(execution, 'synchronize_exits'):
         execution.open_blocker = None
         try:
-            execution.synchronize_exits(db)
+            execution.synchronize_exits(copier.db)
         except (CopyBlocked, ReconciliationRequired, BingXAPIError) as error:
             execution.open_blocker = str(error)
             print(json.dumps({'copy_status': 'protection_blocked', 'error': str(error)}), flush=True)
-    rows = db.execute(
+
+
+def pending_rows(db):
+    return db.execute(
         """SELECT o.rowid, o.payload, f.payload FROM observations o
            LEFT JOIN hl_fills f ON f.id = substr(o.order_id, 4, length(o.order_id) -
                CASE WHEN o.order_id LIKE '%:close' THEN 9 ELSE 8 END)
@@ -85,6 +86,16 @@ def cycle(source, copier, execution, *, min_equity=Decimal('100'), allowed_symbo
                (SELECT cast(value AS INTEGER) FROM meta WHERE key='bingx_copy_row'), 0)
            ORDER BY o.rowid"""
     ).fetchall()
+
+
+def cycle(source, copier, execution, *, min_equity=Decimal('100'), allowed_symbols=None,
+          copy_allocation=None, prepared_rows=None):
+    db = copier.db
+    if prepared_rows is None:
+        synchronize(source, copier, execution)
+        rows = pending_rows(db)
+    else:
+        rows = prepared_rows
     if getattr(execution, 'copy_executed_entries_only', False):
         rows = batch_executed_entries(db, rows)
     for rowid, payload, raw in rows:
@@ -109,11 +120,17 @@ def cycle(source, copier, execution, *, min_equity=Decimal('100'), allowed_symbo
             ":prebaseline:" not in event["positionId"] or seed or managed or planned
         ):
             symbol = event["symbol"][:-4] + "-USDT"
+            skip_reason = None
             if allowed_symbols is not None and symbol not in allowed_symbols and not managed and not planned:
+                skip_reason = 'symbol_not_selected'
+            if (event['action'] == 'OPEN' and not managed and not planned
+                    and getattr(execution, 'peer_journals', ()) and execution.peer_owns(symbol)):
+                skip_reason = 'symbol_reserved_by_another_trader'
+            if skip_reason:
                 with db:
                     db.execute("INSERT OR IGNORE INTO copy_skips VALUES (?,?,?,?,?)",
                                (event['orderId'], event['updatedAt'], time.time_ns() // 1_000_000,
-                                'symbol_not_selected', json.dumps(event, sort_keys=True)))
+                                skip_reason, json.dumps(event, sort_keys=True)))
                     db.execute("INSERT OR REPLACE INTO meta VALUES ('bingx_copy_row',?)", (str(rowid),))
                 continue
             contracts = execution._request("GET", "quote/contracts", symbol=symbol)
@@ -180,10 +197,41 @@ def cycle(source, copier, execution, *, min_equity=Decimal('100'), allowed_symbo
             db.execute("INSERT OR REPLACE INTO meta VALUES ('bingx_copy_row',?)", (str(rowid),))
 
 
+def cycle_sources(sources, *, min_equity, allowed_symbols):
+    events = []
+    unavailable = False
+    for idx, (source, copier, execution) in enumerate(sources):
+        try:
+            synchronize(source, copier, execution)
+        except (OSError, ValueError, RuntimeError) as error:
+            unavailable = True
+            print(json.dumps({'copy_status': 'source_unavailable', 'source': source.address,
+                              'error_type': type(error).__name__}), flush=True)
+            continue
+        for row in pending_rows(copier.db):
+            events.append((json.loads(row[1])['updatedAt'], idx, row))
+    unresolved = any(
+        copier.db.execute('SELECT 1 FROM copy_entry_children WHERE adopted=0 LIMIT 1').fetchone()
+        or copier.db.execute('SELECT 1 FROM copy_exit_dispatch WHERE result IS NULL LIMIT 1').fetchone()
+        for _, copier, _ in sources
+    )
+    if unavailable or unresolved:
+        for _, _, execution in sources:
+            execution.open_blocker = ('another_copy_operation_requires_reconciliation' if unresolved
+                                      else 'another_trader_feed_unavailable')
+    # Preserve each source journal's ordering for equal timestamps.
+    for _, idx, row in sorted(events, key=lambda item: (item[0], item[1], item[2][0])):
+        source, copier, execution = sources[idx]
+        cycle(source, copier, execution, min_equity=min_equity, allowed_symbols=allowed_symbols,
+              prepared_rows=[row])
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--db", required=True, type=Path)
     parser.add_argument("--address", required=True)
+    parser.add_argument("--additional-address", action="append", default=[],
+                        help="Add a public trader to the same live allocation")
     parser.add_argument("--once", action="store_true")
     parser.add_argument("--enable-orders", action="store_true")
     parser.add_argument("--copy-add-once", action="store_true")
@@ -193,6 +241,11 @@ def main():
                         help="Maximum capital used to size live copies and estimate initial margin (USDT)")
     parser.add_argument("--symbols", nargs='+', help="Optional BingX symbols allowed for new positions")
     args = parser.parse_args()
+    addresses = [a.lower() for a in [args.address, *args.additional_address]]
+    if any(not ADDRESS.fullmatch(a) for a in addresses) or len(set(addresses)) != len(addresses):
+        parser.error('Trader addresses must be distinct valid public addresses')
+    if args.additional_address and (args.allocation is None or args.copy_add_once):
+        parser.error('Multiple traders require a shared allocation and fresh entries only')
     if not args.min_equity.is_finite() or args.min_equity < Decimal('10'):
         parser.error('--min-equity must be finite and at least 10 USDT')
     if args.allocation is not None and (not args.allocation.is_finite() or args.allocation < Decimal('10')):
@@ -221,17 +274,30 @@ def main():
             time.sleep(60)
     with args.db.with_suffix(".lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        observer = Observer(args.db, args.address.lower(), "Hyperliquid BingX copy")
-        source = FillObserver(observer.db, args.address)
-        copier = HyperliquidBingXCopy(observer.db, execution, time.time_ns() // 1_000_000)
+        paths = [args.db, *(args.db.with_name(f'{args.db.stem}-{a[2:]}{args.db.suffix}')
+                            for a in addresses[1:])]
+        workers = []
+        for index, (address, path) in enumerate(zip(addresses, paths)):
+            runner = execution if index == 0 else StrictBingXExecution(
+                os.environ['BINGX_API_KEY'], os.environ['BINGX_API_SECRET'], path, trading_enabled=True,
+                source_client=PublicInfo(), source_address=address,
+                expected_uid=execution.expected_uid, live_allocation=args.allocation)
+            observer = Observer(path, address, "Hyperliquid BingX copy")
+            source = FillObserver(observer.db, address)
+            copier = HyperliquidBingXCopy(observer.db, runner, time.time_ns() // 1_000_000)
+            runner.peer_journals = tuple(other for other in paths if other != path)
+            workers.append((source, copier, runner))
         if args.copy_add_once:
-            copier.arm_add_once(time.time_ns() // 1_000_000)
+            workers[0][1].arm_add_once(time.time_ns() // 1_000_000)
         from .late_entry_probe import start_probe
         start_probe(args.db)
         while True:
             try:
-                cycle(source, copier, execution, min_equity=args.min_equity,
-                      allowed_symbols=frozenset(args.symbols) if args.symbols else None)
+                allowed = frozenset(args.symbols) if args.symbols else None
+                if len(workers) == 1:
+                    cycle(*workers[0], min_equity=args.min_equity, allowed_symbols=allowed)
+                else:
+                    cycle_sources(workers, min_equity=args.min_equity, allowed_symbols=allowed)
             except (BingXAPIError, ReconciliationRequired, CopyBlocked) as error:
                 # Keep polling, but do not advance the failed signal, alter the
                 # position journal, or send another POST for its client ID.

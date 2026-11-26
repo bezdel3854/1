@@ -44,6 +44,7 @@ class StrictBingXExecution(BingXExecution):
     strict_sizing = True
     required_source_protection = True
     copy_executed_entries_only = False
+    peer_journals = ()
     def __init__(self, *args, source_client, source_address, expected_uid=None,
                  live_allocation=None, **kwargs):
         self.live_allocation = None if live_allocation is None else number(live_allocation, positive=True)
@@ -102,6 +103,18 @@ class StrictBingXExecution(BingXExecution):
         if not isinstance(out, list):
             raise CopyBlocked('invalid_target_open_orders')
         return out
+
+    def reserved_peer_symbols(self):
+        symbols = set()
+        for path in self.peer_journals:
+            # Each peer journal is initialized before either source is polled.
+            # A missing or unreadable peer must stop dispatch, not hide exposure.
+            with sqlite3.connect(path.resolve().as_uri() + '?mode=ro', uri=True) as db:
+                symbols.update(row[0] for row in db.execute('SELECT symbol FROM copy_contracts'))
+        return symbols
+
+    def peer_owns(self, symbol):
+        return symbol in self.reserved_peer_symbols()
 
     def _rules(self, symbol):
         contracts = self._request('GET', 'quote/contracts', symbol=symbol)
@@ -180,7 +193,10 @@ class StrictBingXExecution(BingXExecution):
             managed_symbols = ({r[0] for r in db.execute(
                 'SELECT c.symbol FROM copy_contracts c JOIN copied_positions p ON p.epoch=c.epoch')}
                 if has_positions_table else set())
-        if any(p.get('symbol') not in managed_symbols for p in all_positions):
+        peer_symbols = self.reserved_peer_symbols()
+        if symbol in peer_symbols:
+            raise CopyBlocked('symbol_reserved_by_another_trader')
+        if any(p.get('symbol') not in managed_symbols | peer_symbols for p in all_positions):
             raise CopyBlocked('manual_or_unowned_position_requires_separate_copy_account')
         positions, orders = self._positions(symbol), self._orders(symbol)
         with sqlite3.connect(self.journal_path) as db:
