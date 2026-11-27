@@ -46,9 +46,10 @@ class StrictBingXExecution(BingXExecution):
     copy_executed_entries_only = False
     peer_journals = ()
     def __init__(self, *args, source_client, source_address, expected_uid=None,
-                 live_allocation=None, **kwargs):
+                 live_allocation=None, use_account_equity=False, **kwargs):
         self.live_allocation = None if live_allocation is None else number(live_allocation, positive=True)
-        if self.live_allocation is not None and kwargs.get('environment', 'live') != 'live':
+        self.use_account_equity = use_account_equity
+        if (self.live_allocation is not None or use_account_equity) and kwargs.get('environment', 'live') != 'live':
             raise ValueError('Live allocation requires the live exchange')
         super().__init__(*args, **kwargs)
         self.source_client, self.source_address = source_client, source_address
@@ -147,7 +148,7 @@ class StrictBingXExecution(BingXExecution):
         return min(equity, self.live_allocation) if self.live_allocation is not None else equity
 
     def verify_live_margin_budget(self, positions, quantity, leverage, price):
-        if self.live_allocation is None:
+        if self.live_allocation is None and not self.use_account_equity:
             return
         committed = sum((number(p['initialMargin'], positive=True) for p in positions), Decimal(0))
         order_margin = quantity * price / leverage

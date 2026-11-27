@@ -237,14 +237,18 @@ def main():
     parser.add_argument("--copy-add-once", action="store_true")
     parser.add_argument("--min-equity", type=Decimal, default=Decimal('100'),
                         help="Minimum actual account equity for a new entry; default 100 USDT")
-    parser.add_argument("--allocation", type=Decimal,
+    allocation = parser.add_mutually_exclusive_group()
+    allocation.add_argument("--allocation", type=Decimal,
                         help="Maximum capital used to size live copies and estimate initial margin (USDT)")
+    allocation.add_argument("--use-account-equity", action="store_true",
+                            help="Size new copies and cap combined initial margin using current live account equity")
     parser.add_argument("--symbols", nargs='+', help="Optional BingX symbols allowed for new positions")
     args = parser.parse_args()
     addresses = [a.lower() for a in [args.address, *args.additional_address]]
     if any(not ADDRESS.fullmatch(a) for a in addresses) or len(set(addresses)) != len(addresses):
         parser.error('Trader addresses must be distinct valid public addresses')
-    if args.additional_address and (args.allocation is None or args.copy_add_once):
+    if args.additional_address and ((args.allocation is None and not args.use_account_equity)
+                                    or args.copy_add_once):
         parser.error('Multiple traders require a shared allocation and fresh entries only')
     if not args.min_equity.is_finite() or args.min_equity < Decimal('10'):
         parser.error('--min-equity must be finite and at least 10 USDT')
@@ -260,7 +264,8 @@ def main():
         execution = StrictBingXExecution(
             os.environ['BINGX_API_KEY'], os.environ['BINGX_API_SECRET'], args.db,
             trading_enabled=True, source_client=PublicInfo(), source_address=args.address,
-            expected_uid=os.environ['BINGX_ACCOUNT_UID'], live_allocation=args.allocation)
+            expected_uid=os.environ['BINGX_ACCOUNT_UID'], live_allocation=args.allocation,
+            use_account_equity=args.use_account_equity)
     else:
         execution = BingXExecution(os.environ['BINGX_API_KEY'], os.environ['BINGX_API_SECRET'],
                                    ':memory:', trading_enabled=False)
@@ -281,7 +286,8 @@ def main():
             runner = execution if index == 0 else StrictBingXExecution(
                 os.environ['BINGX_API_KEY'], os.environ['BINGX_API_SECRET'], path, trading_enabled=True,
                 source_client=PublicInfo(), source_address=address,
-                expected_uid=execution.expected_uid, live_allocation=args.allocation)
+                expected_uid=execution.expected_uid, live_allocation=args.allocation,
+                use_account_equity=args.use_account_equity)
             observer = Observer(path, address, "Hyperliquid BingX copy")
             source = FillObserver(observer.db, address)
             copier = HyperliquidBingXCopy(observer.db, runner, time.time_ns() // 1_000_000)

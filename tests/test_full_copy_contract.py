@@ -270,6 +270,16 @@ class StrictExecutionTests(unittest.TestCase):
             self.x.submit('entry', 'BTC-USDT', 'BUY', D('.850'), deadline_ms=self.deadline)
         self.assertFalse(any(method == 'POST' for method, _, _ in self.requests))
 
+    def test_account_equity_changes_combined_margin_budget(self):
+        self.x.use_account_equity = True
+        positions = [{'initialMargin': '90'}]
+        self.x.equity = lambda: D('120')
+        self.x.verify_live_margin_budget(positions, D('2'), D('10'), D('100'))
+
+        self.x.equity = lambda: D('100')
+        with self.assertRaisesRegex(CopyBlocked, 'entry_exceeds_live_margin_allocation'):
+            self.x.verify_live_margin_budget(positions, D('2'), D('10'), D('100'))
+
     def test_other_trader_reserves_symbol_until_protection_cleanup(self):
         peer = Path(self.tmp.name) / 'peer.sqlite'
         StrictBingXExecution('key', 'secret', peer, source_client=None, source_address='peer')
