@@ -270,6 +270,25 @@ class StrictExecutionTests(unittest.TestCase):
             self.x.submit('entry', 'BTC-USDT', 'BUY', D('.850'), deadline_ms=self.deadline)
         self.assertFalse(any(method == 'POST' for method, _, _ in self.requests))
 
+    def test_live_copies_confirmed_fill_with_resting_entry_and_requires_protection(self):
+        account, protection, rules = fixture()
+        remaining = dict(oid=200, coin='BTC', side='B', sz='3', limitPx='99',
+                         reduceOnly=False, isTrigger=False, orderType='Limit', tif='Gtc')
+        self.x._rules = lambda _: rules
+        compile_live = StrictBingXExecution._contract.__get__(self.x)
+        with patch('research.trader_review.strict_bingx_copy.source_snapshot',
+                   return_value=(account, [*protection, remaining], time.time_ns() // 1_000_000)):
+            contract = compile_live('BTC-USDT', D('.085'), D('.3'))
+        self.assertEqual(D(contract.target_quantity), D('.3'))
+        self.assertEqual(set(contract.entry_brackets()), {'stopLoss', 'takeProfit'})
+
+        for kept, reason in [(protection[:1], 'source_has_no_take_profit'),
+                             (protection[1:], 'source_has_no_stop_loss')]:
+            with patch('research.trader_review.strict_bingx_copy.source_snapshot',
+                       return_value=(account, [*kept, remaining], time.time_ns() // 1_000_000)):
+                with self.assertRaisesRegex(CopyBlocked, reason):
+                    compile_live('BTC-USDT', D('.085'), D('.3'))
+
     def test_account_equity_changes_combined_margin_budget(self):
         self.x.use_account_equity = True
         positions = [{'initialMargin': '90'}]

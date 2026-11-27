@@ -43,7 +43,7 @@ def source_snapshot(client, address):
 class StrictBingXExecution(BingXExecution):
     strict_sizing = True
     required_source_protection = True
-    copy_executed_entries_only = False
+    copy_executed_entries_only = True
     peer_journals = ()
     def __init__(self, *args, source_client, source_address, expected_uid=None,
                  live_allocation=None, use_account_equity=False, **kwargs):

@@ -271,5 +271,19 @@ class DemoTests(unittest.TestCase):
         self.assertEqual(batch_executed_entries(db,rows),rows)
         db.close()
 
+    def test_live_batch_keeps_cross_trader_timestamp_order(self):
+        with sqlite3.connect(':memory:') as db:
+            db.execute('create table copy_plans(id text)')
+            def row(i, stamp, start, qty):
+                event = dict(orderId=str(i), positionId='short', side='SELL', action='OPEN',
+                             quantity=qty, price='61715', updatedAt=stamp)
+                return i, json.dumps(event), json.dumps(dict(oid=42, startPosition=start))
+
+            rows = [row(1, 1000, '.01707', '.13866'), row(2, 1000, '-.13866', '.00672'),
+                    row(3, 1001, '-.14538', '.01')]
+            first, later = batch_executed_entries(db, rows, same_timestamp=True)
+            self.assertEqual((first[0], D(json.loads(first[1])['quantity'])), (2, D('.14538')))
+            self.assertEqual(later, rows[2])
+
 
 if __name__=='__main__':unittest.main()

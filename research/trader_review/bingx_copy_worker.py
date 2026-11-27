@@ -16,7 +16,7 @@ from .full_copy_contract import CopyBlocked
 from .strict_bingx_copy import StrictBingXExecution
 
 
-def batch_executed_entries(db, rows):
+def batch_executed_entries(db, rows, *, same_timestamp=False):
     """Persist contiguous fills of one source order before any exchange write.
 
     A saved batch is immutable across restart, even when more fills arrive.
@@ -47,6 +47,7 @@ def batch_executed_entries(db, rows):
                 rid,body,source=rows[j]
                 nxt=json.loads(body); nf=json.loads(source) if source else {}
                 if (rid in saved or nxt['action']!='OPEN' or nxt['positionId']!=event['positionId']
+                        or (same_timestamp and nxt['updatedAt'] != event['updatedAt'])
                         or nxt['side']!=event['side'] or nf.get('oid')!=fill['oid']
                         or nxt['orderId'] in plans
                         or Decimal(str(nf.get('startPosition','NaN')))!=expected):break
@@ -96,8 +97,8 @@ def cycle(source, copier, execution, *, min_equity=Decimal('100'), allowed_symbo
         rows = pending_rows(db)
     else:
         rows = prepared_rows
-    if getattr(execution, 'copy_executed_entries_only', False):
-        rows = batch_executed_entries(db, rows)
+    if prepared_rows is None and getattr(execution, 'copy_executed_entries_only', False):
+        rows = batch_executed_entries(db, rows, same_timestamp=execution.environment == 'live')
     for rowid, payload, raw in rows:
         event = json.loads(payload)
         if copier.skip_stale_entry(event):
@@ -208,7 +209,10 @@ def cycle_sources(sources, *, min_equity, allowed_symbols):
             print(json.dumps({'copy_status': 'source_unavailable', 'source': source.address,
                               'error_type': type(error).__name__}), flush=True)
             continue
-        for row in pending_rows(copier.db):
+        rows = pending_rows(copier.db)
+        if getattr(execution, 'copy_executed_entries_only', False):
+            rows = batch_executed_entries(copier.db, rows, same_timestamp=True)
+        for row in rows:
             events.append((json.loads(row[1])['updatedAt'], idx, row))
     unresolved = any(
         copier.db.execute('SELECT 1 FROM copy_entry_children WHERE adopted=0 LIMIT 1').fetchone()
