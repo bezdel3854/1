@@ -381,6 +381,12 @@ class StrictExecutionTests(unittest.TestCase):
         self.assertEqual(self.x.open_blocker, 'isolated_collateral_requires_separate_verified_transfer')
         self.assertTrue(any(str(o.get('stopPrice')) == '91' for o in self.orders))
 
+    def test_live_identity_fallback_uses_exchange_uid_over_internal_user_id(self):
+        with patch.object(self.x, '_request', side_effect=[
+                BingXAPIError(100400, 'Endpoint unavailable'),
+                [{'asset': 'USDT', 'userId': '999999999999', 'shortUid': '123'}]]):
+            self.x.verify_account_identity()
+
     def test_missing_source_protection_or_inflated_minimum_prevents_order(self):
         self.x._contract=lambda *a,**kw:(_ for _ in ()).throw(CopyBlocked('source_has_no_stop_loss'))
         with self.assertRaises(CopyBlocked):self.x.submit('entry','BTC-USDT','BUY',D('.850'),deadline_ms=self.deadline)

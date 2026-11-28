@@ -112,6 +112,23 @@ class HyperliquidTests(unittest.TestCase):
         b=normalize(fill(1200,3),epochs,2000)[0]
         self.assertNotEqual(a['positionId'],b['positionId'])
 
+    def test_reversal_fills_batch_without_float_remainder(self):
+        from research.trader_review.bingx_copy_worker import batch_executed_entries
+        from decimal import Decimal
+        first = fill(1000, 1, '.01707', '.15573', 'A')
+        second = fill(1000, 2, '-.13866', '.00672', 'A')
+        first['oid'] = second['oid'] = 42
+        epochs = {}
+        events = normalize(first, epochs, 2000)[1:] + normalize(second, epochs, 2000)
+        self.assertEqual([e['quantity'] for e in events], [.13866, .00672])
+        rows = [(i, json.dumps(event), json.dumps(raw))
+                for i, (event, raw) in enumerate(zip(events, [first, second]), 1)]
+        with sqlite3.connect(':memory:') as db:
+            db.execute('CREATE TABLE copy_plans(id TEXT)')
+            batches = batch_executed_entries(db, rows, same_timestamp=True)
+            self.assertEqual(len(batches), 1)
+            self.assertEqual(Decimal(json.loads(batches[0][1])['quantity']), Decimal('.14538'))
+
 class SimultaneousFillTests(unittest.TestCase):
     def test_trade_ids_do_not_define_execution_order(self):
         o=Observer(':memory:',ADDR,'test')

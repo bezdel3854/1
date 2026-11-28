@@ -5,6 +5,7 @@ import math
 import re
 import time
 import urllib.request
+from decimal import Decimal
 from .finmonster_feed import canonical
 
 ADDRESS = re.compile(r'0x[0-9a-fA-F]{40}')
@@ -40,7 +41,10 @@ def normalize(fill, epochs, now):
     side = {'B': 1, 'A': -1}.get(fill['side'])
     if side is None:
         raise ValueError('Unknown fill side')
-    qty, price, start = finite(fill['sz'], True), finite(fill['px'], True), finite(fill['startPosition'])
+    finite(fill['sz'], True)
+    price = finite(fill['px'], True)
+    finite(fill['startPosition'])
+    qty, start = Decimal(str(fill['sz'])), Decimal(str(fill['startPosition']))
     fid = f"hl:{coin}:{stamp}:{fill['tid']}"
     before_side = 1 if start > 0 else -1 if start < 0 else 0
     output = []
@@ -49,7 +53,7 @@ def normalize(fill, epochs, now):
         epoch = epochs.get(coin, f'{coin}:prebaseline:{before_side}')
         output.append(dict(orderId=fid+':close', positionId=epoch, symbol=coin+'USDT',
             side='BUY' if side == 1 else 'SELL', action='CLOSE', status='Filled',
-            updatedAt=stamp, quantity=close, price=price))
+            updatedAt=stamp, quantity=float(close), price=price))
         qty -= close
         if close >= abs(start):
             epochs.pop(coin, None)
@@ -60,8 +64,8 @@ def normalize(fill, epochs, now):
             epochs.setdefault(coin, f'{coin}:prebaseline:{side}')
         output.append(dict(orderId=fid+':open', positionId=epochs[coin], symbol=coin+'USDT',
             side='BUY' if side == 1 else 'SELL', action='OPEN', status='Filled',
-            updatedAt=stamp, quantity=qty, price=price,
-            sourcePositionAfter=abs(start + (1 if side == 1 else -1)*finite(fill['sz'], True))))
+            updatedAt=stamp, quantity=float(qty), price=price,
+            sourcePositionAfter=float(abs(start + side * Decimal(str(fill['sz']))))))
     return output
 
 

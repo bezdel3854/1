@@ -89,7 +89,8 @@ class StrictBingXExecution(BingXExecution):
             # The live account endpoint may be unavailable. The signed USDT
             # balance also carries the account identity when BingX sends it in full.
             balances = self._request('GET', 'user/balance', version=3)
-            ids = [row.get('userId') for row in balances if row.get('asset') == 'USDT']
+            ids = [row.get('shortUid', row.get('userId')) for row in balances
+                   if row.get('asset') == 'USDT']
             actual = ids[0] if len(ids) == 1 else None
         if str(actual) != self.expected_uid:
             raise CopyBlocked('account_uid_mismatch_no_mutations_allowed')
