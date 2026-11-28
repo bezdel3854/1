@@ -11,7 +11,7 @@ import json
 import sqlite3
 import time
 
-from .bingx_execution import BingXAPIError, BingXExecution, ReconciliationRequired, require_entry_deadline
+from .bingx_execution import BingXAPIError, BingXExecution, EntryUnfilled, ReconciliationRequired, require_entry_deadline
 from .full_copy_contract import (CopyBlocked, compile_contract, number,
                                  settings_plan, verify_target_settings, exit_sync_plan)
 
@@ -74,6 +74,8 @@ class StrictBingXExecution(BingXExecution):
             db.execute('CREATE TABLE IF NOT EXISTS copy_entry_children '
                        '(signal_id TEXT PRIMARY KEY, epoch TEXT, symbol TEXT, quantity TEXT, '
                        'before_ids TEXT, contract TEXT, adopted INTEGER DEFAULT 0)')
+            db.execute('CREATE TABLE IF NOT EXISTS copy_zero_entries '
+                       '(signal_id TEXT PRIMARY KEY,response TEXT NOT NULL,checked_ms INTEGER NOT NULL)')
             db.execute('CREATE TABLE IF NOT EXISTS copy_exit_fills '
                        '(order_id TEXT PRIMARY KEY, executed_qty TEXT)')
             db.execute('CREATE TABLE IF NOT EXISTS copy_exit_history '
@@ -270,7 +272,44 @@ class StrictBingXExecution(BingXExecution):
         return result
 
     def check_entry_result(self, signal_id, symbol, order):
-        """Check venue-specific immediate order outcomes before adopting protection."""
+        """Release only an exchange-confirmed terminal entry with no execution."""
+        if order.get('status') not in ('CANCELLED', 'CANCELED', 'EXPIRED', 'FAILED'):
+            return
+        if 'executedQty' not in order or number(order['executedQty']) != 0:
+            return  # Partial / unknown executions remain fenced for reconciliation.
+        from .bingx_account_stream import order_id
+        try:
+            order_id(order.get('orderID', order.get('orderId')))
+        except ValueError:
+            raise ReconciliationRequired('Zero-fill entry lacks exchange identity') from None
+        client_id = hashlib.sha256(signal_id.encode()).hexdigest()[:40]
+        with sqlite3.connect(self.journal_path) as db:
+            saved = db.execute('SELECT parameters FROM bingx_submissions WHERE client_id=?', (client_id,)).fetchone()
+            child = db.execute('SELECT quantity,before_ids,contract FROM copy_entry_children WHERE signal_id=?',
+                               (signal_id,)).fetchone()
+            if not saved or not child:
+                raise ReconciliationRequired('Zero-fill entry lacks immutable preparation metadata')
+            params = json.loads(saved[0])
+            if (order.get('symbol') != symbol or order.get('side') != params['side']
+                    or order.get('type') != params['type']
+                    or order.get('positionSide') != params['positionSide']
+                    or order.get('clientOrderID', order.get('clientOrderId')) != client_id
+                    or number(order.get('origQty'), positive=True) != number(params['quantity'], positive=True)):
+                raise ReconciliationRequired('Zero-fill entry response differs from saved request')
+            before = number(json.loads(child[2])['target_quantity']) - number(child[0], positive=True)
+            before_ids = set(json.loads(child[1]))
+            positions = self._positions(symbol)
+            side = 'LONG' if params['side'] == 'BUY' else 'SHORT'
+            if (before < 0 or sum((abs(number(p['positionAmt'])) for p in positions), Decimal(0)) != before
+                    or any(p.get('positionSide') != side for p in positions)
+                    or any(str(o.get('orderID', o.get('orderId'))) not in before_ids
+                           for o in self._orders(symbol))):
+                raise ReconciliationRequired('Zero-fill entry changed exposure or left unexpected protection')
+            db.execute('INSERT OR REPLACE INTO copy_zero_entries VALUES (?,?,?)',
+                       (signal_id, json.dumps(order, sort_keys=True), time.time_ns() // 1_000_000))
+            db.execute('UPDATE copy_entry_children SET adopted=1 WHERE signal_id=?', (signal_id,))
+        raise EntryUnfilled('Exchange confirmed terminal entry with zero execution',
+                            reason='entry_cancelled_without_execution')
 
     def adopt_entry_children(self, signal_id):
         from .full_copy_contract import ExitOrder

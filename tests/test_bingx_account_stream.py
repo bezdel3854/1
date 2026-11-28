@@ -103,6 +103,8 @@ class ImmediateProtectionTests(unittest.TestCase):
         self.wrong_parent = False
         self.partial = False
         self.cancel_sibling = False
+        self.cancel_parent = None
+        self.cancel_leaves_children = False
         self.events_path = self.case.path
         self.history, self.parents = {}, {}
         self.position_qty = D('0')
@@ -119,12 +121,23 @@ class ImmediateProtectionTests(unittest.TestCase):
             return ([dict(symbol='BTC-USDT', positionSide='LONG', positionAmt=str(self.position_qty),
                           availableAmt=str(self.position_qty))] if self.position_qty else [])
         if path == 'trade/order' and method == 'POST':
+            before = list(self.case.orders)
             result = self.original_request(method, path, **kwargs)
             parent_id = str(int(self.parent_id) + len(self.parents))
             self.parents[kwargs['clientOrderId']] = dict(orderId=parent_id, symbol='BTC-USDT',
-                side=kwargs['side'], status='FILLED', executedQty=kwargs['quantity'])
+                side=kwargs['side'], positionSide=kwargs['positionSide'],
+                type=kwargs['type'],
+                clientOrderId=kwargs['clientOrderId'], origQty=kwargs['quantity'],
+                status='FILLED', executedQty=kwargs['quantity'])
             if kwargs.get('reduceOnly') == 'true':
                 self.position_qty = D('0')
+                return result
+            if self.cancel_parent is not None:
+                self.parents[kwargs['clientOrderId']].update(status='CANCELLED', executedQty='0')
+                self.parents[kwargs['clientOrderId']].update(self.cancel_parent)
+                self.position_qty = D(self.parents[kwargs['clientOrderId']]['executedQty'])
+                if not self.cancel_leaves_children:
+                    self.case.orders[:] = before
                 return result
             self.position_qty = D('.400') if self.partial else D('0')
             for order in self.case.orders:
@@ -175,6 +188,58 @@ class ImmediateProtectionTests(unittest.TestCase):
         self.assertEqual(self.entry_posts(), 1)
         self.assertEqual(self.db.execute('SELECT adopted FROM copy_entry_children').fetchone(), (0,))
         self.assertEqual(self.db.execute('SELECT count(*) FROM copied_signals').fetchone(), (0,))
+
+    def test_cancelled_live_market_entry_with_zero_fill_does_not_block_future_signals(self):
+        self.cancel_parent = {}
+        for _ in range(2):
+            self.assertIsNone(self.copy.apply(self.event, D('0'), D('.085'), self.market))
+        self.assertEqual(self.entry_posts(), 1)
+        self.assertEqual(self.db.execute('SELECT reason FROM copy_skips').fetchone(), ('entry_cancelled_without_execution',))
+        self.assertEqual(self.db.execute('SELECT adopted FROM copy_entry_children').fetchone(), (1,))
+        self.assertEqual(self.db.execute('SELECT count(*) FROM copied_positions').fetchone(), (0,))
+        receipt = json.loads(self.db.execute('SELECT response FROM copy_zero_entries').fetchone()[0])
+        self.assertEqual((receipt['status'], D(receipt['executedQty'])), ('CANCELLED', D('0')))
+        self.x.synchronize_exits(self.db)
+        self.assertEqual(self.db.execute('SELECT count(*) FROM copy_contracts').fetchone(), (0,))
+
+    def test_partial_cancelled_entry_is_not_classified_as_zero_execution(self):
+        self.cancel_parent = {'executedQty': '.100'}
+        with self.assertRaises(ReconciliationRequired):
+            self.copy.apply(self.event, D('0'), D('.085'), self.market)
+        self.assertEqual(self.db.execute('SELECT count(*) FROM copy_skips').fetchone(), (0,))
+        self.assertEqual(self.db.execute('SELECT adopted FROM copy_entry_children').fetchone(), (0,))
+
+    def test_cancelled_zero_entry_with_wrong_identity_is_not_released(self):
+        self.cancel_parent = {'side': 'SELL'}
+        with self.assertRaises(ReconciliationRequired):
+            self.copy.apply(self.event, D('0'), D('.085'), self.market)
+        self.assertEqual(self.db.execute('SELECT count(*) FROM copy_skips').fetchone(), (0,))
+
+    def test_cancelled_zero_entry_with_leftover_children_is_not_released(self):
+        self.cancel_parent = {}
+        self.cancel_leaves_children = True
+        with self.assertRaises(ReconciliationRequired):
+            self.copy.apply(self.event, D('0'), D('.085'), self.market)
+        self.assertEqual(self.db.execute('SELECT count(*) FROM copy_skips').fetchone(), (0,))
+
+    def test_zero_fill_receipt_survives_crash_before_skip_is_recorded(self):
+        self.cancel_parent = {}
+        with patch.object(self.copy, 'record_expired_entry', side_effect=RuntimeError('simulated crash')):
+            with self.assertRaisesRegex(RuntimeError, 'simulated crash'):
+                self.copy.apply(self.event, D('0'), D('.085'), self.market)
+        self.assertEqual(self.db.execute('SELECT count(*) FROM copy_zero_entries').fetchone(), (1,))
+        self.assertEqual(self.db.execute('SELECT count(*) FROM copy_skips').fetchone(), (0,))
+        restarted = StrictBingXExecution('test-key', 'test-secret', self.case.path, trading_enabled=True,
+            source_client=None, source_address='public', expected_uid='123')
+        restarted._request, restarted.hedge_mode = self.request, lambda: False
+        self.copy.execution = restarted
+        with self.assertRaisesRegex(ReconciliationRequired, 'journal not committed'):
+            restarted.synchronize_exits(self.db)
+        self.copy.apply(self.event, D('0'), D('.085'), self.market)
+        restarted.synchronize_exits(self.db)
+        self.assertEqual(self.db.execute('SELECT count(*) FROM copy_contracts').fetchone(), (0,))
+        self.assertEqual(self.db.execute('SELECT count(*) FROM copy_skips').fetchone(), (1,))
+        self.assertEqual(self.entry_posts(), 1)
 
     def test_immediate_stop_and_cancelled_sibling_recover_with_no_open_children(self):
         self.cancel_sibling = True
