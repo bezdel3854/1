@@ -301,6 +301,12 @@ class StrictExecutionTests(unittest.TestCase):
     def test_optional_source_protection_is_adopted_and_not_duplicated_on_retry(self):
         for count in (0, 1, 2):
             with self.subTest(exits=count):
+                # Independent bracket shapes; previous positions and their
+                # protection do not coexist in this fixture.
+                self.orders.clear()
+                with sqlite3.connect(self.path) as db:
+                    for table in ('copy_contracts', 'copy_exit_orders', 'copy_entry_children'):
+                        db.execute('DELETE FROM ' + table)
                 self.contract = replace(self.contract, exits=self.contract.exits[:count])
                 signal = 'optional-' + str(count)
                 self.x.set_context(dict(self.event, orderId=signal, positionId=signal), D('0'), D('.085'))

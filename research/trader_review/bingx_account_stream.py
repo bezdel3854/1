@@ -70,6 +70,7 @@ class AccountOrderStream:
         self.connected = False
         self.last_seen = 0.0
         self.error_type = None
+        self.last_event_type = None
         self.lock = threading.Lock()
         with sqlite3.connect(path) as db:
             initialize(db)
@@ -79,7 +80,7 @@ class AccountOrderStream:
             age = time.monotonic() - self.last_seen
             return dict(ready=self.connected and age < 45,
                         last_message_age_ms=int(age * 1000) if self.last_seen else None,
-                        error_type=self.error_type)
+                        error_type=self.error_type, last_event_type=self.last_event_type)
 
     def require_ready(self):
         if not self.health()['ready']:
@@ -108,6 +109,8 @@ class AccountOrderStream:
 
     def session(self):
         from websockets.sync.client import connect
+        with self.lock:
+            self.connected, self.last_event_type = False, None
         self.execution.verify_account_identity()
         key = self._auth('POST')
         logger = logging.getLogger('copy.account_stream.private')
@@ -139,6 +142,9 @@ class AccountOrderStream:
                     record_event(self.path, message)
                 with self.lock:
                     self.last_seen, self.connected, self.error_type = time.monotonic(), True, None
+                    if message != 'Ping' and message.get('e') in (
+                            'ACCOUNT_CONFIG_UPDATE', 'ACCOUNT_UPDATE', 'TRADE_UPDATE', 'ORDER_TRADE_UPDATE'):
+                        self.last_event_type = message['e']
 
     def start(self):
         def run():
