@@ -586,7 +586,8 @@ class StrictExecutionTests(unittest.TestCase):
         original=self.x._request
         def query(method,path,**kw):
             if method=='GET' and path=='trade/order' and 'orderId' in kw:
-                return {'executedQty':'.850' if kw['orderId']=='1' else '0','side':'SELL','status':'FILLED' if kw['orderId']=='1' else 'NEW'}
+                return {'orderId':kw['orderId'],'symbol':kw['symbol'],
+                        'executedQty':'.850' if kw['orderId']=='1' else '0','side':'SELL','status':'FILLED' if kw['orderId']=='1' else 'NEW'}
             return original(method,path,**kw)
         self.x._request=query
         self.x.synchronize_exits(state)
@@ -604,11 +605,38 @@ class StrictExecutionTests(unittest.TestCase):
         original=self.x._request
         def query(method,path,**kw):
             if method=='GET' and path=='trade/order' and 'orderId' in kw:
-                return {'executedQty':'0','side':'SELL','status':'NEW'}
+                return {'orderId':kw['orderId'],'symbol':kw['symbol'],
+                        'executedQty':'0','side':'SELL','status':'NEW'}
             return original(method,path,**kw)
         self.x._request=query;state=self.position_state()
         with self.assertRaisesRegex(ReconciliationRequired,'not explained'):self.x.synchronize_exits(state)
         self.assertEqual(state.execute('SELECT quantity FROM copied_positions').fetchone()[0],'.850');state.close()
+
+    def test_protective_reconciliation_rejects_wrong_identity_and_incomplete_fills(self):
+        self.x.submit('entry', 'BTC-USDT', 'BUY', D('.850'), deadline_ms=self.deadline)
+        self.x._positions = lambda *args: []
+        original = self.x._request
+        for mutation in ({'orderId': '999'}, {'symbol': 'SOL-USDT'}, {'side': 'BUY'},
+                         {'executedQty': None}, {'executedQty': '1.7'}):
+            with self.subTest(mutation=mutation):
+                def query(method, path, **kwargs):
+                    if method == 'GET' and path == 'trade/order' and 'orderId' in kwargs:
+                        result = dict(orderId=kwargs['orderId'], symbol=kwargs['symbol'], side='SELL',
+                                      executedQty='.850' if kwargs['orderId'] == '1' else '0')
+                        if kwargs['orderId'] == '1':
+                            result.update(mutation)
+                            if result['executedQty'] is None:
+                                del result['executedQty']
+                        return result
+                    return original(method, path, **kwargs)
+                self.x._request = query
+                state = self.position_state()
+                with self.assertRaises(ReconciliationRequired):
+                    self.x.synchronize_exits(state)
+                self.assertEqual(state.execute('SELECT quantity FROM copied_positions').fetchone(), ('.850',))
+                with sqlite3.connect(self.path) as db:
+                    self.assertEqual(db.execute('SELECT count(*) FROM copy_exit_fills').fetchone(), (0,))
+                state.close()
 
     def test_price_basis_guard_prevents_chasing_entry(self):
         self.x._rules=lambda *a:{'price':'101'}

@@ -59,6 +59,22 @@ class SubmissionRecoveryTests(unittest.TestCase):
         self.assertNotIn('private-key', str(caught.exception))
         self.assertNotIn('private-secret', str(caught.exception))
 
+    def test_malformed_write_reply_preserves_claim_for_read_only_recovery(self):
+        for index, body in enumerate(([], None, {}, {'code': 0},
+                                      {'code': False, 'data': {}}, {'code': '0', 'data': {}})):
+            with self.subTest(body=body):
+                signal = f'malformed-{index}'
+                reply = io.BytesIO(json.dumps(body).encode())
+                with patch('research.trader_review.bingx_execution.urlopen', return_value=reply):
+                    with self.assertRaisesRegex(ValueError, 'Malformed BingX'):
+                        self.execution.submit(signal, 'HYPE-USDT', 'BUY', Decimal('1'))
+                self.assertTrue(self.execution.needs_reconciliation(signal))
+                filled = {'status': 'FILLED', 'executedQty': '1'}
+                with patch.object(self.execution, '_request', return_value=filled) as request:
+                    self.assertEqual(self.execution.submit(signal, 'HYPE-USDT', 'BUY', Decimal('1')), filled)
+                    self.assertEqual(request.call_args.args, ('GET', 'trade/order'))
+                    self.assertEqual(request.call_count, 1)
+
     def test_rejected_post_is_not_searched_or_resubmitted_after_restart(self):
         with patch.object(self.execution, '_request', side_effect=BingXAPIError(109400, 'bad quantity')) as request:
             with self.assertRaises(BingXAPIError):

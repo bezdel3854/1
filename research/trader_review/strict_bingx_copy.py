@@ -442,13 +442,18 @@ class StrictBingXExecution(BingXExecution):
             raise ReconciliationRequired('Unexplained target position increase; do not add or resubmit')
         newly_filled = Decimal(0)
         updates = []
-        for _, oid, _ in db.execute('SELECT source_id,order_id,parameters FROM copy_exit_orders WHERE epoch=?', (epoch,)).fetchall():
+        for _, oid, payload in db.execute('SELECT source_id,order_id,parameters FROM copy_exit_orders WHERE epoch=?', (epoch,)).fetchall():
             result = self._request('GET', 'trade/order', symbol=symbol, orderId=oid)
             result = result.get('order', result)
-            filled = number(result.get('executedQty', '0'))
+            params = json.loads(payload)
+            if (str(result.get('orderId', result.get('orderID'))) != oid
+                    or result.get('symbol') != symbol or result.get('side') != params['side']
+                    or 'executedQty' not in result):
+                raise ReconciliationRequired('Protective order identity or fill fields differ from owned order')
+            filled = number(result['executedQty'])
             old = db.execute('SELECT executed_qty FROM copy_exit_fills WHERE order_id=?', (oid,)).fetchone()
             prior = number(old[0]) if old else Decimal(0)
-            if filled < prior or result.get('side') not in ('BUY', 'SELL'):
+            if filled < prior or filled > number(params['quantity'], positive=True):
                 raise ReconciliationRequired('Invalid protective fill reconciliation')
             newly_filled += filled - prior
             updates.append((oid, str(filled)))

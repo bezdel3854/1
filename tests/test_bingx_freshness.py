@@ -183,6 +183,19 @@ class FreshnessTests(unittest.TestCase):
                                         ('balance-race',)).fetchone(),
                          ('account_equity_below_entry_threshold',))
 
+    def test_committed_signals_advance_cursor_after_crash_without_exchange_reads(self):
+        from research.trader_review.bingx_copy_worker import cycle
+        rows = []
+        for row_id, action in enumerate(('OPEN', 'CLOSE'), 1):
+            event = self.event(f'committed-{action}', action=action, age=90_000)
+            self.db.execute('INSERT INTO copied_signals VALUES (?)', (event['orderId'],))
+            rows.append((row_id, json.dumps(event), None))
+        with patch.object(self.execution, 'needs_reconciliation', side_effect=AssertionError('No API lookup')):
+            cycle(types.SimpleNamespace(), self.copier, self.execution, prepared_rows=rows)
+        self.assertEqual(self.db.execute("SELECT value FROM meta WHERE key='bingx_copy_row'").fetchone(), ('2',))
+        self.assertEqual(self.db.execute('SELECT count(*) FROM copy_skips').fetchone(), (0,))
+        self.assertEqual(self.execution.orders, [])
+
 
 class DispatchDeadlineTests(unittest.TestCase):
     def setUp(self):

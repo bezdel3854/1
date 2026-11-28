@@ -101,6 +101,12 @@ def cycle(source, copier, execution, *, min_equity=Decimal('100'), allowed_symbo
         rows = batch_executed_entries(db, rows, same_timestamp=execution.environment == 'live')
     for rowid, payload, raw in rows:
         event = json.loads(payload)
+        if db.execute('SELECT 1 FROM copied_signals WHERE id=?', (event['orderId'],)).fetchone():
+            # The fill + local position were committed atomically before a
+            # possible crash. Advancing only the consumer cursor needs no API.
+            with db:
+                db.execute("INSERT OR REPLACE INTO meta VALUES ('bingx_copy_row',?)", (str(rowid),))
+            continue
         if copier.skip_stale_entry(event):
             with db:
                 db.execute("INSERT OR REPLACE INTO meta VALUES ('bingx_copy_row',?)", (str(rowid),))

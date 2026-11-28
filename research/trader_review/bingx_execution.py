@@ -111,6 +111,11 @@ class BingXExecution:
                 result = json.load(error)
             except (ValueError, TypeError):
                 raise RuntimeError(f"BingX HTTP {error.code}; response unavailable") from None
+        if (not isinstance(result, dict) or type(result.get('code')) is not int
+                or (result['code'] == 0 and 'data' not in result)):
+            # A malformed response to a write is an UNKNOWN outcome. Keep
+            # its durable claim and let the worker reconcile, never repost.
+            raise ValueError('Malformed BingX API response')
         if result["code"] != 0:
             message = str(result.get("msg", "No API error description"))
             # The exchange message is untrusted; never log request credentials.
