@@ -337,7 +337,7 @@ class StrictBingXExecution(BingXExecution):
             for dispatch_id, epoch, payload, oid, result in db.execute(
                     'SELECT d.id,d.epoch,d.payload,r.order_id,r.response FROM copy_exit_dispatch d '
                     'LEFT JOIN copy_exit_receipts r ON r.dispatch_id=d.id WHERE d.result IS NULL').fetchall():
-                if not oid or self.environment != 'demo':
+                if not oid:
                     raise ReconciliationRequired('Ambiguous protection operation; inspect exchange before resuming')
                 self._confirm_exit(db, dispatch_id, epoch, json.loads(payload), oid, json.loads(result))
             if db.execute('SELECT 1 FROM copy_entry_children WHERE adopted=0 LIMIT 1').fetchone():
@@ -510,7 +510,7 @@ class StrictBingXExecution(BingXExecution):
             raise ReconciliationRequired('Old protection still open after replacement; inspect orders')
         match = active.get(oid)
         filled = False
-        if not match and self.environment == 'demo':
+        if not match:
             response = self._request('GET', 'trade/order', symbol=symbol, orderId=oid)
             terminal = response.get('order', response)
             if (str(terminal.get('orderId', terminal.get('orderID'))) == oid

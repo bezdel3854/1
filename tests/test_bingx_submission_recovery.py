@@ -106,11 +106,7 @@ class SubmissionRecoveryTests(unittest.TestCase):
         feed.Observer = unittest.mock.Mock()
         hyper = types.ModuleType('research.trader_review.hyperliquid_feed')
         hyper.FillObserver = unittest.mock.Mock()
-        with patch.dict(sys.modules, {
-            'research.trader_review.finmonster_feed': feed,
-            'research.trader_review.hyperliquid_feed': hyper,
-        }):
-            worker = importlib.import_module('research.trader_review.bingx_copy_worker')
+        worker = importlib.import_module('research.trader_review.bingx_copy_worker')
         class EndTest(Exception):
             pass
         argv = ['worker', '--db', self.folder.name + '/hyperliquid-bingx-live.sqlite',
@@ -121,6 +117,7 @@ class SubmissionRecoveryTests(unittest.TestCase):
                 patch.object(worker, 'FillObserver', hyper.FillObserver), \
                 patch.object(worker, 'BingXExecution'), patch.object(worker, 'HyperliquidBingXCopy'), \
                 patch('research.trader_review.late_entry_probe.start_probe'), \
+                patch('research.trader_review.copy_health.start_health'), \
                 patch.object(worker, 'cycle', side_effect=[
                     TimeoutError('private-key'), ValueError('invalid response'),
                     RuntimeError('unconfirmed execution'), ReconciliationRequired('blocked')]) as cycle, \

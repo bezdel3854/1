@@ -425,6 +425,37 @@ class StrictExecutionTests(unittest.TestCase):
             network.assert_not_called()
         state.close()
 
+    def test_live_receipt_recovers_by_readback_without_another_post(self):
+        params = self.contract.exits[0].bingx('BTC-USDT')
+        change = dict(action='create', source_id='100', parameters=params)
+        order = dict(params, orderId='12345', origQty=params['quantity'])
+        with sqlite3.connect(self.path) as db:
+            db.execute('INSERT INTO copy_exit_dispatch VALUES (1,?,?,?,?,NULL)',
+                       ('epoch', '100', 'create', json.dumps(change)))
+            db.execute('INSERT INTO copy_exit_receipts VALUES (?,?,?)',
+                       (1, '12345', json.dumps({'orderId': '12345'})))
+        self.orders = [order]
+        state = sqlite3.connect(':memory:')
+        state.execute('CREATE TABLE copied_positions(epoch TEXT,quantity TEXT)')
+        self.x.synchronize_exits(state)
+        self.assertFalse(any(m in ('POST', 'DELETE') for m, _, _ in self.requests))
+        with sqlite3.connect(self.path) as db:
+            self.assertIsNotNone(db.execute('SELECT result FROM copy_exit_dispatch').fetchone()[0])
+        state.close()
+
+    def test_live_immediately_filled_protection_is_confirmed_without_resubmission(self):
+        params = self.contract.exits[0].bingx('BTC-USDT')
+        change = dict(action='create', source_id='100', parameters=params)
+        terminal = dict(params, orderId='12345', origQty=params['quantity'],
+                        executedQty=params['quantity'], status='FILLED')
+        with sqlite3.connect(self.path) as db:
+            db.execute('INSERT INTO copy_exit_dispatch VALUES (1,?,?,?,?,NULL)',
+                       ('epoch', '100', 'create', json.dumps(change)))
+            with patch.object(self.x, '_orders', return_value=[]), \
+                    patch.object(self.x, '_request', return_value=terminal) as api:
+                self.assertTrue(self.x._confirm_exit(db, 1, 'epoch', change, '12345', {}))
+                api.assert_called_once_with('GET', 'trade/order', symbol='BTC-USDT', orderId='12345')
+
     def test_reduction_does_not_require_new_source_protection(self):
         self.x._contract=lambda *a:(_ for _ in ()).throw(AssertionError('must not read new-entry protections'))
         self.x.submit('close','BTC-USDT','SELL',D('.850'),reduce_only=True)

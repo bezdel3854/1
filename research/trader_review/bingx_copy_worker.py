@@ -306,6 +306,8 @@ def main():
             workers[0][1].arm_add_once(time.time_ns() // 1_000_000)
         from .late_entry_probe import start_probe
         start_probe(args.db)
+        from .copy_health import start_health
+        start_health(execution, paths)
         while True:
             try:
                 allowed = frozenset(args.symbols) if args.symbols else None
