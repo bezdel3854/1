@@ -582,6 +582,43 @@ class StrictExecutionTests(unittest.TestCase):
         self.assertEqual(sum(p=='trade/cancelReplace' for _,p,_ in self.requests),1)
         state.close()
 
+    def test_partial_fill_during_replace_is_reconciled_from_retired_order_after_restart(self):
+        self.x.submit('entry', 'BTC-USDT', 'BUY', D('.850'), deadline_ms=self.deadline)
+        state = sqlite3.connect(self.path)
+        state.execute('CREATE TABLE copied_positions(epoch TEXT,quantity TEXT)')
+        state.execute("INSERT INTO copied_positions VALUES ('epoch','.850')")
+        state.commit()
+        actual = [D('.850')]
+        self.x._positions = lambda *args: [{'positionAmt': str(actual[0])}]
+        original = self.x._request
+        old_order = dict(self.orders[0])
+        def request(method, path, **kwargs):
+            if method == 'GET' and path == 'trade/order' and 'orderId' in kwargs:
+                if kwargs['orderId'] == '1':
+                    return {**old_order, 'status': 'CANCELLED', 'executedQty': '.450'}
+                order = next(o for o in self.orders if o['orderId'] == kwargs['orderId'])
+                return {**order, 'status': 'NEW', 'executedQty': '0'}
+            result = original(method, path, **kwargs)
+            if method == 'POST' and path == 'trade/cancelReplace' and kwargs['cancelOrderId'] == '1':
+                actual[0] = D('.400')
+            return result
+        self.x._request = request
+        self.contract = replace(self.contract, exits=(replace(self.contract.exits[0], stop_price='91'), self.contract.exits[1]))
+        self.x.synchronize_exits(state)
+        self.assertEqual(state.execute('SELECT order_id FROM copy_exit_history').fetchone(), ('1',))
+        restarted = StrictBingXExecution('test-key', 'test-secret', self.path, trading_enabled=True,
+                                       source_client=None, source_address='test', expected_uid='123')
+        restarted._request = request
+        restarted._positions = self.x._positions
+        restarted._contract = lambda *args, **kwargs: (_ for _ in ()).throw(CopyBlocked('source_snapshot_changed'))
+        restarted.synchronize_exits(state)
+        self.assertEqual(D(state.execute('SELECT quantity FROM copied_positions').fetchone()[0]), D('.400'))
+        self.assertEqual(D(state.execute("SELECT executed_qty FROM copy_exit_fills WHERE order_id='1'").fetchone()[0]), D('.450'))
+        self.assertEqual(state.execute('SELECT count(*) FROM copy_exit_history').fetchone(), (0,))
+        self.assertEqual(state.execute("SELECT order_id FROM copy_exit_orders WHERE source_id='100'").fetchone(), ('101',))
+        self.assertEqual(sum(m == 'POST' and p == 'trade/cancelReplace' for m, p, _ in self.requests), 1)
+        state.close()
+
     def test_removed_source_stop_keeps_existing_protection_and_blocks_increases(self):
         self.x.submit('entry','BTC-USDT','BUY',D('.850'),deadline_ms=self.deadline)
         self.x._positions=lambda *a:[{'positionAmt':'.850'}]

@@ -58,6 +58,33 @@ class StreamTests(unittest.TestCase):
         with sqlite3.connect(self.path) as db:
             self.assertEqual(db.execute('SELECT parent_id FROM copy_exchange_links').fetchone(), ('456',))
 
+    def test_listen_key_renewal_does_not_hide_a_stale_connection(self):
+        stream = AccountOrderStream(Mock(environment='live'), self.path)
+        clock = {'now': 0, 'advance': False}
+        def monotonic():
+            now = clock['now']
+            if clock['advance']:
+                clock.update(now=1801, advance=False)
+            return now
+        ws = Mock()
+        def first_message(**kwargs):
+            clock['now'] = 1799
+            return 'Ping'
+        reads = iter((first_message, lambda **kwargs: (_ for _ in ()).throw(TimeoutError()),
+                      lambda **kwargs: (_ for _ in ()).throw(AssertionError('Stale session must reconnect'))))
+        ws.recv.side_effect = lambda **kwargs: next(reads)(**kwargs)
+        ws.send.side_effect = lambda *args: clock.update(advance=True)
+        def auth(method, key=None):
+            if method == 'PUT':
+                clock['now'] = 1847
+            return 'k' * 32
+        with patch.object(stream, '_auth', side_effect=auth) as authenticate, \
+                patch('research.trader_review.bingx_account_stream.time.monotonic', side_effect=monotonic), \
+                patch('websockets.sync.client.connect', return_value=contextlib.nullcontext(ws)):
+            with self.assertRaisesRegex(RuntimeError, 'became stale'):
+                stream.session()
+        self.assertEqual([call.args[0] for call in authenticate.call_args_list], ['POST', 'PUT'])
+
 
 class ImmediateProtectionTests(unittest.TestCase):
     def setUp(self):

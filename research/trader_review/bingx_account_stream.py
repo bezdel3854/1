@@ -121,7 +121,7 @@ class AccountOrderStream:
                      ping_interval=20, ping_timeout=10, max_size=1_048_576, max_queue=64,
                      logger=logger) as ws:
             # Wait for the first server message before certifying subscription.
-            renewed = time.monotonic()
+            connected_at = renewed = time.monotonic()
             while True:
                 if time.monotonic() - renewed > 1800:
                     self._auth('PUT', key)
@@ -129,7 +129,7 @@ class AccountOrderStream:
                 try:
                     message = decode_message(ws.recv(timeout=5))
                 except TimeoutError:
-                    if time.monotonic() - renewed > 45 and not self.health()['ready']:
+                    if time.monotonic() - connected_at > 45 and not self.health()['ready']:
                         raise RuntimeError('Account stream became stale')
                     continue
                 if message == 'Ping':

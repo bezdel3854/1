@@ -76,6 +76,8 @@ class StrictBingXExecution(BingXExecution):
                        'before_ids TEXT, contract TEXT, adopted INTEGER DEFAULT 0)')
             db.execute('CREATE TABLE IF NOT EXISTS copy_exit_fills '
                        '(order_id TEXT PRIMARY KEY, executed_qty TEXT)')
+            db.execute('CREATE TABLE IF NOT EXISTS copy_exit_history '
+                       '(epoch TEXT,order_id TEXT,parameters TEXT NOT NULL,PRIMARY KEY(epoch,order_id))')
             db.execute('CREATE TABLE IF NOT EXISTS locally_exited_epochs '
                        '(epoch TEXT PRIMARY KEY, reason TEXT)')
 
@@ -491,7 +493,12 @@ class StrictBingXExecution(BingXExecution):
         newly_filled = Decimal(0)
         updates = []
         terminal = []
-        for sid, oid, payload in db.execute('SELECT source_id,order_id,parameters FROM copy_exit_orders WHERE epoch=?', (epoch,)).fetchall():
+        retired_terminal = []
+        rows = db.execute('SELECT source_id,order_id,parameters FROM copy_exit_orders WHERE epoch=? '
+                          'UNION ALL SELECT NULL,h.order_id,h.parameters FROM copy_exit_history h '
+                          'WHERE h.epoch=? AND NOT EXISTS (SELECT 1 FROM copy_exit_orders o '
+                          'WHERE o.epoch=h.epoch AND o.order_id=h.order_id)', (epoch, epoch)).fetchall()
+        for sid, oid, payload in rows:
             result = self._request('GET', 'trade/order', symbol=symbol, orderId=oid)
             result = result.get('order', result)
             params = json.loads(payload)
@@ -507,7 +514,10 @@ class StrictBingXExecution(BingXExecution):
             newly_filled += filled - prior
             updates.append((oid, str(filled)))
             if result.get('status') in ('FILLED', 'CANCELLED', 'CANCELED', 'EXPIRED', 'FAILED'):
-                terminal.append((epoch, sid))
+                if sid is None:
+                    retired_terminal.append((epoch, oid))
+                else:
+                    terminal.append((epoch, sid))
         if newly_filled != expected - actual:
             raise ReconciliationRequired('Position change not explained by confirmed bot-owned protective fills')
         # Keep the verified fill and position update atomic on the worker's DB.
@@ -517,6 +527,7 @@ class StrictBingXExecution(BingXExecution):
         # Retire only after its confirmed fills explain the position change.
         # Otherwise removing a just-filled stop would erase the evidence.
         db.executemany('DELETE FROM copy_exit_orders WHERE epoch=? AND source_id=?', terminal)
+        db.executemany('DELETE FROM copy_exit_history WHERE epoch=? AND order_id=?', retired_terminal)
         db.execute('INSERT OR REPLACE INTO locally_exited_epochs VALUES (?,?)',
                    (epoch, 'confirmed_bot_protection_fill'))
         if not same_file:
@@ -633,6 +644,14 @@ class StrictBingXExecution(BingXExecution):
         if not match or not self._matches(match, params):
             raise ReconciliationRequired('Protection creation/replacement unconfirmed; never resubmit blindly')
         with db:
+            if change['action'] == 'replace':
+                old = db.execute('SELECT parameters FROM copy_exit_orders '
+                                 'WHERE epoch=? AND source_id=? AND order_id=?',
+                                 (epoch, change['source_id'], change['order_id'])).fetchone()
+                if not old:
+                    raise ReconciliationRequired('Replacement lacks original owned protection metadata')
+                db.execute('INSERT OR IGNORE INTO copy_exit_history VALUES (?,?,?)',
+                           (epoch, change['order_id'], old[0]))
             db.execute('INSERT OR REPLACE INTO copy_exit_orders VALUES (?,?,?,?)',
                        (epoch, change['source_id'], oid, json.dumps(params, sort_keys=True)))
             db.execute('UPDATE copy_exit_dispatch SET result=? WHERE id=?', (json.dumps(result), dispatch_id))
