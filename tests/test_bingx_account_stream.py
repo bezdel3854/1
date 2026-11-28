@@ -93,19 +93,22 @@ class ImmediateProtectionTests(unittest.TestCase):
                           availableAmt=str(self.position_qty))] if self.position_qty else [])
         if path == 'trade/order' and method == 'POST':
             result = self.original_request(method, path, **kwargs)
-            self.parents[kwargs['clientOrderId']] = dict(orderId=self.parent_id, symbol='BTC-USDT',
+            parent_id = str(int(self.parent_id) + len(self.parents))
+            self.parents[kwargs['clientOrderId']] = dict(orderId=parent_id, symbol='BTC-USDT',
                 side=kwargs['side'], status='FILLED', executedQty=kwargs['quantity'])
             if kwargs.get('reduceOnly') == 'true':
                 self.position_qty = D('0')
                 return result
             self.position_qty = D('.400') if self.partial else D('0')
             for order in self.case.orders:
+                if order['orderId'] in self.history:
+                    order['orderId'] = str(max(map(int, self.history)) + 1)
                 sl = order['type'] == 'STOP_MARKET'
                 self.history[order['orderId']] = {**order,
                     'status': ('PARTIALLYFILLED' if self.partial else 'FILLED') if sl else ('CANCELLED' if self.cancel_sibling else 'NEW'),
                     'executedQty': ('.450' if self.partial else '.850') if sl else '0'}
                 record_event(self.events_path, {'e': 'TRADE_UPDATE', 'o': {
-                    'i': order['orderId'], 'li': '999' if self.wrong_parent else self.parent_id,
+                    'i': order['orderId'], 'li': '999' if self.wrong_parent else parent_id,
                     's': 'BTC-USDT'}})
             if not self.partial:
                 self.case.orders[:] = [o for o in self.case.orders if o['type'] != 'STOP_MARKET' and not self.cancel_sibling]
@@ -230,6 +233,20 @@ class ImmediateProtectionTests(unittest.TestCase):
         self.x.synchronize_exits(self.db)
         self.assertEqual(self.db.execute('SELECT count(*) FROM copied_positions').fetchone(), (0,))
         self.assertEqual(self.entry_posts(), 1)
+
+    def test_new_epoch_waits_for_old_take_profit_cleanup_then_enters_once(self):
+        self.copy.apply(self.event, D('0'), D('.085'), self.market)
+        self.x.synchronize_exits(self.db)
+        self.assertTrue(self.case.orders)  # Old TP is still active after SL.
+        fresh = {**self.event, 'orderId': 'next-entry', 'positionId': 'next-epoch'}
+        self.x.set_context(fresh, D('0'), D('.085'))
+        with self.assertRaisesRegex(ReconciliationRequired, 'Previous epoch'):
+            self.copy.apply(fresh, D('0'), D('.085'), self.market)
+        self.assertEqual(self.entry_posts(), 1)
+        self.x.synchronize_exits(self.db)
+        self.assertEqual(self.case.orders, [])
+        self.copy.apply(fresh, D('0'), D('.085'), self.market)
+        self.assertEqual(self.entry_posts(), 2)
 
 
 if __name__ == '__main__':

@@ -188,6 +188,9 @@ class StrictBingXExecution(BingXExecution):
             raise CopyBlocked('missing_signal_contract_context')
         event, before, ratio = self.context
         with sqlite3.connect(self.journal_path) as db:
+            if db.execute('SELECT 1 FROM copy_contracts WHERE symbol=? AND epoch<>?',
+                          (symbol, event['positionId'])).fetchone():
+                raise ReconciliationRequired('Previous epoch protection cleanup required before entry')
             if db.execute('SELECT 1 FROM locally_exited_epochs WHERE epoch=?', (event['positionId'],)).fetchone():
                 raise CopyBlocked('local_protection_filled_do_not_reopen_epoch')
         if not ratio or not number(ratio, positive=True):
