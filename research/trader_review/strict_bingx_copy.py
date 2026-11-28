@@ -458,8 +458,9 @@ class StrictBingXExecution(BingXExecution):
         for key, response_key in [('quantity', 'origQty'), ('stopPrice', 'stopPrice'), ('price', 'price')]:
             if key in parameters and number(order.get(response_key)) != number(parameters[key]):
                 return False
-        if 'workingType' in parameters and order.get('workingType') != parameters['workingType']:
-            return False
+        for key in ('workingType', 'timeInForce'):
+            if key in parameters and order.get(key) != parameters[key]:
+                return False
         if 'reduceOnly' in parameters and str(order.get('reduceOnly')).lower() != parameters['reduceOnly']:
             return False
         return True

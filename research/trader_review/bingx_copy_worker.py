@@ -229,10 +229,22 @@ def cycle_sources(sources, *, min_equity, allowed_symbols):
             execution.open_blocker = ('another_copy_operation_requires_reconciliation' if unresolved
                                       else 'another_trader_feed_unavailable')
     # Preserve each source journal's ordering for equal timestamps.
+    failed_sources = set()
     for _, idx, row in sorted(events, key=lambda item: (item[0], item[1], item[2][0])):
+        if idx in failed_sources:
+            continue  # Never advance a source cursor past its failed operation.
         source, copier, execution = sources[idx]
-        cycle(source, copier, execution, min_equity=min_equity, allowed_symbols=allowed_symbols,
-              prepared_rows=[row])
+        try:
+            cycle(source, copier, execution, min_equity=min_equity, allowed_symbols=allowed_symbols,
+                  prepared_rows=[row])
+        except (OSError, ValueError, RuntimeError) as error:
+            failed_sources.add(idx)
+            # One source's uncertain operation must fence new exposure across
+            # the account, but must not starve another source's reductions.
+            for _, _, runner in sources:
+                runner.open_blocker = 'another_copy_operation_requires_reconciliation'
+            print(json.dumps({'copy_status': 'source_event_blocked', 'source': source.address,
+                              'error_type': type(error).__name__}), flush=True)
 
 
 def main():

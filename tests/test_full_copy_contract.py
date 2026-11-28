@@ -443,6 +443,14 @@ class StrictExecutionTests(unittest.TestCase):
             self.assertIsNotNone(db.execute('SELECT result FROM copy_exit_dispatch').fetchone()[0])
         state.close()
 
+    def test_protective_limit_order_requires_matching_time_in_force(self):
+        params = dict(symbol='BTC-USDT', side='SELL', positionSide='BOTH',
+                      type='LIMIT', quantity='.850', price='110', timeInForce='GTC')
+        actual = dict(params, origQty='.850')
+        self.assertTrue(self.x._matches(actual, params))
+        for wrong in ('IOC', 'FOK', None):
+            self.assertFalse(self.x._matches(dict(actual, timeInForce=wrong), params))
+
     def test_live_immediately_filled_protection_is_confirmed_without_resubmission(self):
         params = self.contract.exits[0].bingx('BTC-USDT')
         change = dict(action='create', source_id='100', parameters=params)

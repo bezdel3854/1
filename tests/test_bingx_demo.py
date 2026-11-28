@@ -102,7 +102,8 @@ class DemoTests(unittest.TestCase):
             params = dict(symbol=symbol, positionSide='SHORT', side='BUY', type='LIMIT',
                           quantity='0.2027', price='57920.0', timeInForce='GTC')
             order = dict(symbol=symbol, positionSide='SHORT', side='BUY', type='LIMIT',
-                         origQty='0.2027', executedQty='0.2027', price='57920.0', orderId=int(oid), status='FILLED')
+                         origQty='0.2027', executedQty='0.2027', price='57920.0',
+                         timeInForce='GTC', orderId=int(oid), status='FILLED')
             copy_db = sqlite3.connect(path)
             copier = HyperliquidBingXCopy(copy_db, x, 1)
             with copy_db:
