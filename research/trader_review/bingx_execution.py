@@ -161,7 +161,9 @@ class BingXExecution:
                                   'WHERE s.client_id=?', (client_id,)).fetchone()
         # Only explicit, definitive rejections can expire. Timeouts, system
         # errors and accepted orders remain fenced until reconciled.
-        return bool(row and row[0] not in {109400, 109425, 101400, 101204, 101206, 100421})
+        # 101400 can also mean duplicate clientOrderID: an earlier order may
+        # exist, so it must remain recoverable by its immutable client ID.
+        return bool(row and row[0] not in {109400, 109425, 101204, 101206, 100421})
 
     def submit(self, signal_id, symbol, side, quantity, *, reduce_only=False, deadline_ms=None):
         if not self.trading_enabled:
@@ -204,7 +206,7 @@ class BingXExecution:
             ).fetchone()
         if saved_payload != payload:
             raise ValueError("Order parameters changed for an existing signal")
-        if rejection:
+        if rejection and not self.needs_reconciliation(signal_id):
             raise ReconciliationRequired(
                 f"Submission {client_id} rejected: BingX API code {rejection[0]}: {rejection[1]}; "
                 "no automatic resubmission"

@@ -17,7 +17,7 @@ from research.trader_review.full_copy_contract import (
     CopyBlocked, compile_contract, exit_sync_plan, scaled_quantity,
     settings_plan, verify_target_settings, json_number)
 from research.trader_review.strict_bingx_copy import StrictBingXExecution, source_snapshot
-from research.trader_review.bingx_execution import BingXAPIError, ReconciliationRequired, HyperliquidBingXCopy, BingXExecution
+from research.trader_review.bingx_execution import BingXAPIError, ReconciliationRequired, HyperliquidBingXCopy, BingXExecution, EntryExpired
 from tests.test_bingx_freshness import FakeExecution
 
 
@@ -479,6 +479,58 @@ class StrictExecutionTests(unittest.TestCase):
                 with sqlite3.connect(self.path) as db:
                     completed = db.execute('SELECT result FROM copy_exit_dispatch').fetchone()[0]
                     self.assertEqual(completed is not None, status == 'CANCELLED' and filled == '0' and not active)
+                state.close()
+
+    def test_expiry_after_entry_preparation_releases_unsent_reservation(self):
+        calls = 0
+        with patch('research.trader_review.bingx_execution.time.time_ns',
+                   return_value=(self.deadline - 10000) * 1_000_000) as clock:
+            def mode():
+                nonlocal calls
+                calls += 1
+                if calls == 2:
+                    clock.return_value = (self.deadline + 1) * 1_000_000
+                return False
+            self.x.hedge_mode = mode
+            with self.assertRaises(EntryExpired):
+                self.x.submit('entry', 'BTC-USDT', 'BUY', D('.850'), deadline_ms=self.deadline)
+        self.assertFalse(any(m == 'POST' and p == 'trade/order' for m, p, _ in self.requests))
+        state = sqlite3.connect(':memory:')
+        state.execute('CREATE TABLE copied_positions(epoch TEXT,quantity TEXT)')
+        self.requests.clear()
+        self.x.synchronize_exits(state)
+        self.assertFalse(any(m in ('POST', 'DELETE') for m, _, _ in self.requests))
+        with sqlite3.connect(self.path) as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM copy_entry_children').fetchone()[0], 0)
+            self.assertEqual(db.execute('SELECT count(*) FROM copy_contracts').fetchone()[0], 0)
+        state.close()
+
+    def test_definitive_rejection_clears_reservation_but_ambiguous_post_keeps_fence(self):
+        for rejected in (True, False):
+            with self.subTest(rejected=rejected):
+                client_id = hashlib.sha256(b'entry').hexdigest()[:40]
+                with sqlite3.connect(self.path) as db:
+                    db.execute('DELETE FROM bingx_submission_errors')
+                    db.execute('INSERT OR REPLACE INTO bingx_submissions VALUES (?,?)', (client_id, '{}'))
+                    db.execute('INSERT OR REPLACE INTO copy_contracts VALUES (?,?,?,?)',
+                               ('epoch', 'BTC-USDT', '.085', '{}'))
+                    db.execute('INSERT OR REPLACE INTO copy_entry_children VALUES (?,?,?,?,?,?,0)',
+                               ('entry', 'epoch', 'BTC-USDT', '.850', '[]', '{}'))
+                    if rejected:
+                        db.execute('INSERT INTO bingx_submission_errors VALUES (?,?,?)',
+                                   (client_id, 109400, 'invalid quantity'))
+                state = sqlite3.connect(':memory:')
+                state.execute('CREATE TABLE copied_positions(epoch TEXT,quantity TEXT)')
+                self.requests.clear()
+                if rejected:
+                    self.x.synchronize_exits(state)
+                else:
+                    with self.assertRaisesRegex(ReconciliationRequired, 'Unadopted'):
+                        self.x.synchronize_exits(state)
+                self.assertFalse(any(m in ('POST', 'DELETE') for m, _, _ in self.requests))
+                with sqlite3.connect(self.path) as db:
+                    self.assertEqual(db.execute('SELECT count(*) FROM copy_entry_children').fetchone()[0],
+                                     0 if rejected else 1)
                 state.close()
 
     def test_live_immediately_filled_protection_is_confirmed_without_resubmission(self):

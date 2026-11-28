@@ -81,6 +81,20 @@ class SubmissionRecoveryTests(unittest.TestCase):
             self.assertEqual(request.call_args.args, ('GET', 'trade/order'))
             self.assertEqual(request.call_count, 1)
 
+    def test_ambiguous_api_errors_reconcile_by_get_without_second_post(self):
+        for code in (101400, 109201, 101481, 109500):
+            with self.subTest(code=code):
+                signal = str(code)
+                with patch.object(self.execution, '_request', side_effect=BingXAPIError(code, 'ambiguous')):
+                    with self.assertRaises(BingXAPIError):
+                        self.execution.submit(signal, 'HYPE-USDT', 'BUY', Decimal('1'))
+                self.assertTrue(self.execution.needs_reconciliation(signal))
+                filled = {'status': 'FILLED', 'executedQty': '1'}
+                with patch.object(self.execution, '_request', return_value=filled) as request:
+                    self.assertEqual(self.execution.submit(signal, 'HYPE-USDT', 'BUY', Decimal('1')), filled)
+                    self.assertEqual(request.call_count, 1)
+                    self.assertEqual(request.call_args.args, ('GET', 'trade/order'))
+
     def test_successful_submission_and_reconciliation_keep_same_client_id(self):
         filled = {'status': 'FILLED', 'executedQty': '1'}
         with patch.object(self.execution, '_request', side_effect=[{}, filled, filled]) as request:

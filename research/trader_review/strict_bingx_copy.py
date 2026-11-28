@@ -331,6 +331,21 @@ class StrictBingXExecution(BingXExecution):
         """
         self.verify_account_identity()
         with sqlite3.connect(self.journal_path) as db:
+            # Preparing an entry reserves its protection metadata before the
+            # durable POST claim. Expiry or a pre-dispatch read failure can
+            # leave this reservation behind, even though no order was sent.
+            for signal_id, epoch in db.execute(
+                    'SELECT signal_id,epoch FROM copy_entry_children WHERE adopted=0').fetchall():
+                if self.needs_reconciliation(signal_id):
+                    continue  # Accepted/ambiguous requests retain their fence.
+                db.execute('DELETE FROM copy_entry_children WHERE signal_id=?', (signal_id,))
+                if (not copy_db.execute('SELECT 1 FROM copied_positions WHERE epoch=?', (epoch,)).fetchone()
+                        and not db.execute('SELECT 1 FROM copy_entry_children WHERE epoch=?', (epoch,)).fetchone()
+                        and not db.execute('SELECT 1 FROM copy_exit_orders WHERE epoch=?', (epoch,)).fetchone()):
+                    db.execute('DELETE FROM copy_contracts WHERE epoch=?', (epoch,))
+                db.commit()
+                print(json.dumps({'copy_status': 'unaccepted_entry_reservation_released',
+                                  'signal_id': signal_id}), flush=True)
             for (epoch,) in copy_db.execute('SELECT epoch FROM copied_positions'):
                 if not db.execute('SELECT 1 FROM copy_contracts WHERE epoch=?', (epoch,)).fetchone():
                     raise ReconciliationRequired('Legacy copied position lacks verified protection contract')
