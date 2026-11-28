@@ -327,6 +327,12 @@ def main():
             workers[0][1].arm_add_once(time.time_ns() // 1_000_000)
         from .late_entry_probe import start_probe
         start_probe(args.db)
+        from .bingx_account_stream import AccountOrderStream
+        account_stream = AccountOrderStream(execution, paths[0])
+        for _, _, runner in workers:
+            runner.account_stream = account_stream
+            runner.event_journal_path = paths[0]
+        account_stream.start()
         from .copy_health import start_health
         start_health(execution, paths)
         while True:

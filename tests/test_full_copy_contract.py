@@ -451,7 +451,7 @@ class StrictExecutionTests(unittest.TestCase):
         for wrong in ('IOC', 'FOK', None):
             self.assertFalse(self.x._matches(dict(actual, timeInForce=wrong), params))
 
-    def test_cancel_timeout_recovers_only_verified_unfilled_terminal_order(self):
+    def test_cancel_timeout_recovers_verified_terminal_orders_and_preserves_fill_proof(self):
         change = dict(action='cancel', source_id='100', order_id='12345')
         params = self.contract.exits[0].bingx('BTC-USDT')
         for status, filled, active in [('CANCELLED', '0', False), ('NEW', '0', True),
@@ -464,13 +464,13 @@ class StrictExecutionTests(unittest.TestCase):
                                ('epoch', '100', '12345', json.dumps(params)))
                     db.execute('INSERT INTO copy_exit_dispatch VALUES (1,?,?,?,?,NULL)',
                                ('epoch', '100', 'cancel', json.dumps(change)))
-                terminal = dict(orderId='12345', symbol='BTC-USDT', status=status, executedQty=filled)
+                terminal = dict(orderId='12345', symbol='BTC-USDT', side='SELL', status=status, executedQty=filled)
                 state = sqlite3.connect(':memory:')
                 state.execute('CREATE TABLE copied_positions(epoch TEXT,quantity TEXT)')
                 with patch.object(self.x, 'verify_account_identity'), \
                         patch.object(self.x, '_orders', return_value=[terminal] if active else []), \
                         patch.object(self.x, '_request', return_value=terminal) as api:
-                    if status == 'CANCELLED' and filled == '0' and not active:
+                    if status in ('CANCELLED', 'FILLED') and not active:
                         self.x.synchronize_exits(state)
                     else:
                         with self.assertRaises(ReconciliationRequired):
@@ -478,7 +478,11 @@ class StrictExecutionTests(unittest.TestCase):
                     api.assert_called_once_with('GET', 'trade/order', symbol='BTC-USDT', orderId='12345')
                 with sqlite3.connect(self.path) as db:
                     completed = db.execute('SELECT result FROM copy_exit_dispatch').fetchone()[0]
-                    self.assertEqual(completed is not None, status == 'CANCELLED' and filled == '0' and not active)
+                    done = status in ('CANCELLED', 'FILLED') and not active
+                    self.assertEqual(completed is not None, done)
+                    if done:
+                        self.assertEqual(db.execute('SELECT count(*) FROM copy_exit_orders').fetchone()[0],
+                                         1 if D(filled) else 0)
                 state.close()
 
     def test_expiry_after_entry_preparation_releases_unsent_reservation(self):

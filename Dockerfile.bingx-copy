@@ -1,5 +1,6 @@
 FROM python:3.12-slim
 WORKDIR /app
+RUN python -m pip install --no-cache-dir websockets==15.0.1
 COPY research ./research
 ENV PYTHONUNBUFFERED=1
 ENTRYPOINT ["python", "-m", "research.trader_review.bingx_copy_worker"]

@@ -56,7 +56,11 @@ class StrictBingXExecution(BingXExecution):
         self.expected_uid = str(expected_uid) if expected_uid is not None else None
         self.context = None
         self.open_blocker = None
+        self.account_stream = None
+        self.event_journal_path = self.journal_path
         with sqlite3.connect(self.journal_path) as db:
+            from .bingx_account_stream import initialize
+            initialize(db)
             db.execute('CREATE TABLE IF NOT EXISTS copy_contracts '
                        '(epoch TEXT PRIMARY KEY, symbol TEXT, ratio TEXT, payload TEXT)')
             db.execute('CREATE TABLE IF NOT EXISTS copy_exit_orders '
@@ -176,6 +180,8 @@ class StrictBingXExecution(BingXExecution):
             params = json.loads(saved[0])
             return {key: params[key] for key in ('stopLoss', 'takeProfit', 'type', 'price', 'timeInForce')
                     if key in params}
+        if self.account_stream is not None:
+            self.account_stream.require_ready()
         if self.open_blocker:
             raise CopyBlocked(self.open_blocker)
         if self.context is None or self.context[0]['orderId'] != signal_id:
@@ -235,6 +241,8 @@ class StrictBingXExecution(BingXExecution):
         latest = self._contract(symbol, ratio, actual + quantity)
         if latest.fingerprint() != contract.fingerprint():
             raise CopyBlocked('source_contract_changed_before_dispatch')
+        if self.account_stream is not None:
+            self.account_stream.require_ready()
         epoch = event['positionId']
         recorded_contract = {**asdict(contract), 'entry_brackets_attached': bool(brackets)}
         with sqlite3.connect(self.journal_path) as db:
@@ -299,7 +307,9 @@ class StrictBingXExecution(BingXExecution):
                                   'invented_protection':False}), flush=True)
                 return
             if len(new_orders) != len(contract['exits']):
-                raise ReconciliationRequired('Entry attached protection count differs from request')
+                new_orders = self._recover_entry_children(parent, symbol, before_ids, new_orders)
+                if len(new_orders) != len(contract['exits']):
+                    raise ReconciliationRequired('Entry attached protection count differs from request')
             hedge = self.hedge_mode()
             matched = set()
             for raw in contract['exits']:
@@ -318,6 +328,34 @@ class StrictBingXExecution(BingXExecution):
                 db.execute('INSERT OR IGNORE INTO copy_exit_orders VALUES (?,?,?,?)',
                            (epoch, canonical, oid, json.dumps(params, sort_keys=True)))
             db.execute('UPDATE copy_entry_children SET adopted=1 WHERE signal_id=?', (signal_id,))
+
+    def _recover_entry_children(self, parent, symbol, before_ids, active):
+        from .bingx_account_stream import order_id
+        try:
+            parent_id = order_id(parent.get('orderID', parent.get('orderId')))
+        except ValueError:
+            raise ReconciliationRequired('Entry parent identity missing for protection recovery') from None
+        if parent.get('symbol', symbol) != symbol:
+            raise ReconciliationRequired('Entry parent symbol differs during protection recovery')
+        with sqlite3.connect(self.event_journal_path) as events:
+            linked = [r[0] for r in events.execute(
+                'SELECT order_id FROM copy_exchange_links WHERE parent_id=? AND symbol=?', (parent_id, symbol))]
+        candidates = {str(o.get('orderID', o.get('orderId'))): o for o in active}
+        for oid in linked:
+            if oid in before_ids:
+                raise ReconciliationRequired('Parent-linked child predates entry; inspect exchange')
+            if oid in candidates:
+                continue
+            response = self._request('GET', 'trade/order', symbol=symbol, orderId=oid)
+            order = response.get('order', response)
+            if (str(order.get('orderID', order.get('orderId'))) != oid
+                    or order.get('symbol') != symbol
+                    or order.get('status') not in ('FILLED', 'CANCELLED', 'CANCELED', 'EXPIRED', 'FAILED')
+                    or 'executedQty' not in order
+                    or not 0 <= number(order['executedQty']) <= number(order.get('origQty'), positive=True)):
+                raise ReconciliationRequired('Parent-linked protection outcome not confirmed')
+            candidates[oid] = order
+        return list(candidates.values())
 
     def _owned(self, db, epoch):
         rows = db.execute('SELECT source_id,order_id,parameters FROM copy_exit_orders WHERE epoch=?', (epoch,))
@@ -365,11 +403,18 @@ class StrictBingXExecution(BingXExecution):
                 row = copy_db.execute('SELECT quantity FROM copied_positions WHERE epoch=?', (epoch,)).fetchone()
                 positions = self._positions(symbol)
                 if not row:
+                    if copy_db.execute("SELECT 1 FROM sqlite_master WHERE name='copy_plans'").fetchone():
+                        for (signal_id,) in db.execute('SELECT signal_id FROM copy_entry_children WHERE epoch=?', (epoch,)):
+                            if copy_db.execute('SELECT 1 FROM copy_plans p WHERE p.id=? '
+                                    'AND NOT EXISTS (SELECT 1 FROM copied_signals s WHERE s.id=p.id) '
+                                    'AND NOT EXISTS (SELECT 1 FROM copy_skips k WHERE k.id=p.id)', (signal_id,)).fetchone():
+                                raise ReconciliationRequired('Entry journal not committed; reconcile parent before cleanup')
                     if positions:
                         raise ReconciliationRequired('Exchange exposure exists without a copy position')
                     # No new entry until every owned stale exit is gone.
                     for sid, old in self._owned(db, epoch).items():
                         self._dispatch_exit(db, epoch, dict(action='cancel', source_id=sid, order_id=old['order_id']), symbol)
+                        db.execute('DELETE FROM copy_exit_orders WHERE epoch=? AND source_id=?', (epoch, sid))
                     db.execute('DELETE FROM copy_contracts WHERE epoch=?', (epoch,)); db.commit()
                     continue
                 qty = number(row[0], positive=True)
@@ -442,7 +487,8 @@ class StrictBingXExecution(BingXExecution):
             raise ReconciliationRequired('Unexplained target position increase; do not add or resubmit')
         newly_filled = Decimal(0)
         updates = []
-        for _, oid, payload in db.execute('SELECT source_id,order_id,parameters FROM copy_exit_orders WHERE epoch=?', (epoch,)).fetchall():
+        terminal = []
+        for sid, oid, payload in db.execute('SELECT source_id,order_id,parameters FROM copy_exit_orders WHERE epoch=?', (epoch,)).fetchall():
             result = self._request('GET', 'trade/order', symbol=symbol, orderId=oid)
             result = result.get('order', result)
             params = json.loads(payload)
@@ -457,12 +503,17 @@ class StrictBingXExecution(BingXExecution):
                 raise ReconciliationRequired('Invalid protective fill reconciliation')
             newly_filled += filled - prior
             updates.append((oid, str(filled)))
+            if result.get('status') in ('FILLED', 'CANCELLED', 'CANCELED', 'EXPIRED', 'FAILED'):
+                terminal.append((epoch, sid))
         if newly_filled != expected - actual:
             raise ReconciliationRequired('Position change not explained by confirmed bot-owned protective fills')
         # Keep the verified fill and position update atomic on the worker's DB.
         same_file = db.execute('PRAGMA database_list').fetchone()[2]
         same_file = same_file and same_file == copy_db.execute('PRAGMA database_list').fetchone()[2]
         db.executemany('INSERT OR REPLACE INTO copy_exit_fills VALUES (?,?)', updates)
+        # Retire only after its confirmed fills explain the position change.
+        # Otherwise removing a just-filled stop would erase the evidence.
+        db.executemany('DELETE FROM copy_exit_orders WHERE epoch=? AND source_id=?', terminal)
         db.execute('INSERT OR REPLACE INTO locally_exited_epochs VALUES (?,?)',
                    (epoch, 'confirmed_bot_protection_fill'))
         if not same_file:
@@ -501,14 +552,11 @@ class StrictBingXExecution(BingXExecution):
         if action == 'cancel':
             existing = self._request('GET', 'trade/order', symbol=symbol, orderId=change['order_id'])
             existing = existing.get('order', existing)
-            if existing.get('status') in ('FILLED', 'CANCELLED', 'FAILED'):
-                result = {'already_terminal': existing}
-            else:
-                result = self._request('DELETE', 'trade/order', symbol=symbol, orderId=change['order_id'])
-            remaining = self._orders(symbol)
-            if any(str(o.get('orderID', o.get('orderId'))) == change['order_id'] for o in remaining):
-                raise ReconciliationRequired('Protection cancellation unconfirmed')
-            db.execute('DELETE FROM copy_exit_orders WHERE epoch=? AND source_id=?', (epoch, change['source_id']))
+            if existing.get('status') not in ('FILLED', 'CANCELLED', 'CANCELED', 'EXPIRED', 'FAILED'):
+                self._request('DELETE', 'trade/order', symbol=symbol, orderId=change['order_id'])
+                response = self._request('GET', 'trade/order', symbol=symbol, orderId=change['order_id'])
+                existing = response.get('order', response)
+            return self._finish_cancellation(db, dispatch_id, epoch, change, symbol, existing)
         else:
             params = change['parameters']
             if action == 'replace':
@@ -537,18 +585,31 @@ class StrictBingXExecution(BingXExecution):
         symbol = json.loads(owned[0])['symbol']
         response = self._request('GET', 'trade/order', symbol=symbol, orderId=change['order_id'])
         order = response.get('order', response)
+        return self._finish_cancellation(db, dispatch_id, epoch, change, symbol, order)
+
+    def _finish_cancellation(self, db, dispatch_id, epoch, change, symbol, order):
+        owned = db.execute('SELECT parameters FROM copy_exit_orders WHERE epoch=? AND source_id=? AND order_id=?',
+                           (epoch, change['source_id'], change['order_id'])).fetchone()
+        if not owned:
+            raise ReconciliationRequired('Cancellation lacks owned order metadata')
+        params = json.loads(owned[0])
+        filled = number(order.get('executedQty'))
         if (str(order.get('orderId', order.get('orderID'))) != change['order_id']
                 or order.get('symbol') != symbol
-                or order.get('status') not in ('CANCELLED', 'CANCELED', 'EXPIRED', 'FAILED')
-                or number(order.get('executedQty')) != 0
+                or order.get('status') not in ('FILLED', 'CANCELLED', 'CANCELED', 'EXPIRED', 'FAILED')
+                or not 0 <= filled <= number(params['quantity'], positive=True)
+                or (filled and order.get('side') != params['side'])
+                or (order.get('status') == 'FILLED' and filled != number(params['quantity']))
                 or any(str(o.get('orderId', o.get('orderID'))) == change['order_id']
                        for o in self._orders(symbol))):
-            raise ReconciliationRequired('Cancellation remains uncertain or has fills; inspect exchange')
+            raise ReconciliationRequired('Cancellation outcome remains uncertain; inspect exchange')
         with db:
-            db.execute('DELETE FROM copy_exit_orders WHERE epoch=? AND source_id=?',
-                       (epoch, change['source_id']))
+            if not filled:
+                db.execute('DELETE FROM copy_exit_orders WHERE epoch=? AND source_id=?',
+                           (epoch, change['source_id']))
             db.execute('UPDATE copy_exit_dispatch SET result=? WHERE id=?',
                        (json.dumps({'confirmed_cancel': order}), dispatch_id))
+        return filled > 0
 
     def _confirm_exit(self, db, dispatch_id, epoch, change, oid, result):
         params = change['parameters']

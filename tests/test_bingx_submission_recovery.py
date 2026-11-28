@@ -148,6 +148,7 @@ class SubmissionRecoveryTests(unittest.TestCase):
                 patch.object(worker, 'BingXExecution'), patch.object(worker, 'HyperliquidBingXCopy'), \
                 patch('research.trader_review.late_entry_probe.start_probe'), \
                 patch('research.trader_review.copy_health.start_health'), \
+                patch('research.trader_review.bingx_account_stream.AccountOrderStream'), \
                 patch.object(worker, 'cycle', side_effect=[
                     TimeoutError('private-key'), ValueError('invalid response'),
                     RuntimeError('unconfirmed execution'), ReconciliationRequired('blocked')]) as cycle, \

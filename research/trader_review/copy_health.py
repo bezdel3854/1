@@ -43,6 +43,9 @@ def snapshot(execution, paths, now_ms=None):
         # Never expose exchange messages, signed URLs or credentials in diagnostics.
         result['exchange_check_error'] = type(error).__name__
     result['completed_ms'] = time.time_ns() // 1_000_000
+    account_stream = execution.__dict__.get('account_stream')
+    if account_stream is not None:
+        result['account_stream'] = account_stream.health()
     return result
 
 

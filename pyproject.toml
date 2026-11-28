@@ -16,4 +16,5 @@ bingx-bot = "bingx_bot.cli:main"
 include = ["bingx_bot*"]
 
 [project.optional-dependencies]
+copy = ["websockets==15.0.1"]
 research = ["numpy==2.3.5", "pandas==2.2.3"]
