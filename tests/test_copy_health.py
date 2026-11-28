@@ -22,6 +22,10 @@ class HealthTests(unittest.TestCase):
                     CREATE TABLE copied_positions(epoch TEXT);
                     CREATE TABLE copied_signals(id TEXT);
                     CREATE TABLE copy_skips(id TEXT);
+                    CREATE TABLE copy_plans(id TEXT);
+                    INSERT INTO copy_plans VALUES('pending-close'),('completed'),('skipped');
+                    INSERT INTO copied_signals VALUES('completed');
+                    INSERT INTO copy_skips VALUES('skipped');
                     CREATE TABLE copy_entry_children(adopted INTEGER);
                     INSERT INTO copy_entry_children VALUES(0);
                     CREATE TABLE copy_exit_dispatch(result TEXT);
@@ -38,6 +42,7 @@ class HealthTests(unittest.TestCase):
             self.assertEqual(result['sources'][0]['poll_age_ms'], 89000)
             self.assertEqual(result['sources'][0]['pending_entries'], 1)
             self.assertEqual(result['sources'][0]['pending_exits'], 1)
+            self.assertEqual(result['sources'][0]['pending_signals'], 1)
             execution._request.assert_called_once_with('GET', 'user/positions')
             self.assertEqual(path.read_bytes(), before)
             execution.verify_account_identity.side_effect = RuntimeError('secret-key')

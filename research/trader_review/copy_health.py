@@ -23,6 +23,9 @@ def snapshot(execution, paths, now_ms=None):
                 'skipped_signals': db.execute('SELECT count(*) FROM copy_skips').fetchone()[0],
                 'pending_entries': db.execute('SELECT count(*) FROM copy_entry_children WHERE adopted=0').fetchone()[0],
                 'pending_exits': db.execute('SELECT count(*) FROM copy_exit_dispatch WHERE result IS NULL').fetchone()[0],
+                'pending_signals': db.execute(
+                    'SELECT count(*) FROM copy_plans p LEFT JOIN copied_signals s ON s.id=p.id '
+                    'LEFT JOIN copy_skips k ON k.id=p.id WHERE s.id IS NULL AND k.id IS NULL').fetchone()[0],
             })
     # Signed reads only. A failed API call must never emit a successful balance check.
     try:
