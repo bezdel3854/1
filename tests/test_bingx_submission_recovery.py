@@ -121,13 +121,16 @@ class SubmissionRecoveryTests(unittest.TestCase):
                 patch.object(worker, 'FillObserver', hyper.FillObserver), \
                 patch.object(worker, 'BingXExecution'), patch.object(worker, 'HyperliquidBingXCopy'), \
                 patch('research.trader_review.late_entry_probe.start_probe'), \
-                patch.object(worker, 'cycle', side_effect=ReconciliationRequired('blocked')) as cycle, \
-                patch.object(worker.time, 'sleep', side_effect=[None, EndTest]), \
+                patch.object(worker, 'cycle', side_effect=[
+                    TimeoutError('private-key'), ValueError('invalid response'),
+                    RuntimeError('unconfirmed execution'), ReconciliationRequired('blocked')]) as cycle, \
+                patch.object(worker.time, 'sleep', side_effect=[None, None, None, EndTest]), \
                 patch('builtins.print') as output:
             with self.assertRaises(EndTest):
                 worker.main()
-            self.assertEqual(cycle.call_count, 2)
-            self.assertEqual(output.call_count, 2)
+            self.assertEqual(cycle.call_count, 4)
+            self.assertEqual(output.call_count, 4)
+            self.assertNotIn('private-key', str(output.call_args_list))
             self.assertEqual(json.loads(output.call_args.args[0])['copy_status'], 'blocked')
 
 

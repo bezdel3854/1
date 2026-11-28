@@ -124,6 +124,11 @@ def cycle(source, copier, execution, *, min_equity=Decimal('100'), allowed_symbo
             skip_reason = None
             if allowed_symbols is not None and symbol not in allowed_symbols and not managed and not planned:
                 skip_reason = 'symbol_not_selected'
+            if (event['action'] == 'OPEN'
+                    and not execution.needs_reconciliation(event['orderId'])):
+                equity = execution.equity()
+                if not equity.is_finite() or equity < min_equity:
+                    skip_reason = 'account_equity_below_entry_threshold'
             if (event['action'] == 'OPEN' and not managed and not planned
                     and getattr(execution, 'peer_journals', ()) and execution.peer_owns(symbol)):
                 skip_reason = 'symbol_reserved_by_another_trader'
@@ -308,10 +313,10 @@ def main():
                     cycle(*workers[0], min_equity=args.min_equity, allowed_symbols=allowed)
                 else:
                     cycle_sources(workers, min_equity=args.min_equity, allowed_symbols=allowed)
-            except (BingXAPIError, ReconciliationRequired, CopyBlocked) as error:
+            except (OSError, ValueError, RuntimeError) as error:
                 # Keep polling, but do not advance the failed signal, alter the
                 # position journal, or send another POST for its client ID.
-                print(json.dumps({"copy_status": "blocked", "error": str(error)}), flush=True)
+                print(json.dumps({"copy_status": "blocked", "error_type": type(error).__name__}), flush=True)
                 if args.once:
                     raise
             if args.once:

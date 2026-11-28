@@ -145,6 +145,27 @@ class FreshnessTests(unittest.TestCase):
         self.assertTrue(self.execution.orders[0][3])
 
 
+    def test_low_equity_blocks_fresh_add_but_still_processes_close(self):
+        from research.trader_review.bingx_copy_worker import cycle
+        self.db.execute("INSERT INTO copied_positions VALUES ('epoch','.1','5')")
+        self.execution.equity = lambda: D('79')
+        self.execution._request = lambda method, path, **params: (
+            {'price': '100'} if path == 'quote/price' else
+            [{'symbol': 'HYPE-USDT', 'quantityPrecision': 3,
+              'tradeMinQuantity': '.001', 'tradeMinUSDT': '5'}])
+        add = self.event('add', qty=25)
+        close = self.event('close', action='CLOSE', qty=25)
+        rows = [(1, json.dumps(add), json.dumps({'startPosition': '100'})),
+                (2, json.dumps(close), json.dumps({'startPosition': '100'}))]
+        cycle(types.SimpleNamespace(), self.copier, self.execution, min_equity=D('80'),
+              prepared_rows=rows)
+        self.assertEqual(self.position(), ('3.75',))
+        self.assertEqual(len(self.execution.orders), 1)
+        self.assertTrue(self.execution.orders[0][3])
+        self.assertEqual(self.db.execute('SELECT reason FROM copy_skips').fetchone()[0],
+                         'account_equity_below_entry_threshold')
+
+
 class DispatchDeadlineTests(unittest.TestCase):
     def setUp(self):
         self.folder = tempfile.TemporaryDirectory()
