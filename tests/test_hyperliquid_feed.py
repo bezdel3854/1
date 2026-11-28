@@ -14,6 +14,12 @@ class Fake:
     def get(self,*args,**kwargs):return self.rows
 
 class HyperliquidTests(unittest.TestCase):
+    def test_malformed_source_numbers_raise_recoverable_validation_errors(self):
+        from research.trader_review.hyperliquid_feed import finite
+        for invalid in (None, {}, [], True, 10**400, 'not-a-number'):
+            with self.subTest(kind=type(invalid).__name__), self.assertRaises(ValueError):
+                finite(invalid)
+
     def test_baseline_restart_and_duplicate(self):
         o=Observer(':memory:',ADDR,'test');api=Fake([fill()]);h=FillObserver(o.db,ADDR,api)
         h.poll(now=2000)
@@ -130,6 +136,65 @@ class HyperliquidTests(unittest.TestCase):
             self.assertEqual(Decimal(json.loads(batches[0][1])['quantity']), Decimal('.14538'))
 
 class SimultaneousFillTests(unittest.TestCase):
+    def test_small_fills_on_large_position_keep_exact_execution_order(self):
+        from research.trader_review.hyperliquid_feed import ordered_fills
+        first = fill(1000, 99, '100000', '.0001', coin='ETH')
+        second = fill(1000, 1, '100000.0001', '.0001', coin='ETH')
+        self.assertEqual([f['tid'] for f in ordered_fills([second, first])], [99, 1])
+
+    def test_small_missing_fill_is_not_hidden_by_position_relative_tolerance(self):
+        o = Observer(':memory:', ADDR, 'test')
+        api = Fake([fill(1000, 1, '0', '100000', coin='ETH')])
+        h = FillObserver(o.db, ADDR, api)
+        h.poll(now=2000)
+        before = o.db.execute("SELECT value FROM meta WHERE key='hl_cursor'").fetchone()[0]
+        api.rows.append(fill(2500, 2, '100000.0001', '.001', coin='ETH'))
+        with self.assertRaisesRegex(ValueError, 'discontinuity'):
+            h.poll(now=3000)
+        self.assertEqual(o.db.execute("SELECT value FROM meta WHERE key='hl_cursor'").fetchone()[0], before)
+        self.assertEqual(o.db.execute('SELECT count(*) FROM hl_fills').fetchone(), (1,))
+
+    def test_legacy_float_cursor_is_rebuilt_from_raw_fills_without_replay(self):
+        from decimal import Decimal
+        o = Observer(':memory:', ADDR, 'test')
+        api = Fake([fill(1000, 1, '0', '.1'), fill(1500, 2, '.1', '.2')])
+        h = FillObserver(o.db, ADDR, api)
+        h.poll(now=2000)
+        cursor = json.loads(o.db.execute("SELECT value FROM meta WHERE key='hl_cursor'").fetchone()[0])
+        cursor.pop('exact_positions', None)
+        cursor['positions']['BTC'] = .1 + .2
+        with o.db:
+            o.db.execute("UPDATE meta SET value=? WHERE key='hl_cursor'", (json.dumps(cursor),))
+        api.rows.append(fill(2500, 3, '.3', '.1'))
+        FillObserver(o.db, ADDR, api).poll(now=3000)
+        restored = json.loads(o.db.execute("SELECT value FROM meta WHERE key='hl_cursor'").fetchone()[0])
+        self.assertEqual(Decimal(restored['exact_positions']['BTC']), Decimal('.4'))
+        self.assertIsInstance(restored['positions']['BTC'], float)  # Compatible with an older worker.
+        self.assertEqual(restored['baseline_ms'], 2000)
+        self.assertEqual(o.db.execute('SELECT count(*) FROM hl_fills').fetchone(), (3,))
+        self.assertEqual(o.db.execute("SELECT count(*) FROM observations WHERE category='observed'").fetchone(), (1,))
+
+    def test_legacy_cursor_without_consistent_raw_provenance_is_not_reset(self):
+        for missing in (False, True):
+            with self.subTest(missing=missing):
+                o = Observer(':memory:', ADDR, 'test')
+                api = Fake([fill()])
+                h = FillObserver(o.db, ADDR, api)
+                h.poll(now=2000)
+                cursor = json.loads(o.db.execute("SELECT value FROM meta WHERE key='hl_cursor'").fetchone()[0])
+                cursor.pop('exact_positions')
+                if not missing:
+                    cursor['positions']['BTC'] = 999
+                saved = json.dumps(cursor)
+                with o.db:
+                    o.db.execute("UPDATE meta SET value=? WHERE key='hl_cursor'", (saved,))
+                    if missing:
+                        o.db.execute('DELETE FROM hl_fills')
+                with self.assertRaisesRegex(ValueError, 'Legacy source cursor'):
+                    h.poll(now=3000)
+                self.assertEqual(o.db.execute("SELECT value FROM meta WHERE key='hl_cursor'").fetchone()[0], saved)
+                self.assertEqual(o.db.execute('SELECT count(*) FROM polls').fetchone(), (1,))
+
     def test_trade_ids_do_not_define_execution_order(self):
         o=Observer(':memory:',ADDR,'test')
         api=Fake([fill(1000,99,'0','2'),fill(1000,1,'2','1')])

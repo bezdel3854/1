@@ -15,8 +15,10 @@ def snapshot(execution, paths, now_ms=None):
         with sqlite3.connect(Path(path).resolve().as_uri() + '?mode=ro', uri=True, timeout=1) as db:
             poll = db.execute('SELECT max(observed_ms) FROM polls').fetchone()[0]
             source = db.execute("SELECT value FROM meta WHERE key='hl_address'").fetchone()
+            cursor = db.execute("SELECT value FROM meta WHERE key='hl_cursor'").fetchone()
             result['sources'].append({
                 'address': source[0] if source else None, 'poll_ms': poll,
+                'exact_source_positions': bool(cursor and 'exact_positions' in json.loads(cursor[0])),
                 'poll_age_ms': max(0, now_ms - poll) if poll is not None else None,
                 'managed_positions': db.execute('SELECT count(*) FROM copied_positions').fetchone()[0],
                 'copied_signals': db.execute('SELECT count(*) FROM copied_signals').fetchone()[0],

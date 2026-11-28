@@ -25,10 +25,50 @@ class PublicInfo:
 def finite(value, positive=False):
     if isinstance(value, bool):
         raise ValueError('Invalid number')
-    result = float(value)
+    try:
+        result = float(value)
+    except (TypeError, ValueError, OverflowError):
+        raise ValueError('Invalid number') from None
     if not math.isfinite(result) or (positive and result <= 0):
         raise ValueError('Invalid number')
     return result
+
+
+def exact_number(value, positive=False):
+    finite(value, positive)
+    return Decimal(str(value))
+
+
+def position_after(fill):
+    if fill['side'] not in ('B', 'A'):
+        raise ValueError('Unknown fill side')
+    return exact_number(fill['startPosition']) + (1 if fill['side'] == 'B' else -1) * exact_number(fill['sz'], True)
+
+
+def exact_cursor_positions(db, saved):
+    if not saved:
+        return {}
+    if 'exact_positions' in saved:
+        return {coin: str(exact_number(value)) for coin, value in saved['exact_positions'].items()}
+    # Reconstruct legacy floating-point totals from already committed raw
+    # executions, without polling/replaying historical signals or moving cutover.
+    legacy = saved.get('positions', {})
+    restored = {}
+    if legacy:
+        for (payload,) in db.execute('SELECT payload FROM hl_fills ORDER BY rowid DESC'):
+            fill = json.loads(payload)
+            coin = fill['coin']
+            if coin not in legacy or coin in restored:
+                continue
+            value = position_after(fill)
+            if not math.isclose(float(value), finite(legacy[coin]), rel_tol=1e-8, abs_tol=1e-8):
+                raise ValueError('Legacy source cursor differs from its committed executions')
+            restored[coin] = str(value)
+            if len(restored) == len(legacy):
+                break
+        if len(restored) != len(legacy):
+            raise ValueError('Legacy source cursor lacks exact execution provenance')
+    return restored
 
 
 def normalize(fill, epochs, now):
@@ -80,11 +120,9 @@ def ordered_fills(fills):
         if len(pending) == 1 or not re.fullmatch(r'[A-Z0-9]+', key[1]):
             result.extend(pending)
             continue
-        def before(f): return finite(f['startPosition'])
-        def after(f):
-            if f['side'] not in ('B', 'A'): raise ValueError('Unknown fill side')
-            return before(f) + (1 if f['side'] == 'B' else -1)*finite(f['sz'], True)
-        def same(a,b): return math.isclose(a,b,rel_tol=1e-8,abs_tol=1e-8)
+        def before(f): return exact_number(f['startPosition'])
+        def after(f): return position_after(f)
+        def same(a,b): return a == b
         starts = [f for f in pending if not any(g is not f and same(after(g),before(f)) for g in pending)]
         if len(starts) != 1:
             raise ValueError('Ambiguous simultaneous source fills')
@@ -128,7 +166,7 @@ class FillObserver:
             raise ValueError('Source history gap; refusing cursor advance')
         epochs = dict(saved.get('epochs', {})) if saved else {}
         baseline_ms = saved.get('baseline_ms', now) if saved else now
-        expected = dict(saved.get('positions', {})) if saved else {}
+        expected = exact_cursor_positions(self.db, saved)
         prepared = []
         for fill in ordered_fills(fills):
             fid = identity(fill)
@@ -136,15 +174,16 @@ class FillObserver:
                 continue
             coin = fill['coin']
             if re.fullmatch(r'[A-Z0-9]+', coin):
-                before = finite(fill['startPosition'])
-                if coin in expected and not math.isclose(before, expected[coin], rel_tol=1e-8, abs_tol=1e-8):
+                before = exact_number(fill['startPosition'])
+                if coin in expected and before != exact_number(expected[coin]):
                     raise ValueError('Source position discontinuity; refusing cursor advance')
-                expected[coin] = before + (1 if fill['side'] == 'B' else -1)*finite(fill['sz'], True)
+                expected[coin] = str(position_after(fill))
             orders = normalize(fill, epochs, now)
             prepared.append((fid, fill, orders))
         latest = max(fills, key=lambda f:(f['time'],int(f['tid']),f['coin'])) if fills else None
         cursor = dict(time=latest['time'] if latest else now,
-                      anchor=identity(latest) if latest else None, epochs=epochs, baseline_ms=baseline_ms, positions=expected)
+                      anchor=identity(latest) if latest else None, epochs=epochs, baseline_ms=baseline_ms,
+                      positions={coin: float(value) for coin, value in expected.items()}, exact_positions=expected)
         with self.db:
             for fid, fill, orders in prepared:
                 self.db.execute('INSERT INTO hl_fills VALUES(?,?,?)',(fid,fill['time'],canonical(fill)))
