@@ -119,15 +119,18 @@ class CopyContract:
         payload.pop('source_margin'); payload.pop('target_margin')
         return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
 
-    def entry_brackets(self):
+    def entry_brackets(self, *, require_pair=True):
         """Only certify an atomic attached pair for two whole-position market exits."""
         stops = [x for x in self.exits if x.kind == 'STOP_MARKET' and x.full_position]
         profits = [x for x in self.exits if x.kind == 'TAKE_PROFIT_MARKET' and x.full_position]
-        if len(stops) != 1 or len(profits) != 1 or len(self.exits) != 2:
+        if (len(stops) > 1 or len(profits) > 1
+                or len(stops) + len(profits) != len(self.exits)
+                or (require_pair and (len(stops) != 1 or len(profits) != 1))):
             raise CopyBlocked('entry_requires_single_full_position_market_sl_and_tp')
         return {key: json.dumps({'type': order.kind, 'stopPrice': json_number(order.stop_price),
                                 'workingType': 'MARK_PRICE', 'stopGuaranteed': False}, sort_keys=True)
-                for key, order in [('stopLoss', stops[0]), ('takeProfit', profits[0])]}
+                for key, orders in [('stopLoss', stops), ('takeProfit', profits)]
+                for order in orders}
 
 
 def compile_contract(account, orders, coin, target_equity, rules, *, observed_ms,

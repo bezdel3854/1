@@ -42,7 +42,7 @@ def source_snapshot(client, address):
 
 class StrictBingXExecution(BingXExecution):
     strict_sizing = True
-    required_source_protection = True
+    required_source_protection = False
     copy_executed_entries_only = True
     peer_journals = ()
     def __init__(self, *args, source_client, source_address, expected_uid=None,
@@ -156,10 +156,12 @@ class StrictBingXExecution(BingXExecution):
             raise CopyBlocked('entry_exceeds_live_margin_allocation')
 
     def entry_brackets(self, contract):
-        return contract.entry_brackets()
+        return contract.entry_brackets(require_pair=False)
 
     def entry_price_parameters(self, side, source_price, rules):
-        if abs(number(rules['price'], positive=True) / source_price - 1) > Decimal('.001'):
+        deviation = number(rules['price'], positive=True) / source_price - 1
+        adverse = deviation if side == 'BUY' else -deviation
+        if adverse > Decimal('.001'):
             raise CopyBlocked('cross_exchange_entry_price_deviation_exceeds_0.1_percent')
         return {}
 
@@ -274,6 +276,11 @@ class StrictBingXExecution(BingXExecution):
                           if str(o.get('orderID', o.get('orderId'))) not in before_ids]
             contract = json.loads(contract_json)
             if not contract.get('entry_brackets_attached', True):
+                if not contract['exits']:
+                    if new_orders:
+                        raise ReconciliationRequired('Unprotected source entry left unexpected target orders')
+                    db.execute('UPDATE copy_entry_children SET adopted=1 WHERE signal_id=?', (signal_id,))
+                    return
                 if self.environment != 'demo':
                     raise CopyBlocked('detached_initial_protection_is_demo_only')
                 if new_orders:

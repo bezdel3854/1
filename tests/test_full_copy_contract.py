@@ -217,7 +217,9 @@ class StrictExecutionTests(unittest.TestCase):
             if method=='POST' and kw['type']=='MARKET':
                 if kw.get('reduceOnly')=='true':return {'orderId':'close'}
                 for i,k in enumerate(['stopLoss','takeProfit']):
-                    p=json.loads(kw[k]);self.orders.append(dict(orderId=str(i+1),symbol='BTC-USDT',
+                    if k not in kw:
+                        continue
+                    p=json.loads(kw[k]);self.orders.append(dict(orderId=str(len(self.orders)+1),symbol='BTC-USDT',
                         positionSide='BOTH',side='SELL',type=p['type'],origQty=kw['quantity'],
                         stopPrice=p['stopPrice'],workingType=p['workingType'],reduceOnly=True))
                 return {'orderId':'parent'}
@@ -282,12 +284,36 @@ class StrictExecutionTests(unittest.TestCase):
         self.assertEqual(D(contract.target_quantity), D('.3'))
         self.assertEqual(set(contract.entry_brackets()), {'stopLoss', 'takeProfit'})
 
-        for kept, reason in [(protection[:1], 'source_has_no_take_profit'),
-                             (protection[1:], 'source_has_no_stop_loss')]:
+        for kept, keys in [(protection[:1], {'stopLoss'}),
+                           (protection[1:], {'takeProfit'}), ([], set())]:
             with patch('research.trader_review.strict_bingx_copy.source_snapshot',
                        return_value=(account, [*kept, remaining], time.time_ns() // 1_000_000)):
-                with self.assertRaisesRegex(CopyBlocked, reason):
-                    compile_live('BTC-USDT', D('.085'), D('.3'))
+                contract = compile_live('BTC-USDT', D('.085'), D('.3'))
+                self.assertEqual(set(self.x.entry_brackets(contract)), keys)
+
+    def test_favorable_entry_prices_pass_for_both_sides(self):
+        self.assertEqual(self.x.entry_price_parameters('BUY', D('100'), {'price': '99'}), {})
+        self.assertEqual(self.x.entry_price_parameters('SELL', D('100'), {'price': '101'}), {})
+        for side, price in [('BUY', '100.2'), ('SELL', '99.8')]:
+            with self.assertRaises(CopyBlocked):
+                self.x.entry_price_parameters(side, D('100'), {'price': price})
+
+    def test_optional_source_protection_is_adopted_and_not_duplicated_on_retry(self):
+        for count in (0, 1, 2):
+            with self.subTest(exits=count):
+                self.contract = replace(self.contract, exits=self.contract.exits[:count])
+                signal = 'optional-' + str(count)
+                self.x.set_context(dict(self.event, orderId=signal, positionId=signal), D('0'), D('.085'))
+                self.x.submit(signal, 'BTC-USDT', 'BUY', D('.850'), deadline_ms=self.deadline)
+                self.x.submit(signal, 'BTC-USDT', 'BUY', D('.850'), deadline_ms=self.deadline)
+                with sqlite3.connect(self.path) as db:
+                    self.assertEqual(db.execute(
+                        'SELECT adopted FROM copy_entry_children WHERE signal_id=?', (signal,)).fetchone(), (1,))
+                self.assertEqual(sum(m == 'POST' and path == 'trade/order'
+                                     for m, path, _ in self.requests), count + 1)
+                # Start the next case with the original source's complete pair.
+                self.contract = compile_contract(*fixture()[:2], 'BTC', 85, fixture()[2],
+                                                 observed_ms=1000, now_ms=1000)
 
     def test_account_equity_changes_combined_margin_budget(self):
         self.x.use_account_equity = True
@@ -298,6 +324,20 @@ class StrictExecutionTests(unittest.TestCase):
         self.x.equity = lambda: D('100')
         with self.assertRaisesRegex(CopyBlocked, 'entry_exceeds_live_margin_allocation'):
             self.x.verify_live_margin_budget(positions, D('2'), D('10'), D('100'))
+
+    def test_source_can_add_stop_after_entry_without_initial_protection(self):
+        full = self.contract
+        self.contract = replace(full, exits=())
+        self.x.submit('entry', 'BTC-USDT', 'BUY', D('.850'), deadline_ms=self.deadline)
+        self.x._positions = lambda *_: [{'positionAmt': '.850'}]
+        self.contract = replace(full, exits=full.exits[:1])
+        with self.position_state() as state, patch.object(
+                self.x, '_dispatch_exit', return_value=False) as dispatch:
+            self.x.synchronize_exits(state)
+        change = dispatch.call_args.args[2]
+        self.assertEqual(change['action'], 'create')
+        self.assertEqual(change['parameters']['type'], 'STOP_MARKET')
+        self.assertEqual(D(change['parameters']['quantity']), D('.850'))
 
     def test_other_trader_reserves_symbol_until_protection_cleanup(self):
         peer = Path(self.tmp.name) / 'peer.sqlite'
