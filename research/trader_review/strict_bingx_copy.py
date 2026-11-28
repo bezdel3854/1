@@ -337,9 +337,13 @@ class StrictBingXExecution(BingXExecution):
             for dispatch_id, epoch, payload, oid, result in db.execute(
                     'SELECT d.id,d.epoch,d.payload,r.order_id,r.response FROM copy_exit_dispatch d '
                     'LEFT JOIN copy_exit_receipts r ON r.dispatch_id=d.id WHERE d.result IS NULL').fetchall():
+                change = json.loads(payload)
+                if change['action'] == 'cancel':
+                    self._recover_cancellation(db, dispatch_id, epoch, change)
+                    continue
                 if not oid:
                     raise ReconciliationRequired('Ambiguous protection operation; inspect exchange before resuming')
-                self._confirm_exit(db, dispatch_id, epoch, json.loads(payload), oid, json.loads(result))
+                self._confirm_exit(db, dispatch_id, epoch, change, oid, json.loads(result))
             if db.execute('SELECT 1 FROM copy_entry_children WHERE adopted=0 LIMIT 1').fetchone():
                 raise ReconciliationRequired('Unadopted entry protection; reconcile parent and children before resuming')
             for epoch, symbol, ratio, payload in db.execute('SELECT * FROM copy_contracts').fetchall():
@@ -502,6 +506,29 @@ class StrictBingXExecution(BingXExecution):
             return self._confirm_exit(db, dispatch_id, epoch, change, oid, result)
         db.execute('UPDATE copy_exit_dispatch SET result=? WHERE id=?', (json.dumps(result), dispatch_id)); db.commit()
         return False
+
+    def _recover_cancellation(self, db, dispatch_id, epoch, change):
+        """Recover a completed cancellation by reads; never issue another DELETE."""
+        owned = db.execute('SELECT parameters FROM copy_exit_orders '
+                           'WHERE epoch=? AND source_id=? AND order_id=?',
+                           (epoch, change['source_id'], change['order_id'])).fetchone()
+        if not owned:
+            raise ReconciliationRequired('Pending cancellation lacks owned order metadata')
+        symbol = json.loads(owned[0])['symbol']
+        response = self._request('GET', 'trade/order', symbol=symbol, orderId=change['order_id'])
+        order = response.get('order', response)
+        if (str(order.get('orderId', order.get('orderID'))) != change['order_id']
+                or order.get('symbol') != symbol
+                or order.get('status') not in ('CANCELLED', 'CANCELED', 'EXPIRED', 'FAILED')
+                or number(order.get('executedQty')) != 0
+                or any(str(o.get('orderId', o.get('orderID'))) == change['order_id']
+                       for o in self._orders(symbol))):
+            raise ReconciliationRequired('Cancellation remains uncertain or has fills; inspect exchange')
+        with db:
+            db.execute('DELETE FROM copy_exit_orders WHERE epoch=? AND source_id=?',
+                       (epoch, change['source_id']))
+            db.execute('UPDATE copy_exit_dispatch SET result=? WHERE id=?',
+                       (json.dumps({'confirmed_cancel': order}), dispatch_id))
 
     def _confirm_exit(self, db, dispatch_id, epoch, change, oid, result):
         params = change['parameters']

@@ -451,6 +451,36 @@ class StrictExecutionTests(unittest.TestCase):
         for wrong in ('IOC', 'FOK', None):
             self.assertFalse(self.x._matches(dict(actual, timeInForce=wrong), params))
 
+    def test_cancel_timeout_recovers_only_verified_unfilled_terminal_order(self):
+        change = dict(action='cancel', source_id='100', order_id='12345')
+        params = self.contract.exits[0].bingx('BTC-USDT')
+        for status, filled, active in [('CANCELLED', '0', False), ('NEW', '0', True),
+                                      ('CANCELLED', '.1', False), ('FILLED', '.850', False),
+                                      ('CANCELLED', '0', True)]:
+            with self.subTest(status=status, filled=filled, active=active):
+                with sqlite3.connect(self.path) as db:
+                    db.execute('DELETE FROM copy_exit_dispatch')
+                    db.execute('INSERT OR REPLACE INTO copy_exit_orders VALUES (?,?,?,?)',
+                               ('epoch', '100', '12345', json.dumps(params)))
+                    db.execute('INSERT INTO copy_exit_dispatch VALUES (1,?,?,?,?,NULL)',
+                               ('epoch', '100', 'cancel', json.dumps(change)))
+                terminal = dict(orderId='12345', symbol='BTC-USDT', status=status, executedQty=filled)
+                state = sqlite3.connect(':memory:')
+                state.execute('CREATE TABLE copied_positions(epoch TEXT,quantity TEXT)')
+                with patch.object(self.x, 'verify_account_identity'), \
+                        patch.object(self.x, '_orders', return_value=[terminal] if active else []), \
+                        patch.object(self.x, '_request', return_value=terminal) as api:
+                    if status == 'CANCELLED' and filled == '0' and not active:
+                        self.x.synchronize_exits(state)
+                    else:
+                        with self.assertRaises(ReconciliationRequired):
+                            self.x.synchronize_exits(state)
+                    api.assert_called_once_with('GET', 'trade/order', symbol='BTC-USDT', orderId='12345')
+                with sqlite3.connect(self.path) as db:
+                    completed = db.execute('SELECT result FROM copy_exit_dispatch').fetchone()[0]
+                    self.assertEqual(completed is not None, status == 'CANCELLED' and filled == '0' and not active)
+                state.close()
+
     def test_live_immediately_filled_protection_is_confirmed_without_resubmission(self):
         params = self.contract.exits[0].bingx('BTC-USDT')
         change = dict(action='create', source_id='100', parameters=params)

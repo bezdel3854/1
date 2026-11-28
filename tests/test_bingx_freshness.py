@@ -165,6 +165,24 @@ class FreshnessTests(unittest.TestCase):
         self.assertEqual(self.db.execute('SELECT reason FROM copy_skips').fetchone()[0],
                          'account_equity_below_entry_threshold')
 
+    def test_equity_drop_between_reads_is_recorded_without_order(self):
+        from research.trader_review.bingx_copy_worker import cycle
+        balances = iter([D('100'), D('79')])
+        self.execution.equity = lambda: next(balances)
+        self.execution._request = lambda method, path, **params: (
+            {'price': '100'} if path == 'quote/price' else
+            [{'symbol': 'HYPE-USDT', 'quantityPrecision': 3,
+              'tradeMinQuantity': '.001', 'tradeMinUSDT': '5'}])
+        source = types.SimpleNamespace(address='public', client=types.SimpleNamespace(
+            get=lambda *args, **kwargs: {'marginSummary': {'accountValue': '1000'}}))
+        event = self.event('balance-race', qty=25)
+        cycle(source, self.copier, self.execution, min_equity=D('80'),
+              prepared_rows=[(1, json.dumps(event), json.dumps({'startPosition': '0'}))])
+        self.assertEqual(self.execution.orders, [])
+        self.assertEqual(self.db.execute('SELECT reason FROM copy_skips WHERE id=?',
+                                        ('balance-race',)).fetchone(),
+                         ('account_equity_below_entry_threshold',))
+
 
 class DispatchDeadlineTests(unittest.TestCase):
     def setUp(self):

@@ -172,6 +172,9 @@ def cycle(source, copier, execution, *, min_equity=Decimal('100'), allowed_symbo
                 if not equity.is_finite() or equity < min_equity:
                     # A signal seen before funding must never be replayed after funding.
                     with db:
+                        db.execute('INSERT OR IGNORE INTO copy_skips VALUES (?,?,?,?,?)',
+                                   (event['orderId'], event['updatedAt'], time.time_ns() // 1_000_000,
+                                    'account_equity_below_entry_threshold', json.dumps(event, sort_keys=True)))
                         db.execute("INSERT OR REPLACE INTO meta VALUES ('bingx_copy_row',?)", (str(rowid),))
                     continue
                 live_allocation = getattr(execution, 'live_allocation', None)
